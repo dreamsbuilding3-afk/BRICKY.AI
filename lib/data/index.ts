@@ -1,5 +1,5 @@
 import { fetchDpe } from "./dpe";
-import { fetchDvfComparables } from "./dvf";
+import { buildDvfMarketStats, fetchDvfComparables } from "./dvf";
 import { geocodeAddress } from "./geocode";
 import { fetchGeorisques } from "./georisques";
 import type { DataSourceStatus, PropertyDataBundle } from "./types";
@@ -51,6 +51,7 @@ export async function collectPropertyData(input: {
 
   if (dvfResult.status === "fulfilled") {
     bundle.comparables = dvfResult.value;
+    bundle.market = buildDvfMarketStats(dvfResult.value, input.surfaceM2);
     sources.push(sourceStatus("DVF_PLUS", Date.now()));
   } else {
     sources.push(sourceStatus("DVF_PLUS", Date.now(), dvfResult.reason));
@@ -74,7 +75,7 @@ export async function collectPropertyData(input: {
 }
 
 export * from "./types";
+export { buildDvfMarketStats, fetchDvfComparables } from "./dvf";
 export { fetchDpe } from "./dpe";
-export { fetchDvfComparables } from "./dvf";
 export { geocodeAddress } from "./geocode";
 export { fetchGeorisques } from "./georisques";
