@@ -1,6 +1,9 @@
-import type { ComparableSale } from "./types";
+import type { ComparableSale, Confidence, DvfMarketStats } from "./types";
 
 const DVF_BASE_URL = "https://apidf.cerema.fr/dvf_opendata/geomutations/";
+const MAX_PAGES = 3;
+const MAX_RESULTS = 60;
+const MAX_DISTANCE_M = 1500;
 
 function numberValue(value: unknown): number | undefined {
   if (typeof value === "number" && Number.isFinite(value)) return value;
@@ -9,6 +12,10 @@ function numberValue(value: unknown): number | undefined {
     return Number.isFinite(parsed) ? parsed : undefined;
   }
   return undefined;
+}
+
+function stringValue(value: unknown): string | undefined {
+  return typeof value === "string" && value.trim() !== "" ? value.trim() : undefined;
 }
 
 function distanceMeters(lat1: number, lon1: number, lat2: number, lon2: number): number {
@@ -35,10 +42,17 @@ function pickCoordinate(row: Record<string, unknown>): [number, number] | null {
   return lon !== undefined && lat !== undefined ? [lon, lat] : null;
 }
 
+function normalizePropertyType(row: Record<string, unknown>): string | undefined {
+  const code = stringValue(row.codtypbien ?? row.type_local ?? row.type_bien);
+  if (code === "111") return "maison";
+  if (code === "121") return "appartement";
+  return stringValue(row.libtypbien ?? row.type_local_label);
+}
+
 function mapRow(row: Record<string, unknown>, lat: number, lon: number): ComparableSale | null {
   const price = numberValue(row.valeurfonc ?? row.valeur_fonciere ?? row.prix);
   const surface = numberValue(row.sbati ?? row.surface_bati ?? row.surface);
-  if (!price || !surface || surface <= 0) return null;
+  if (!price || !surface || price <= 0 || surface <= 0) return null;
 
   const coordinates = pickCoordinate(row);
   const distance = coordinates
@@ -47,15 +61,31 @@ function mapRow(row: Record<string, unknown>, lat: number, lon: number): Compara
 
   return {
     source: "DVF+",
-    transactionDate: typeof row.datemut === "string" ? row.datemut : typeof row.date_mutation === "string" ? row.date_mutation : undefined,
-    address: typeof row.adresse === "string" ? row.adresse : undefined,
-    city: typeof row.libcom === "string" ? row.libcom : typeof row.nom_commune === "string" ? row.nom_commune : undefined,
+    transactionDate: stringValue(row.datemut ?? row.date_mutation),
+    address: stringValue(row.adresse ?? row.adresse_nom_voie),
+    city: stringValue(row.libcom ?? row.nom_commune),
     surfaceM2: surface,
     price,
     priceM2: price / surface,
     distanceM: distance,
+    propertyType: normalizePropertyType(row),
     rawPayload: row,
   };
+}
+
+function dedupeSales(rows: ComparableSale[]): ComparableSale[] {
+  const seen = new Set<string>();
+  return rows.filter((row) => {
+    const key = [
+      row.transactionDate ?? "",
+      row.price ?? "",
+      row.surfaceM2 ?? "",
+      row.address ?? "",
+    ].join("|");
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }
 
 export async function fetchDvfComparables(input: {
@@ -66,41 +96,110 @@ export async function fetchDvfComparables(input: {
   propertyType?: string;
   yearsBack?: number;
 }): Promise<ComparableSale[]> {
-  const url = new URL(DVF_BASE_URL);
-  url.searchParams.set("code_insee", input.inseeCode);
-  url.searchParams.set("anneemut_min", String(new Date().getFullYear() - (input.yearsBack ?? 5)));
-  url.searchParams.set("page_size", "100");
-  url.searchParams.set("ordering", "-datemut");
+  let nextUrl: string | null = null;
+  let currentUrl: URL | null = null;
+  const collected: ComparableSale[] = [];
+
+  currentUrl = new URL(DVF_BASE_URL);
+  currentUrl.searchParams.set("code_insee", input.inseeCode);
+  currentUrl.searchParams.set("anneemut_min", String(new Date().getFullYear() - (input.yearsBack ?? 5)));
+  currentUrl.searchParams.set("page_size", "100");
+  currentUrl.searchParams.set("ordering", "-datemut");
 
   if (input.surfaceM2) {
-    url.searchParams.set("sbati_min", String(Math.max(10, input.surfaceM2 * 0.65)));
-    url.searchParams.set("sbati_max", String(input.surfaceM2 * 1.35));
+    currentUrl.searchParams.set("sbati_min", String(Math.max(10, input.surfaceM2 * 0.65)));
+    currentUrl.searchParams.set("sbati_max", String(input.surfaceM2 * 1.35));
   }
 
   const type = (input.propertyType ?? "").toLowerCase();
   if (type.includes("maison") || type.includes("house")) {
-    url.searchParams.set("codtypbien", "111");
+    currentUrl.searchParams.set("codtypbien", "111");
   } else if (type.includes("appartement") || type.includes("apartment") || type.includes("studio")) {
-    url.searchParams.set("codtypbien", "121");
+    currentUrl.searchParams.set("codtypbien", "121");
   }
 
-  const response = await fetch(url, {
-    headers: { accept: "application/json" },
-    next: { revalidate: 21600 },
-  });
+  for (let page = 0; page < MAX_PAGES && currentUrl; page += 1) {
+    const response = await fetch(currentUrl, {
+      headers: { accept: "application/json" },
+      next: { revalidate: 21600 },
+    });
 
-  if (!response.ok) {
-    throw new Error(`DVF+ API returned ${response.status}`);
+    if (!response.ok) throw new Error(`DVF+ API returned ${response.status}`);
+
+    const payload = (await response.json()) as { results?: unknown[]; next?: unknown };
+    const rows = Array.isArray(payload.results) ? payload.results : [];
+
+    for (const row of rows) {
+      if (!row || typeof row !== "object") continue;
+      const sale = mapRow(row as Record<string, unknown>, input.latitude, input.longitude);
+      if (!sale) continue;
+      if (sale.distanceM !== undefined && sale.distanceM > MAX_DISTANCE_M) continue;
+      collected.push(sale);
+    }
+
+    nextUrl = typeof payload.next === "string" && payload.next.length > 0 ? payload.next : null;
+    currentUrl = nextUrl ? new URL(nextUrl, currentUrl) : null;
+    if (collected.length >= MAX_RESULTS) break;
   }
 
-  const payload = (await response.json()) as { results?: unknown[] };
-  const rows = Array.isArray(payload.results) ? payload.results : [];
-
-  return rows
-    .filter((row): row is Record<string, unknown> => !!row && typeof row === "object")
-    .map((row) => mapRow(row, input.latitude, input.longitude))
-    .filter((row): row is ComparableSale => row !== null)
-    .filter((row) => row.distanceM === undefined || row.distanceM <= 1500)
+  return dedupeSales(collected)
     .sort((a, b) => (a.distanceM ?? Infinity) - (b.distanceM ?? Infinity))
-    .slice(0, 30);
+    .slice(0, MAX_RESULTS);
+}
+
+function percentile(sorted: number[], p: number): number | undefined {
+  if (sorted.length === 0) return undefined;
+  if (sorted.length === 1) return sorted[0];
+  const index = (sorted.length - 1) * p;
+  const lower = Math.floor(index);
+  const upper = Math.ceil(index);
+  if (lower === upper) return sorted[lower];
+  return sorted[lower] + (sorted[upper] - sorted[lower]) * (index - lower);
+}
+
+export function buildDvfMarketStats(
+  comparables: ComparableSale[],
+  targetSurfaceM2?: number,
+): DvfMarketStats {
+  const prices = comparables
+    .map((sale) => sale.priceM2)
+    .filter((value): value is number => typeof value === "number" && Number.isFinite(value) && value > 0)
+    .sort((a, b) => a - b);
+
+  const average = prices.length > 0
+    ? prices.reduce((sum, value) => sum + value, 0) / prices.length
+    : undefined;
+  const median = percentile(prices, 0.5);
+  const p25 = percentile(prices, 0.25);
+  const p75 = percentile(prices, 0.75);
+
+  const confidence: Confidence = prices.length >= 15
+    ? "high"
+    : prices.length >= 7
+      ? "medium"
+      : prices.length >= 3
+        ? "low"
+        : "none";
+
+  const estimatedMarketValue = median !== undefined && targetSurfaceM2
+    ? median * targetSurfaceM2
+    : undefined;
+  const valueLow = p25 !== undefined && targetSurfaceM2 ? p25 * targetSurfaceM2 : undefined;
+  const valueHigh = p75 !== undefined && targetSurfaceM2 ? p75 * targetSurfaceM2 : undefined;
+
+  return {
+    source: "DVF+",
+    comparableCount: prices.length,
+    medianPriceM2: median,
+    averagePriceM2: average,
+    minPriceM2: prices[0],
+    maxPriceM2: prices[prices.length - 1],
+    p25PriceM2: p25,
+    p75PriceM2: p75,
+    estimatedMarketValue,
+    valueLow,
+    valueHigh,
+    methodology: "Médiane des prix/m² des transactions DVF+ comparables sur les 5 dernières années, filtrées par commune, surface et type de bien, puis limitées à 1,5 km autour du bien.",
+    confidence,
+  };
 }
