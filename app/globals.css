@@ -1,0 +1,30 @@
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; min-height: 100%; }
+body {
+  background: #f7f7f5;
+  color: #111111;
+  font-family: Arial, Helvetica, sans-serif;
+}
+button, input { font: inherit; }
+button { cursor: pointer; }
+::selection { background: #111; color: #fff; }
+
+.page { min-height: 100vh; }
+.nav { height: 72px; display: flex; align-items: center; justify-content: space-between; padding: 0 40px; border-bottom: 1px solid #e7e7e4; background: rgba(255,255,255,.78); backdrop-filter: blur(18px); position: sticky; top: 0; z-index: 10; }
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 800; letter-spacing: -.04em; font-size: 20px; }
+.mark { width: 30px; height: 30px; border-radius: 9px; background: #111; color: #fff; display: grid; place-items: center; font-size: 14px; }
+.navlink { color: #666; font-size: 14px; }
+.hero { max-width: 1120px; margin: 0 auto; padding: 100px 24px 70px; text-align: center; }
+.eyebrow { display: inline-flex; padding: 7px 11px; border: 1px solid #deded9; border-radius: 999px; background: #fff; color: #666; font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+h1 { margin: 24px auto 18px; max-width: 850px; font-size: clamp(48px, 7vw, 88px); line-height: .96; letter-spacing: -.065em; font-weight: 800; }
+.sub { max-width: 650px; margin: 0 auto 38px; color: #666; font-size: 18px; line-height: 1.55; }
+.analyzer { max-width: 760px; margin: 0 auto; padding: 8px; border: 1px solid #ddd; background: #fff; border-radius: 18px; box-shadow: 0 20px 60px rgba(0,0,0,.08); display: flex; gap: 8px; }
+.analyzer input { min-width: 0; flex: 1; border: 0; outline: 0; padding: 18px 16px; background: transparent; color: #111; }
+.analyzer button { border: 0; border-radius: 12px; background: #111; color: #fff; padding: 0 24px; font-weight: 700; }
+.proof { margin-top: 16px; color: #888; font-size: 12px; }
+.features { max-width: 1120px; margin: 0 auto; padding: 0 24px 90px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.card { background: #fff; border: 1px solid #e7e7e4; border-radius: 18px; padding: 24px; min-height: 180px; }
+.card h2 { margin: 0 0 10px; font-size: 18px; letter-spacing: -.03em; }
+.card p { margin: 0; color: #70706d; line-height: 1.55; font-size: 14px; }
+.footer { border-top: 1px solid #e7e7e4; padding: 24px 40px; color: #888; font-size: 12px; text-align: center; }
+@media (max-width: 720px) { .nav { padding: 0 18px; } .hero { padding-top: 70px; } .features { grid-template-columns: 1fr; } .analyzer { flex-direction: column; } .analyzer button { height: 52px; } }
