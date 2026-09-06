@@ -22,7 +22,24 @@ export type ComparableSale = {
   price?: number;
   priceM2?: number;
   distanceM?: number;
+  propertyType?: string;
   rawPayload?: unknown;
+};
+
+export type DvfMarketStats = {
+  source: "DVF+";
+  comparableCount: number;
+  medianPriceM2?: number;
+  averagePriceM2?: number;
+  minPriceM2?: number;
+  maxPriceM2?: number;
+  p25PriceM2?: number;
+  p75PriceM2?: number;
+  estimatedMarketValue?: number;
+  valueLow?: number;
+  valueHigh?: number;
+  methodology: string;
+  confidence: Confidence;
 };
 
 export type DpeResult = {
@@ -57,6 +74,7 @@ export type DataSourceStatus = {
 export type PropertyDataBundle = {
   geocode?: GeoResult;
   comparables: ComparableSale[];
+  market?: DvfMarketStats;
   dpe?: DpeResult;
   risks: RiskResult[];
   sources: DataSourceStatus[];
