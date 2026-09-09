@@ -24,7 +24,8 @@ export async function collectPropertyData(input: {
 
   const geocodeStarted = Date.now();
   try {
-    bundle.geocode = await geocodeAddress(input.address);
+    const geocode = await geocodeAddress(input.address);
+    if (geocode) bundle.geocode = geocode;
     sources.push(sourceStatus("BAN_GEOPLATEFORME", geocodeStarted));
   } catch (error) {
     sources.push(sourceStatus("BAN_GEOPLATEFORME", geocodeStarted, error));
