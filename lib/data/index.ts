@@ -1,7 +1,7 @@
 import { fetchDpe } from "./dpe";
 import { buildDvfMarketStats, fetchDvfComparables } from "./dvf";
 import { geocodeAddress } from "./geocode";
-import { fetchGeorisques } from "./georisques";
+import { buildRiskSummary, fetchGeorisques } from "./georisques";
 import type { DataSourceStatus, PropertyDataBundle } from "./types";
 
 function sourceStatus(source: string, startedAt: number, error?: unknown): DataSourceStatus {
@@ -66,6 +66,7 @@ export async function collectPropertyData(input: {
 
   if (risksResult.status === "fulfilled") {
     bundle.risks = risksResult.value;
+    bundle.riskSummary = buildRiskSummary(risksResult.value);
     sources.push(sourceStatus("GEORISQUES", Date.now()));
   } else {
     sources.push(sourceStatus("GEORISQUES", Date.now(), risksResult.reason));
@@ -78,4 +79,4 @@ export * from "./types";
 export { buildDvfMarketStats, fetchDvfComparables } from "./dvf";
 export { fetchDpe } from "./dpe";
 export { geocodeAddress } from "./geocode";
-export { fetchGeorisques } from "./georisques";
+export { buildRiskSummary, fetchGeorisques } from "./georisques";
