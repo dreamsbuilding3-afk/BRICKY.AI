@@ -58,13 +58,36 @@ export type DpeResult = {
   raw?: unknown;
 };
 
+export type RiskCategory =
+  | "flood"
+  | "earthquake"
+  | "ground_movement"
+  | "clay"
+  | "industrial"
+  | "wildfire"
+  | "radon"
+  | "cavity"
+  | "volcanic"
+  | "tsunami"
+  | "transport"
+  | "other";
+
 export type RiskResult = {
   source: "GEORISQUES";
   code?: string;
   label: string;
+  category: RiskCategory;
   severity: "low" | "medium" | "high" | "unknown";
   explanation?: string;
   raw?: unknown;
+};
+
+export type RiskSummary = {
+  source: "GEORISQUES";
+  totalRisks: number;
+  categories: Array<{ category: RiskCategory; count: number }>;
+  highSignalCategories: RiskCategory[];
+  methodology: string;
 };
 
 export type DataSourceStatus = {
@@ -80,5 +103,6 @@ export type PropertyDataBundle = {
   market?: DvfMarketStats;
   dpe?: DpeResult;
   risks: RiskResult[];
+  riskSummary?: RiskSummary;
   sources: DataSourceStatus[];
 };
