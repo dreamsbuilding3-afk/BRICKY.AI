@@ -52,6 +52,9 @@ export type DpeResult = {
   diagnosticDate?: string;
   address?: string;
   confidence: Confidence;
+  matchScore?: number;
+  matchQuality?: "exact" | "strong" | "approximate";
+  dataQuality?: "complete" | "partial" | "limited";
   raw?: unknown;
 };
 
