@@ -1,73 +1,51 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { supabase } from "../../lib/supabase/client";
 
-type AnalysisResult = {
-  property_id?: string;
-  analysis_id?: string;
-  analysis?: Record<string, unknown>;
-  [key: string]: unknown;
-};
+type AnalysisResult = { property_id?: string; analysis_id?: string; [key: string]: unknown };
 
 export default function AnalyzePage() {
-  const [payload, setPayload] = useState({
-    title: "Appartement à analyser",
-    city: "",
-    address: "",
-    price: "",
-    surface_m2: "",
-    rooms: "",
-    bedrooms: "",
-    dpe_class: "",
-    monthly_rent: "",
-  });
+  const router = useRouter();
+  const [payload, setPayload] = useState({ title: "Appartement à analyser", city: "", address: "", price: "", surface_m2: "", rooms: "", bedrooms: "", dpe_class: "", monthly_rent: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState<AnalysisResult | null>(null);
+  const [userEmail, setUserEmail] = useState("");
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      if (!data.session) router.replace("/login");
+      else setUserEmail(data.session.user.email ?? "");
+    });
+  }, [router]);
 
   async function handleSubmit(event: FormEvent) {
-    event.preventDefault();
-    setLoading(true);
-    setError("");
-    setResult(null);
-
-    const body = Object.fromEntries(
-      Object.entries(payload).map(([key, value]) => {
-        if (["price", "surface_m2", "rooms", "bedrooms", "monthly_rent"].includes(key) && value !== "") {
-          return [key, Number(value)];
-        }
-        return [key, value];
-      }),
-    );
-
+    event.preventDefault(); setLoading(true); setError(""); setResult(null);
+    const { data: sessionData } = await supabase.auth.getSession();
+    const token = sessionData.session?.access_token;
+    if (!token) { router.replace("/login"); return; }
+    const body = Object.fromEntries(Object.entries(payload).map(([key, value]) => {
+      if (["price", "surface_m2", "rooms", "bedrooms", "monthly_rent"].includes(key) && value !== "") return [key, Number(value)];
+      return [key, value];
+    }));
     try {
-      const response = await fetch("/api/properties/analyze", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
+      const response = await fetch("/api/properties/analyze", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify(body) });
       const data = await response.json();
       if (!response.ok) throw new Error(data?.details?.message || data?.error || "Analyse impossible.");
       setResult(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Une erreur est survenue.");
-    } finally {
-      setLoading(false);
-    }
+    } catch (err) { setError(err instanceof Error ? err.message : "Une erreur est survenue."); }
+    finally { setLoading(false); }
   }
 
   const update = (key: keyof typeof payload, value: string) => setPayload((current) => ({ ...current, [key]: value }));
 
   return (
     <main className="page">
-      <nav className="nav"><div className="brand"><span className="mark">B</span>Bricky</div><span className="navlink">Analyse</span></nav>
+      <nav className="nav"><div className="brand"><span className="mark">B</span>Bricky</div><div className="navlink">{userEmail || "Analyse"}</div></nav>
       <section className="analysis-shell">
-        <div className="analysis-intro">
-          <span className="eyebrow">Bricky · V1</span>
-          <h1>Analysez le bien avant de décider.</h1>
-          <p className="sub">Entrez uniquement les données que vous connaissez. Bricky calculera le reste sans inventer les informations manquantes.</p>
-        </div>
-
+        <div className="analysis-intro"><span className="eyebrow">Bricky · V1</span><h1>Analysez le bien avant de décider.</h1><p className="sub">Entrez uniquement les données que vous connaissez. Bricky calculera le reste sans inventer les informations manquantes.</p></div>
         <form className="property-form" onSubmit={handleSubmit}>
           <div className="form-grid">
             <label>Titre<input value={payload.title} onChange={(e) => update("title", e.target.value)} /></label>
@@ -83,14 +61,41 @@ export default function AnalyzePage() {
           <button className="primary-button" disabled={loading}>{loading ? "Analyse en cours…" : "Lancer l’analyse Bricky →"}</button>
           {error && <div className="error-box">{error}</div>}
         </form>
-
-        {result && (
-          <section className="result-panel">
-            <div className="result-head"><div><span className="eyebrow">Analyse terminée</span><h2>Première lecture du dossier</h2></div><span className="status-dot">● Bricky</span></div>
-            <pre>{JSON.stringify(result, null, 2)}</pre>
-          </section>
-        )}
+        {result && <AnalysisDashboard result={result} />}
       </section>
     </main>
   );
 }
+
+function AnalysisDashboard({ result }: { result: AnalysisResult }) {
+  const analysis = (result.analysis as Record<string, any>) || result;
+  const financial = (analysis.financial_snapshot || analysis.financial || {}) as Record<string, any>;
+  const decision = (analysis.decision_snapshot || analysis.decision || {}) as Record<string, any>;
+  const risk = (analysis.risk || {}) as Record<string, any>;
+  const scenarios = (analysis.financial_scenarios || financial.scenarios || {}) as Record<string, any>;
+  const verdict = decision.verdict || analysis.verdict;
+  const score = decision.score ?? analysis.overall_score;
+  const confidence = decision.confidence_score ?? analysis.confidence_score;
+  const actions = Array.isArray(decision.actions) ? decision.actions : [];
+  const risks = Array.isArray(risk.risks) ? risk.risks : [];
+  const missing = Array.isArray(analysis.missing_information) ? analysis.missing_information : [];
+  const scenarioRows = ["base", "conservative", "optimistic"].filter((key) => scenarios[key]).map((key) => [key, scenarios[key]]);
+  const verdictLabel = verdict === "interesting" ? "Intéressant" : verdict === "unattractive" ? "Peu intéressant" : "À vérifier & négocier";
+
+  return <section className="result-panel decision-dashboard">
+    <div className="result-head"><div><span className="eyebrow">Analyse terminée</span><h2>Voici ce que Bricky en pense.</h2></div><span className="status-dot">● Décision</span></div>
+    <div className="decision-hero"><div><span className="decision-label">Verdict</span><strong>{verdictLabel}</strong></div><div className="score-block"><span>Score</span><b>{score ?? "—"}<small>/100</small></b></div><div className="score-block"><span>Confiance</span><b>{confidence ?? "—"}<small>%</small></b></div></div>
+    <div className="metric-grid">
+      <Metric label="Loyer mensuel" value={financial.monthly_rent} suffix=" €" />
+      <Metric label="Revenu annuel" value={financial.annual_net_income ?? financial.annual_gross_income} suffix=" €" />
+      <Metric label="Rendement brut" value={financial.gross_yield} suffix=" %" />
+      <Metric label="Rendement net" value={financial.net_yield} suffix=" %" />
+    </div>
+    {scenarioRows.length > 0 && <div className="dashboard-section"><h3>Scénarios</h3><div className="scenario-grid">{scenarioRows.map(([key, value]) => <div className="scenario" key={key}><span>{key === "base" ? "Base" : key === "conservative" ? "Conservateur" : "Optimiste"}</span><b>{value.net_yield ?? "—"} %</b><small>rendement net</small></div>)}</div></div>}
+    {actions.length > 0 && <div className="dashboard-section"><h3>Ce qu’il faut faire</h3><ul>{actions.map((action: string, i: number) => <li key={i}>{action}</li>)}</ul></div>}
+    {risks.length > 0 && <div className="dashboard-section"><h3>Points de vigilance</h3><div className="risk-list">{risks.map((item: any, i: number) => <div className="risk-item" key={i}><b>{item.title || "Risque"}</b><span>{item.severity || ""}</span><p>{item.explanation || ""}</p></div>)}</div></div>}
+    {missing.length > 0 && <div className="dashboard-section"><h3>Données manquantes</h3><div className="missing-list">{missing.map((item: any, i: number) => <div key={i}><b>{item.label || item.field_key}</b><p>{item.suggested_question || item.impact || "À vérifier avant décision."}</p></div>)}</div></div>}
+  </section>;
+}
+
+function Metric({ label, value, suffix }: { label: string; value: unknown; suffix: string }) { return <div className="metric"><span>{label}</span><b>{value == null || value === "" ? "—" : Number(value).toLocaleString("fr-FR", { maximumFractionDigits: 2 })}{value != null && value !== "" ? suffix : ""}</b></div>; }
