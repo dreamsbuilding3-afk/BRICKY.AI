@@ -1,8 +1,7 @@
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; min-height: 100%; }
 body { background: #f7f7f5; color: #111; font-family: Arial, Helvetica, sans-serif; }
-button, input { font: inherit; }
-button { cursor: pointer; }
+button, input { font: inherit; } button { cursor: pointer; }
 ::selection { background: #111; color: #fff; }
 .page { min-height: 100vh; }
 .nav { height: 72px; display: flex; align-items: center; justify-content: space-between; padding: 0 40px; border-bottom: 1px solid #e7e7e4; background: rgba(255,255,255,.82); backdrop-filter: blur(18px); position: sticky; top: 0; z-index: 10; }
@@ -19,23 +18,23 @@ h1 { margin: 24px auto 18px; max-width: 850px; font-size: clamp(48px, 7vw, 88px)
 .proof { margin-top: 16px; color: #888; font-size: 12px; }
 .features { max-width: 1120px; margin: 0 auto; padding: 0 24px 90px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
 .card { background: #fff; border: 1px solid #e7e7e4; border-radius: 18px; padding: 24px; min-height: 180px; }
-.card h2 { margin: 0 0 10px; font-size: 18px; letter-spacing: -.03em; }
-.card p { margin: 0; color: #70706d; line-height: 1.55; font-size: 14px; }
+.card h2 { margin: 0 0 10px; font-size: 18px; letter-spacing: -.03em; } .card p { margin: 0; color: #70706d; line-height: 1.55; font-size: 14px; }
 .footer { border-top: 1px solid #e7e7e4; padding: 24px 40px; color: #888; font-size: 12px; text-align: center; }
-.analysis-shell { max-width: 1000px; margin: 0 auto; padding: 72px 24px 100px; }
-.analysis-intro { text-align: center; }
-.analysis-intro h1 { font-size: clamp(42px, 6vw, 68px); }
+.analysis-shell { max-width: 1000px; margin: 0 auto; padding: 72px 24px 100px; } .analysis-intro { text-align: center; } .analysis-intro h1 { font-size: clamp(42px, 6vw, 68px); }
 .property-form { margin: 42px auto 0; padding: 28px; background: #fff; border: 1px solid #e3e3df; border-radius: 24px; box-shadow: 0 24px 70px rgba(0,0,0,.07); }
 .form-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
 .property-form label { display: flex; flex-direction: column; gap: 8px; color: #555; font-size: 13px; font-weight: 700; }
-.property-form input { width: 100%; border: 1px solid #ddd; border-radius: 12px; padding: 13px 14px; outline: none; background: #fafaf8; color: #111; }
-.property-form input:focus { border-color: #999; background: #fff; }
-.primary-button { width: 100%; min-height: 54px; margin-top: 24px; }
-.primary-button:disabled { opacity: .55; cursor: wait; }
+.property-form input { width: 100%; border: 1px solid #ddd; border-radius: 12px; padding: 13px 14px; outline: none; background: #fafaf8; color: #111; } .property-form input:focus { border-color: #999; background: #fff; }
+.primary-button { width: 100%; min-height: 54px; margin-top: 24px; } .primary-button:disabled { opacity: .55; cursor: wait; }
 .error-box { margin-top: 14px; padding: 12px 14px; border-radius: 12px; background: #f5f0f0; color: #7a2222; font-size: 13px; }
 .result-panel { margin-top: 24px; background: #fff; border: 1px solid #e3e3df; border-radius: 24px; padding: 28px; box-shadow: 0 18px 50px rgba(0,0,0,.05); }
-.result-head { display: flex; justify-content: space-between; align-items: center; gap: 20px; }
-.result-head h2 { margin: 14px 0 0; font-size: 28px; letter-spacing: -.04em; }
-.status-dot { color: #555; font-size: 13px; font-weight: 700; }
-.result-panel pre { margin: 24px 0 0; padding: 18px; overflow: auto; border-radius: 14px; background: #f7f7f5; color: #333; font-size: 12px; line-height: 1.55; }
-@media (max-width: 720px) { .nav { padding: 0 18px; } .hero { padding-top: 70px; } .features, .form-grid { grid-template-columns: 1fr; } .analyzer { flex-direction: column; } .analyzer button { height: 52px; } .property-form { padding: 20px; } .result-head { align-items: flex-start; flex-direction: column; } }
+.result-head { display: flex; justify-content: space-between; align-items: center; gap: 20px; } .result-head h2 { margin: 14px 0 0; font-size: 28px; letter-spacing: -.04em; } .status-dot { color: #555; font-size: 13px; font-weight: 700; }
+.login-shell { max-width: 620px; } .auth-form { max-width: 480px; } .auth-form label + label { margin-top: 18px; } .auth-switch { border: 0; background: transparent; color: #666; width: 100%; margin-top: 18px; font-size: 13px; }
+.decision-dashboard { margin-top: 28px; } .decision-hero { margin-top: 28px; display: grid; grid-template-columns: 1.7fr 1fr 1fr; gap: 14px; } .decision-hero > div { border: 1px solid #e5e5e1; border-radius: 18px; padding: 22px; background: #fafaf8; }
+.decision-label, .score-block span, .metric span { display: block; color: #777; font-size: 12px; text-transform: uppercase; letter-spacing: .07em; font-weight: 700; } .decision-hero strong { display: block; margin-top: 10px; font-size: 28px; letter-spacing: -.04em; }
+.score-block b { display: block; margin-top: 8px; font-size: 34px; letter-spacing: -.05em; } .score-block small { font-size: 13px; color: #777; margin-left: 3px; letter-spacing: 0; }
+.metric-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 14px; } .metric { padding: 20px; border: 1px solid #e5e5e1; border-radius: 16px; background: #fff; } .metric b { display: block; margin-top: 12px; font-size: 21px; letter-spacing: -.03em; }
+.dashboard-section { margin-top: 30px; padding-top: 26px; border-top: 1px solid #e7e7e4; } .dashboard-section h3 { margin: 0 0 15px; font-size: 17px; letter-spacing: -.02em; }
+.scenario-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; } .scenario { border: 1px solid #e5e5e1; border-radius: 16px; padding: 18px; } .scenario span, .scenario small { display: block; color: #777; font-size: 12px; } .scenario b { display: block; margin: 9px 0 3px; font-size: 25px; }
+.dashboard-section ul { margin: 0; padding-left: 20px; line-height: 1.8; color: #333; } .risk-list, .missing-list { display: grid; gap: 10px; } .risk-item, .missing-list > div { border: 1px solid #e5e5e1; border-radius: 14px; padding: 16px; } .risk-item { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; } .risk-item span { font-size: 11px; text-transform: uppercase; color: #777; font-weight: 700; } .risk-item p, .missing-list p { margin: 5px 0 0; color: #666; font-size: 13px; line-height: 1.5; }
+@media (max-width: 720px) { .nav { padding: 0 18px; } .hero { padding-top: 70px; } .features, .form-grid, .metric-grid, .scenario-grid, .decision-hero { grid-template-columns: 1fr; } .analyzer { flex-direction: column; } .analyzer button { height: 52px; } .property-form { padding: 20px; } .result-head { align-items: flex-start; flex-direction: column; } }
