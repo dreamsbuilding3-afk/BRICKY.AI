@@ -62,15 +62,30 @@ export default function AnalyzePage() {
 }
 
 function AnalysisDashboard({ result }: { result: AnalysisResult }) {
-  const analysis = (result.analysis as Record<string, any>) || result; const financial = (analysis.financial_snapshot || {}) as Record<string, any>; const decision = (analysis.decision_snapshot || {}) as Record<string, any>; const risk = (analysis.risk || {}) as Record<string, any>;
-  const scenarios = (analysis.financial_scenarios || {}) as Record<string, any>; const verdict = decision.verdict || analysis.verdict; const score = decision.score ?? analysis.overall_score; const confidence = decision.confidence_score ?? analysis.confidence_score; const actions = Array.isArray(decision.actions) ? decision.actions : []; const risks = Array.isArray(risk.risks) ? risk.risks : []; const missing = Array.isArray(analysis.missing_information) ? analysis.missing_information : [];
-  const rows = ["base", "conservative", "optimistic"].filter((k) => scenarios[k]); const label = verdict === "interesting" ? "Intéressant" : verdict === "unattractive" ? "Peu intéressant" : "À vérifier & négocier";
+  const analysis = (result.analysis as Record<string, any>) || result;
+  const financialSnapshot = (analysis.financial_snapshot || {}) as Record<string, any>;
+  const metrics = (financialSnapshot.metrics || {}) as Record<string, any>;
+  const scenarios = (financialSnapshot.scenarios || {}) as Record<string, any>;
+  const decisionSnapshot = (analysis.decision_snapshot || {}) as Record<string, any>;
+  const decision = (decisionSnapshot.decision || {}) as Record<string, any>;
+  const market = (decisionSnapshot.market || {}) as Record<string, any>;
+  const risk = (decisionSnapshot.risk || {}) as Record<string, any>;
+  const verdict = decision.verdict || analysis.verdict;
+  const score = analysis.overall_score ?? decision.score;
+  const confidence = analysis.confidence_score ?? decision.confidence_score;
+  const actions = Array.isArray(decision.actions) ? decision.actions : [];
+  const risks = Array.isArray(risk.risks) ? risk.risks : [];
+  const missing = Array.isArray(financialSnapshot.missing_data) ? financialSnapshot.missing_data : [];
+  const rows = ["base", "conservative", "optimistic"].filter((k) => scenarios[k]);
+  const label = verdict === "interesting" ? "Intéressant" : verdict === "unattractive" ? "Peu intéressant" : "À vérifier & négocier";
+  const marketReady = market.status === "ready";
   return <section className="result-panel decision-dashboard"><div className="result-head"><div><span className="eyebrow">Analyse terminée</span><h2>Voici ce que Bricky en pense.</h2></div><span className="status-dot">● Décision</span></div>
     <div className="decision-hero"><div><span className="decision-label">Verdict</span><strong>{label}</strong></div><div className="score-block"><span>Score</span><b>{score ?? "—"}<small>/100</small></b></div><div className="score-block"><span>Confiance</span><b>{confidence ?? "—"}<small>%</small></b></div></div>
-    <div className="metric-grid"><Metric label="Loyer mensuel" value={financial.monthly_rent} suffix=" €" /><Metric label="Revenu annuel" value={financial.annual_net_income ?? financial.annual_gross_income} suffix=" €" /><Metric label="Rendement brut" value={financial.gross_yield} suffix=" %" /><Metric label="Rendement net" value={financial.net_yield} suffix=" %" /></div>
+    <div className="metric-grid"><Metric label="Loyer mensuel" value={metrics.monthly_rent} suffix=" €" /><Metric label="Revenu annuel net" value={metrics.annual_net_income} suffix=" €" /><Metric label="Rendement brut" value={metrics.gross_yield_pct} suffix=" %" /><Metric label="Rendement net" value={metrics.net_yield_pct} suffix=" %" /></div>
+    <div className="dashboard-section market-card"><div className="section-heading"><div><h3>Valeur marché</h3><small>Transactions comparables · données disponibles</small></div><span className="market-badge">{marketReady ? `${market.confidence_score ?? 0}% confiance` : "Données insuffisantes"}</span></div>{marketReady ? <div className="market-grid"><Metric label="Prix du bien" value={market.property_price_m2} suffix=" €/m²" /><Metric label="Marché médian" value={market.market_price_m2_median} suffix=" €/m²" /><Metric label="Valeur estimée" value={market.market_value_estimate} suffix=" €" /><Metric label="Écart au marché" value={market.market_gap_pct} suffix=" %" /></div> : <p className="empty-note">Bricky ne dispose pas encore de suffisamment de transactions comparables pour produire une estimation fiable. Aucune valeur n'est inventée.</p>}</div>
     {rows.length > 0 && <div className="dashboard-section"><h3>Scénarios</h3><div className="scenario-grid">{rows.map((key) => <div className="scenario" key={key}><span>{key === "base" ? "Base" : key === "conservative" ? "Conservateur" : "Optimiste"}</span><b>{scenarios[key].net_yield ?? "—"} %</b><small>rendement net</small></div>)}</div></div>}
     {actions.length > 0 && <div className="dashboard-section"><h3>Ce qu’il faut faire</h3><ul>{actions.map((a: string, i: number) => <li key={i}>{a}</li>)}</ul></div>}
-    {risks.length > 0 && <div className="dashboard-section"><h3>Points de vigilance</h3><div className="risk-list">{risks.map((r: any, i: number) => <div className="risk-item" key={i}><b>{r.title || "Risque"}</b><span>{r.severity || ""}</span><p>{r.explanation || ""}</p></div>)}</div></div>}
+    {risks.length > 0 && <div className="dashboard-section"><h3>Points de vigilance</h3><div className="risk-list">{risks.map((r: any, i: number) => <div className="risk-item" key={i}><b>{r.title || "Risque"}</b><span>{r.severity || ""}</span><p>{r.explanation || r.impact || ""}</p></div>)}</div></div>}
     {missing.length > 0 && <div className="dashboard-section"><h3>Données manquantes</h3><div className="missing-list">{missing.map((m: any, i: number) => <div key={i}><b>{m.label || m.field_key}</b><p>{m.suggested_question || m.impact || "À vérifier avant décision."}</p></div>)}</div></div>}
   </section>;
 }
