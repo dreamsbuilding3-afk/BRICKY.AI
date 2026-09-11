@@ -8,6 +8,11 @@ function num(value: unknown) {
 }
 
 export async function POST(request: NextRequest) {
+  const authorization = request.headers.get("authorization");
+  if (!authorization?.startsWith("Bearer ")) {
+    return NextResponse.json({ error: "Authentication required." }, { status: 401 });
+  }
+
   try {
     const body = await request.json();
     const lat = num(body?.latitude);
