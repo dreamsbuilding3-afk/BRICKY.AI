@@ -2,6 +2,18 @@ import { NextRequest, NextResponse } from "next/server";
 
 const DVF_API = "https://api.cquest.org/dvf";
 
+type Comparable = {
+  source: "DVF";
+  transaction_date: unknown;
+  address: unknown;
+  city: unknown;
+  surface_m2: number | null;
+  price: number | null;
+  price_m2: number | null;
+  distance_m: number | null;
+  raw_payload: Record<string, unknown>;
+};
+
 function num(value: unknown) {
   const n = Number(value);
   return Number.isFinite(n) ? n : null;
@@ -43,9 +55,13 @@ export async function POST(request: NextRequest) {
     }
 
     const raw = await response.json();
-    const rows = Array.isArray(raw) ? raw : Array.isArray(raw?.data) ? raw.data : [];
+    const rows: Record<string, unknown>[] = Array.isArray(raw)
+      ? raw.filter((row): row is Record<string, unknown> => typeof row === "object" && row !== null)
+      : Array.isArray(raw?.data)
+        ? raw.data.filter((row: unknown): row is Record<string, unknown> => typeof row === "object" && row !== null)
+        : [];
 
-    const comparables = rows.map((row: Record<string, unknown>) => {
+    const comparables: Comparable[] = rows.map((row) => {
       const surface = num(row.surface_reelle_bati ?? row.surface_bati ?? row.surface);
       const price = num(row.valeur_fonciere ?? row.prix);
       return {
@@ -59,7 +75,7 @@ export async function POST(request: NextRequest) {
         distance_m: num(row.distance),
         raw_payload: row,
       };
-    }).filter((row) => row.surface_m2 && row.price && row.price_m2);
+    }).filter((row) => row.surface_m2 !== null && row.price !== null && row.price_m2 !== null);
 
     return NextResponse.json({
       source: "DVF",
