@@ -6,7 +6,7 @@ import { supabase } from "../../lib/supabase/client";
 
 type AnalysisResult = { property_id?: string; analysis_id?: string; [key: string]: unknown };
 type Payload = { title: string; city: string; address: string; price: string; surface_m2: string; rooms: string; bedrooms: string; dpe_class: string; monthly_rent: string; source_url: string };
-type CadastralResult = { cadastral?: { commune_code: string; section_prefix: string; section: string; parcel_number: string; parcel_id: string; source: string; source_url: string; plan_url: string }; error?: string };
+type CadastralResult = { cadastral?: { commune_code: string; section_prefix: string; section: string; parcel_number: string; parcel_id: string; source: string; source_url: string; plan_url: string; geometry?: unknown; parcel_area_m2?: number }; error?: string };
 
 export default function AnalyzePage() {
   const router = useRouter();
@@ -167,8 +167,61 @@ function CadastralPanel({ propertyId, address }: { propertyId: string; address?:
       <div className="cadastral-form"><label>Commune INSEE<input value={communeCode} onChange={(e) => setCommuneCode(e.target.value.toUpperCase())} placeholder="97209" maxLength={5} /></label><label>Préfixe<input value={prefix} onChange={(e) => setPrefix(e.target.value)} placeholder="000" maxLength={3} /></label><label>Section<input value={section} onChange={(e) => setSection(e.target.value.toUpperCase())} placeholder="AB" maxLength={2} /></label><label>Parcelle<input value={parcel} onChange={(e) => setParcel(e.target.value)} placeholder="123" maxLength={4} /></label><button type="button" className="secondary-button" onClick={generatePlan} disabled={loading || !communeCode || !section || !parcel}>{loading ? "Génération…" : "Générer le plan →"}</button></div>
     )}
     {error && <div className="error-box">{error}</div>}
-    {result && <div className="cadastral-result"><div><b>Parcelle {result.section} {result.parcel_number}</b><span>{result.parcel_id} · commune {result.commune_code}</span></div><a className="primary-button" href={result.plan_url} target="_blank" rel="noreferrer">Ouvrir l’extrait cadastral</a><small>Source : {result.source}{autoStatus === "success" ? " · détectée automatiquement" : ""}</small></div>}
+    {result && <div className="cadastral-result"><div><b>Parcelle {result.section} {result.parcel_number}</b><span>{result.parcel_id} · commune {result.commune_code}</span>{typeof result.parcel_area_m2 === "number" && <span>Surface parcelle : {result.parcel_area_m2.toLocaleString("fr-FR")} m²</span>}</div><a className="primary-button" href={result.plan_url} target="_blank" rel="noreferrer">Ouvrir l’extrait cadastral</a><small>Source : {result.source}{autoStatus === "success" ? " · détectée automatiquement" : ""}</small></div>}
+    {result?.geometry ? <ParcelSchema geometry={result.geometry} areaM2={result.parcel_area_m2} /> : null}
   </div>;
+}
+
+type RingPoint = [number, number];
+
+function extractRings(geometry: unknown): RingPoint[][] {
+  if (!geometry || typeof geometry !== "object") return [];
+  const g = geometry as { type?: string; coordinates?: unknown };
+  try {
+    if (g.type === "Polygon") return (g.coordinates as RingPoint[][]) || [];
+    if (g.type === "MultiPolygon") return ((g.coordinates as RingPoint[][][]) || []).flat();
+  } catch { /* malformed geometry, ignore */ }
+  return [];
+}
+
+function ParcelSchema({ geometry, areaM2 }: { geometry: unknown; areaM2?: number }) {
+  const rings = extractRings(geometry);
+  if (rings.length === 0 || !rings[0]?.length) return null;
+
+  const allPoints = rings.flat();
+  const lats = allPoints.map((p) => p[1]);
+  const lons = allPoints.map((p) => p[0]);
+  const latMid = (Math.min(...lats) + Math.max(...lats)) / 2;
+  const cosLat = Math.cos((latMid * Math.PI) / 180);
+
+  const projected = rings.map((ring) => ring.map(([lon, lat]) => [(lon - lons[0]) * cosLat, -(lat - lats[0])] as RingPoint));
+  const flatXY = projected.flat();
+  const xs = flatXY.map((p) => p[0]);
+  const ys = flatXY.map((p) => p[1]);
+  const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
+  const spanX = maxX - minX || 1;
+  const spanY = maxY - minY || 1;
+  const size = 220;
+  const padding = 24;
+  const scale = (size - padding * 2) / Math.max(spanX, spanY);
+
+  const toSvg = ([x, y]: RingPoint) => [
+    padding + (x - minX) * scale + (size - padding * 2 - spanX * scale) / 2,
+    padding + (y - minY) * scale + (size - padding * 2 - spanY * scale) / 2,
+  ];
+
+  const paths = projected.map((ring) => ring.map((point, i) => `${i === 0 ? "M" : "L"}${toSvg(point).map((n) => n.toFixed(1)).join(",")}`).join(" ") + " Z");
+
+  return (
+    <div className="parcel-schema">
+      <div className="section-heading"><div><span className="eyebrow">Schéma Bricky</span><h3>Représentation simplifiée de la parcelle</h3><small>Contour approximatif · à titre indicatif, le plan officiel ci-dessus fait foi</small></div></div>
+      <svg viewBox={`0 0 ${size} ${size}`} width={size} height={size} role="img" aria-label="Schéma simplifié de la parcelle cadastrale">
+        <rect x={0} y={0} width={size} height={size} fill="#fafaf8" rx={16} />
+        {paths.map((d, i) => <path key={i} d={d} fill="#111" fillOpacity={0.08} stroke="#111" strokeWidth={1.5} />)}
+      </svg>
+      {typeof areaM2 === "number" && <small>Surface cadastrale : {areaM2.toLocaleString("fr-FR")} m²</small>}
+    </div>
+  );
 }
 
 function Metric({ label, value, suffix }: { label: string; value: unknown; suffix: string }) { return <div className="metric"><span>{label}</span><b>{value == null || value === "" ? "—" : Number(value).toLocaleString("fr-FR", { maximumFractionDigits: 2 })}{value != null && value !== "" ? suffix : ""}</b></div>; }
