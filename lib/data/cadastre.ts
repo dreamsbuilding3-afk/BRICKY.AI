@@ -24,6 +24,8 @@ export type CadastralRecord = {
   source: string;
   source_url: string;
   plan_url: string;
+  geometry?: unknown;
+  parcel_area_m2?: number;
   metadata: {
   generated_at: string;
   scale: number;
@@ -154,6 +156,8 @@ export function buildCadastralRecord(
     source: "DGFiP / cadastre.gouv.fr via API SCPC Etalab",
     source_url: "https://cadastre.data.gouv.fr/datasets/cadastre-etalab",
     plan_url: buildPlanUrl(reference),
+    ...(reference.geometry ? { geometry: reference.geometry } : {}),
+    ...(typeof reference.contenanceM2 === "number" ? { parcel_area_m2: reference.contenanceM2 } : {}),
     metadata: {
       generated_at: new Date().toISOString(),
       scale: 1000,
