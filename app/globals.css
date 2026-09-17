@@ -52,5 +52,8 @@ h1 { margin: 24px auto 18px; max-width: 850px; font-size: clamp(48px, 7vw, 88px)
 .cadastral-result b, .cadastral-result span, .cadastral-result small { display: block; } .cadastral-result span { margin-top: 5px; color: #777; font-size: 12px; } .cadastral-result small { grid-column: 1 / -1; color: #888; margin-top: 4px; }
 .cadastral-result .primary-button { width: auto; min-height: 44px; margin: 0; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; }
 .empty-note { color: #666; font-size: 13px; line-height: 1.55; }
+.parcel-schema { margin-top: 16px; padding: 16px; border: 1px solid #e2e2de; border-radius: 15px; background: #fff; text-align: center; }
+.parcel-schema svg { max-width: 100%; height: auto; margin: 6px auto 0; display: block; }
+.parcel-schema small { display: block; margin-top: 8px; color: #888; }
 @media (max-width: 900px) { .cadastral-form { grid-template-columns: repeat(2, 1fr); } .cadastral-form .secondary-button { width: 100%; } }
 @media (max-width: 720px) { .nav { padding: 0 18px; } .hero { padding-top: 70px; } .features, .form-grid, .metric-grid, .scenario-grid, .decision-hero, .url-import, .cadastral-form { grid-template-columns: 1fr; } .analyzer { flex-direction: column; } .analyzer button { height: 52px; } .property-form { padding: 20px; } .result-head { align-items: flex-start; flex-direction: column; } .secondary-button { width: 100%; } .cadastral-result { grid-template-columns: 1fr; } }
