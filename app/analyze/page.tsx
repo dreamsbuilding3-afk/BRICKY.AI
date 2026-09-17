@@ -8,6 +8,7 @@ type AnalysisResult = { property_id?: string; analysis_id?: string; [key: string
 type Payload = { title: string; city: string; address: string; price: string; surface_m2: string; rooms: string; bedrooms: string; dpe_class: string; monthly_rent: string; source_url: string };
 type CadastralResult = { cadastral?: { commune_code: string; section_prefix: string; section: string; parcel_number: string; parcel_id: string; source: string; source_url: string; plan_url: string; geometry?: unknown; parcel_area_m2?: number }; error?: string };
 type UrbanismeResult = { urbanisme?: { zone_type: string | null; zone_label: string | null; zone_label_long: string | null; destination_dominante: string | null; regulation_url: string | null; insee_code: string | null; source: string; metadata?: { typezone_label?: string | null } }; error?: string; note?: string };
+type BatimentResult = { batiment?: { hauteur_m: number | null; nature: string | null; usage_1: string | null; usage_2: string | null; nombre_etages: number | null; nombre_logements: number | null; date_construction: string | null; geometry?: unknown; source: string }; error?: string; note?: string };
 
 export default function AnalyzePage() {
   const router = useRouter();
@@ -106,6 +107,8 @@ function CadastralPanel({ propertyId, address }: { propertyId: string; address?:
   const [autoStatus, setAutoStatus] = useState<"idle" | "loading" | "failed" | "success">("idle");
   const [autoNote, setAutoNote] = useState("");
   const [showManual, setShowManual] = useState(false);
+  const [building, setBuilding] = useState<BatimentResult["batiment"] | null>(null);
+  const [buildingStatus, setBuildingStatus] = useState<"idle" | "loading" | "failed" | "success">("idle");
 
   useEffect(() => {
     if (!address || !address.trim() || result) return;
@@ -133,6 +136,33 @@ function CadastralPanel({ propertyId, address }: { propertyId: string; address?:
       }
     }
     attemptAutoLookup();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [address, propertyId]);
+
+  useEffect(() => {
+    if (!address || !address.trim() || building) return;
+    let cancelled = false;
+    async function attemptBuildingLookup() {
+      setBuildingStatus("loading");
+      try {
+        const { data } = await supabase.auth.getSession();
+        const token = data.session?.access_token;
+        if (!token) throw new Error("Session expirée.");
+        const response = await fetch("/api/batiment/lookup", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ property_id: propertyId, address }),
+        });
+        const body = await response.json();
+        if (cancelled) return;
+        if (!response.ok) { setBuildingStatus("failed"); return; }
+        setBuilding(body.batiment); setBuildingStatus("success");
+      } catch {
+        if (!cancelled) setBuildingStatus("failed");
+      }
+    }
+    attemptBuildingLookup();
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [address, propertyId]);
@@ -170,7 +200,20 @@ function CadastralPanel({ propertyId, address }: { propertyId: string; address?:
     )}
     {error && <div className="error-box">{error}</div>}
     {result && <div className="cadastral-result"><div><b>Parcelle {result.section} {result.parcel_number}</b><span>{result.parcel_id} · commune {result.commune_code}</span>{typeof result.parcel_area_m2 === "number" && <span>Surface parcelle : {result.parcel_area_m2.toLocaleString("fr-FR")} m²</span>}</div><a className="primary-button" href={result.plan_url} target="_blank" rel="noreferrer">Ouvrir l’extrait cadastral</a><small>Source : {result.source}{autoStatus === "success" ? " · détectée automatiquement" : ""}</small></div>}
-    {result?.geometry ? <ParcelSchema geometry={result.geometry} areaM2={result.parcel_area_m2} /> : null}
+    {result?.geometry ? <ParcelSchema geometry={result.geometry} areaM2={result.parcel_area_m2} buildingGeometry={building?.geometry} /> : null}
+    {building && (building.hauteur_m != null || building.nature || building.usage_1) && (
+      <div className="cadastral-result building-result">
+        <div>
+          <b>Bâti détecté (BD TOPO®)</b>
+          <span>{building.nature || "Nature non précisée"}{building.usage_1 ? ` · ${building.usage_1}` : ""}</span>
+          {building.hauteur_m != null && <span>Hauteur estimée : {building.hauteur_m.toLocaleString("fr-FR")} m{building.nombre_etages != null ? ` (~${building.nombre_etages} niveau${building.nombre_etages > 1 ? "x" : ""})` : ""}</span>}
+          {building.nombre_logements != null && <span>Logements recensés : {building.nombre_logements}</span>}
+          {building.date_construction && <span>Construction : {building.date_construction}</span>}
+        </div>
+        <small>Source : {building.source}. Empreinte indicative — à recouper avec le relevé de géomètre avant tout projet.</small>
+      </div>
+    )}
+    {buildingStatus === "loading" && !building && <div className="extract-note">Recherche de l&apos;empreinte du bâtiment (BD TOPO®)…</div>}
   </div>;
 }
 
@@ -186,18 +229,26 @@ function extractRings(geometry: unknown): RingPoint[][] {
   return [];
 }
 
-function ParcelSchema({ geometry, areaM2 }: { geometry: unknown; areaM2?: number }) {
+function ParcelSchema({ geometry, areaM2, buildingGeometry }: { geometry: unknown; areaM2?: number; buildingGeometry?: unknown }) {
   const rings = extractRings(geometry);
   if (rings.length === 0 || !rings[0]?.length) return null;
+  const buildingRings = buildingGeometry ? extractRings(buildingGeometry) : [];
 
-  const allPoints = rings.flat();
+  // Origine commune (premier point de la parcelle) et projection équirectangulaire
+  // partagées entre parcelle et bâti, pour que les deux se superposent correctement.
+  const allPoints = [...rings.flat(), ...buildingRings.flat()];
   const lats = allPoints.map((p) => p[1]);
   const lons = allPoints.map((p) => p[0]);
   const latMid = (Math.min(...lats) + Math.max(...lats)) / 2;
   const cosLat = Math.cos((latMid * Math.PI) / 180);
+  const originLon = rings[0][0][0];
+  const originLat = rings[0][0][1];
 
-  const projected = rings.map((ring) => ring.map(([lon, lat]) => [(lon - lons[0]) * cosLat, -(lat - lats[0])] as RingPoint));
-  const flatXY = projected.flat();
+  const project = (ringSet: RingPoint[][]) => ringSet.map((ring) => ring.map(([lon, lat]) => [(lon - originLon) * cosLat, -(lat - originLat)] as RingPoint));
+
+  const projectedParcel = project(rings);
+  const projectedBuilding = project(buildingRings);
+  const flatXY = [...projectedParcel.flat(), ...projectedBuilding.flat()];
   const xs = flatXY.map((p) => p[0]);
   const ys = flatXY.map((p) => p[1]);
   const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
@@ -212,15 +263,23 @@ function ParcelSchema({ geometry, areaM2 }: { geometry: unknown; areaM2?: number
     padding + (y - minY) * scale + (size - padding * 2 - spanY * scale) / 2,
   ];
 
-  const paths = projected.map((ring) => ring.map((point, i) => `${i === 0 ? "M" : "L"}${toSvg(point).map((n) => n.toFixed(1)).join(",")}`).join(" ") + " Z");
+  const toPath = (ringSet: RingPoint[][]) => ringSet.map((ring) => ring.map((point, i) => `${i === 0 ? "M" : "L"}${toSvg(point).map((n) => n.toFixed(1)).join(",")}`).join(" ") + " Z");
+
+  const parcelPaths = toPath(projectedParcel);
+  const buildingPaths = toPath(projectedBuilding);
 
   return (
     <div className="parcel-schema">
-      <div className="section-heading"><div><span className="eyebrow">Schéma Bricky</span><h3>Représentation simplifiée de la parcelle</h3><small>Contour approximatif · à titre indicatif, le plan officiel ci-dessus fait foi</small></div></div>
-      <svg viewBox={`0 0 ${size} ${size}`} width={size} height={size} role="img" aria-label="Schéma simplifié de la parcelle cadastrale">
+      <div className="section-heading"><div><span className="eyebrow">Schéma Bricky</span><h3>Parcelle{buildingPaths.length ? " + bâti" : ""}</h3><small>Contour approximatif · à titre indicatif, le plan officiel ci-dessus fait foi</small></div></div>
+      <svg viewBox={`0 0 ${size} ${size}`} width={size} height={size} role="img" aria-label="Schéma simplifié de la parcelle et du bâtiment">
         <rect x={0} y={0} width={size} height={size} fill="#fafaf8" rx={16} />
-        {paths.map((d, i) => <path key={i} d={d} fill="#111" fillOpacity={0.08} stroke="#111" strokeWidth={1.5} />)}
+        {parcelPaths.map((d, i) => <path key={`p-${i}`} d={d} fill="#111" fillOpacity={0.08} stroke="#111" strokeWidth={1.5} />)}
+        {buildingPaths.map((d, i) => <path key={`b-${i}`} d={d} fill="#b45309" fillOpacity={0.35} stroke="#b45309" strokeWidth={1.5} />)}
       </svg>
+      <div className="parcel-schema-legend">
+        <span><i className="legend-swatch legend-parcel" /> Parcelle</span>
+        {buildingPaths.length > 0 && <span><i className="legend-swatch legend-building" /> Bâti</span>}
+      </div>
       {typeof areaM2 === "number" && <small>Surface cadastrale : {areaM2.toLocaleString("fr-FR")} m²</small>}
     </div>
   );
