@@ -1,4 +1,4 @@
-:root { --accent: #1f6b34; --accent-dark: #123f1f; --accent-light: #379256; --ink: #111; --bg: #f7f7f5; --line: #e7e7e4; }
+:root { --accent: #ff5a1f; --accent-dark: #c73f10; --accent-light: #ff8a4d; --ink: #111; --bg: #f7f7f5; --line: #e7e7e4; }
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; min-height: 100%; }
 body { background: var(--bg); color: var(--ink); font-family: Arial, Helvetica, sans-serif; }
