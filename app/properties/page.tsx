@@ -67,7 +67,7 @@ export default function PropertiesPage() {
   return <main className="page">
     <nav className="nav"><div className="brand"><span className="mark">B</span>Bricky</div><div className="nav-links"><a className="navlink" href="/analyze">Nouvelle analyse</a><span className="navlink">{userEmail || "Mes biens"}</span></div></nav>
     <section className="analysis-shell">
-      <div className="analysis-intro"><span className="eyebrow">Bricky · Historique</span><h1>Mes biens analysés</h1><p className="sub">Retrouvez ici chaque bien que vous avez soumis à Bricky, avec son verdict et ses métriques clés.</p></div>
+      <div className="analysis-intro"><span className="eyebrow">Bricky · Historique</span><h1>Mes biens <span className="accent">analysés</span></h1><p className="sub">Retrouvez ici chaque bien que vous avez soumis à Bricky, avec son verdict et ses métriques clés.</p></div>
 
       {loading && <div className="extract-note">Chargement de vos biens…</div>}
       {error && <div className="error-box">{error}</div>}
