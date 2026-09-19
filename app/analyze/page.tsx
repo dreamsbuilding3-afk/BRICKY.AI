@@ -3,6 +3,7 @@
 import { FormEvent, Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabase/client";
+import { AppNav } from "../../components/AppNav";
 
 type AnalysisResult = { property_id?: string; analysis_id?: string; [key: string]: unknown };
 type Payload = { title: string; city: string; address: string; price: string; surface_m2: string; rooms: string; bedrooms: string; dpe_class: string; monthly_rent: string; source_url: string };
@@ -111,7 +112,7 @@ function AnalyzePageInner() {
   const update = (key: keyof Payload, value: string) => setPayload((current) => ({ ...current, [key]: value }));
 
   return <main className="page">
-    <nav className="nav"><div className="brand"><span className="mark">B</span>Bricky</div><div className="nav-links"><a className="navlink" href="/properties">Mes biens</a><span className="navlink">{userEmail || "Analyse"}</span></div></nav>
+    <AppNav email={userEmail} active="analyze" />
     <section className="analysis-shell">
       <div className="analysis-intro"><span className="eyebrow">Bricky · V1</span><h1>{propertyIdParam ? "Voici l’analyse de ce bien." : "Est-ce que ce bien mérite votre attention ?"}</h1><p className="sub">{propertyIdParam ? "Analyse enregistrée, telle que calculée par Bricky." : "Collez une annonce ou saisissez les données que vous connaissez. Bricky calcule, vérifie et signale ce qui manque — sans inventer."}</p></div>
       {loadingExisting && <div className="extract-note">Chargement du bien…</div>}
