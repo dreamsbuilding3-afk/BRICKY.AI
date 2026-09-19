@@ -91,7 +91,7 @@ function AnalyzePageInner() {
       if (!response.ok) throw new Error(data?.error || "Impossible de lire cette annonce.");
       const e = data.extracted || {};
       setPayload((current) => ({ ...current, title: e.title || current.title, city: e.city || current.city, address: e.address || current.address, price: e.price != null ? String(e.price) : current.price, surface_m2: e.surface_m2 != null ? String(e.surface_m2) : current.surface_m2, rooms: e.rooms != null ? String(e.rooms) : current.rooms, monthly_rent: e.monthly_rent != null ? String(e.monthly_rent) : current.monthly_rent }));
-      setExtractNote(`${data.extraction?.fields_found ?? 0} donnÃ©es dÃ©tectÃ©es. VÃ©rifie-les avant de lancer l'analyse.`);
+      setExtractNote(`${data.extraction?.fields_found ?? 0} données détectées. Vérifie-les avant de lancer l'analyse.`);
     } catch (err) { setError(err instanceof Error ? err.message : "Extraction impossible."); }
     finally { setExtracting(false); }
   }
@@ -113,15 +113,15 @@ function AnalyzePageInner() {
   return <main className="page">
     <nav className="nav"><div className="brand"><span className="mark">B</span>Bricky</div><div className="nav-links"><a className="navlink" href="/properties">Mes biens</a><span className="navlink">{userEmail || "Analyse"}</span></div></nav>
     <section className="analysis-shell">
-      <div className="analysis-intro"><span className="eyebrow">Bricky Â· V1</span><h1>{propertyIdParam ? "Voici lâanalyse de ce bien." : "Est-ce que ce bien mÃ©rite votre attention ?"}</h1><p className="sub">{propertyIdParam ? "Analyse enregistrÃ©e, telle que calculÃ©e par Bricky." : "Collez une annonce ou saisissez les donnÃ©es que vous connaissez. Bricky calcule, vÃ©rifie et signale ce qui manque â sans inventer."}</p></div>
-      {loadingExisting && <div className="extract-note">Chargement du bienâ¦</div>}
+      <div className="analysis-intro"><span className="eyebrow">Bricky · V1</span><h1>{propertyIdParam ? "Voici l’analyse de ce bien." : "Est-ce que ce bien mérite votre attention ?"}</h1><p className="sub">{propertyIdParam ? "Analyse enregistrée, telle que calculée par Bricky." : "Collez une annonce ou saisissez les données que vous connaissez. Bricky calcule, vérifie et signale ce qui manque — sans inventer."}</p></div>
+      {loadingExisting && <div className="extract-note">Chargement du bien…</div>}
       {loadError && <div className="error-box">{loadError}</div>}
       {!propertyIdParam && <>
-        <div className="url-import"><label>URL de l'annonce<input value={payload.source_url} onChange={(e) => update("source_url", e.target.value)} placeholder="https://..." /></label><button type="button" className="secondary-button" onClick={extractListing} disabled={extracting || !payload.source_url.trim()}>{extracting ? "Lectureâ¦" : "Extraire les donnÃ©es"}</button></div>
-        {extractNote && <div className="extract-note">â {extractNote}</div>}
+        <div className="url-import"><label>URL de l'annonce<input value={payload.source_url} onChange={(e) => update("source_url", e.target.value)} placeholder="https://..." /></label><button type="button" className="secondary-button" onClick={extractListing} disabled={extracting || !payload.source_url.trim()}>{extracting ? "Lecture…" : "Extraire les données"}</button></div>
+        {extractNote && <div className="extract-note">✓ {extractNote}</div>}
         <form className="property-form" onSubmit={handleSubmit}><div className="form-grid">
-          <label>Titre<input value={payload.title} onChange={(e) => update("title", e.target.value)} /></label><label>Ville<input value={payload.city} onChange={(e) => update("city", e.target.value)} placeholder="Fort-de-France" /></label><label>Adresse<input value={payload.address} onChange={(e) => update("address", e.target.value)} placeholder="Adresse du bien" /></label><label>Prix (â¬)<input required type="number" min="1" value={payload.price} onChange={(e) => update("price", e.target.value)} placeholder="250000" /></label><label>Surface (mÂ²)<input required type="number" min="1" value={payload.surface_m2} onChange={(e) => update("surface_m2", e.target.value)} placeholder="65" /></label><label>Loyer mensuel (â¬)<input type="number" min="0" value={payload.monthly_rent} onChange={(e) => update("monthly_rent", e.target.value)} placeholder="1200" /></label><label>PiÃ¨ces<input type="number" min="0" value={payload.rooms} onChange={(e) => update("rooms", e.target.value)} placeholder="3" /></label><label>Chambres<input type="number" min="0" value={payload.bedrooms} onChange={(e) => update("bedrooms", e.target.value)} placeholder="2" /></label><label>DPE<input value={payload.dpe_class} onChange={(e) => update("dpe_class", e.target.value.toUpperCase())} placeholder="D" maxLength={1} /></label>
-        </div><button className="primary-button" disabled={loading}>{loading ? "Analyse en coursâ¦" : "Lancer lâanalyse Bricky â"}</button>{error && <div className="error-box">{error}</div>}</form>
+          <label>Titre<input value={payload.title} onChange={(e) => update("title", e.target.value)} /></label><label>Ville<input value={payload.city} onChange={(e) => update("city", e.target.value)} placeholder="Fort-de-France" /></label><label>Adresse<input value={payload.address} onChange={(e) => update("address", e.target.value)} placeholder="Adresse du bien" /></label><label>Prix (€)<input required type="number" min="1" value={payload.price} onChange={(e) => update("price", e.target.value)} placeholder="250000" /></label><label>Surface (m²)<input required type="number" min="1" value={payload.surface_m2} onChange={(e) => update("surface_m2", e.target.value)} placeholder="65" /></label><label>Loyer mensuel (€)<input type="number" min="0" value={payload.monthly_rent} onChange={(e) => update("monthly_rent", e.target.value)} placeholder="1200" /></label><label>Pièces<input type="number" min="0" value={payload.rooms} onChange={(e) => update("rooms", e.target.value)} placeholder="3" /></label><label>Chambres<input type="number" min="0" value={payload.bedrooms} onChange={(e) => update("bedrooms", e.target.value)} placeholder="2" /></label><label>DPE<input value={payload.dpe_class} onChange={(e) => update("dpe_class", e.target.value.toUpperCase())} placeholder="D" maxLength={1} /></label>
+        </div><button className="primary-button" disabled={loading}>{loading ? "Analyse en cours…" : "Lancer l’analyse Bricky →"}</button>{error && <div className="error-box">{error}</div>}</form>
       </>}
       {result && <AnalysisDashboard result={result} address={payload.address} />}
     </section>
@@ -144,19 +144,19 @@ function AnalysisDashboard({ result, address }: { result: AnalysisResult; addres
   const risks = Array.isArray(risk.risks) ? risk.risks : [];
   const missing = Array.isArray(financialSnapshot.missing_data) ? financialSnapshot.missing_data : [];
   const rows = ["base", "conservative", "optimistic"].filter((k) => scenarios[k]);
-  const label = verdict === "interesting" ? "IntÃ©ressant" : verdict === "unattractive" ? "Peu intÃ©ressant" : "Ã vÃ©rifier & nÃ©gocier";
+  const label = verdict === "interesting" ? "Intéressant" : verdict === "unattractive" ? "Peu intéressant" : "À vérifier & négocier";
   const marketReady = market.status === "ready";
   const propertyId = typeof result.property_id === "string" ? result.property_id : typeof analysis.property_id === "string" ? analysis.property_id : "";
-  return <section className="result-panel decision-dashboard"><div className="result-head"><div><span className="eyebrow">Analyse terminÃ©e</span><h2>Voici ce que Bricky en pense.</h2></div><span className="status-dot">â DÃ©cision</span></div>
-    <div className="decision-hero"><div><span className="decision-label">Verdict</span><strong>{label}</strong></div><div className="score-block"><span>Score</span><b>{score ?? "â"}<small>/100</small></b></div><div className="score-block"><span>Confiance</span><b>{confidence ?? "â"}<small>%</small></b></div></div>
-    <div className="metric-grid"><Metric label="Loyer mensuel" value={metrics.monthly_rent} suffix=" â¬" /><Metric label="Revenu annuel net" value={metrics.annual_net_income} suffix=" â¬" /><Metric label="Rendement brut" value={metrics.gross_yield_pct} suffix=" %" /><Metric label="Rendement net" value={metrics.net_yield_pct} suffix=" %" /></div>
+  return <section className="result-panel decision-dashboard"><div className="result-head"><div><span className="eyebrow">Analyse terminée</span><h2>Voici ce que Bricky en pense.</h2></div><span className="status-dot">● Décision</span></div>
+    <div className="decision-hero"><div><span className="decision-label">Verdict</span><strong>{label}</strong></div><div className="score-block"><span>Score</span><b>{score ?? "—"}<small>/100</small></b></div><div className="score-block"><span>Confiance</span><b>{confidence ?? "—"}<small>%</small></b></div></div>
+    <div className="metric-grid"><Metric label="Loyer mensuel" value={metrics.monthly_rent} suffix=" €" /><Metric label="Revenu annuel net" value={metrics.annual_net_income} suffix=" €" /><Metric label="Rendement brut" value={metrics.gross_yield_pct} suffix=" %" /><Metric label="Rendement net" value={metrics.net_yield_pct} suffix=" %" /></div>
     {propertyId && <CadastralPanel propertyId={propertyId} address={address} />}
     {propertyId && <UrbanismePanel propertyId={propertyId} address={address} />}
-    <div className="dashboard-section market-card"><div className="section-heading"><div><h3>Valeur marchÃ©</h3><small>Transactions comparables Â· donnÃ©es disponibles</small></div><span className="market-badge">{marketReady ? `${market.confidence_score ?? 0}% confiance` : "DonnÃ©es insuffisantes"}</span></div>{marketReady ? <div className="market-grid"><Metric label="Prix du bien" value={market.property_price_m2} suffix=" â¬/mÂ²" /><Metric label="MarchÃ© mÃ©dian" value={market.market_price_m2_median} suffix=" â¬/mÂ²" /><Metric label="Valeur estimÃ©e" value={market.market_value_estimate} suffix=" â¬" /><Metric label="Ãcart au marchÃ©" value={market.market_gap_pct} suffix=" %" /></div> : <p className="empty-note">Bricky ne dispose pas encore de suffisamment de transactions comparables pour produire une estimation fiable. Aucune valeur n'est inventÃ©e.</p>}</div>
-    {rows.length > 0 && <div className="dashboard-section"><h3>ScÃ©narios</h3><div className="scenario-grid">{rows.map((key) => <div className="scenario" key={key}><span>{key === "base" ? "Base" : key === "conservative" ? "Conservateur" : "Optimiste"}</span><b>{scenarios[key].net_yield ?? "â"} %</b><small>rendement net</small></div>)}</div></div>}
-    {actions.length > 0 && <div className="dashboard-section"><h3>Ce quâil faut faire</h3><ul>{actions.map((a: string, i: number) => <li key={i}>{a}</li>)}</ul></div>}
+    <div className="dashboard-section market-card"><div className="section-heading"><div><h3>Valeur marché</h3><small>Transactions comparables · données disponibles</small></div><span className="market-badge">{marketReady ? `${market.confidence_score ?? 0}% confiance` : "Données insuffisantes"}</span></div>{marketReady ? <div className="market-grid"><Metric label="Prix du bien" value={market.property_price_m2} suffix=" €/m²" /><Metric label="Marché médian" value={market.market_price_m2_median} suffix=" €/m²" /><Metric label="Valeur estimée" value={market.market_value_estimate} suffix=" €" /><Metric label="Écart au marché" value={market.market_gap_pct} suffix=" %" /></div> : <p className="empty-note">Bricky ne dispose pas encore de suffisamment de transactions comparables pour produire une estimation fiable. Aucune valeur n'est inventée.</p>}</div>
+    {rows.length > 0 && <div className="dashboard-section"><h3>Scénarios</h3><div className="scenario-grid">{rows.map((key) => <div className="scenario" key={key}><span>{key === "base" ? "Base" : key === "conservative" ? "Conservateur" : "Optimiste"}</span><b>{scenarios[key].net_yield ?? "—"} %</b><small>rendement net</small></div>)}</div></div>}
+    {actions.length > 0 && <div className="dashboard-section"><h3>Ce qu’il faut faire</h3><ul>{actions.map((a: string, i: number) => <li key={i}>{a}</li>)}</ul></div>}
     {risks.length > 0 && <div className="dashboard-section"><h3>Points de vigilance</h3><div className="risk-list">{risks.map((r: any, i: number) => <div className="risk-item" key={i}><b>{r.title || "Risque"}</b><span>{r.severity || ""}</span><p>{r.explanation || r.impact || ""}</p></div>)}</div></div>}
-    {missing.length > 0 && <div className="dashboard-section"><h3>DonnÃ©es manquantes</h3><div className="missing-list">{missing.map((m: any, i: number) => <div key={i}><b>{m.label || m.field_key}</b><p>{m.suggested_question || m.impact || "Ã vÃ©rifier avant dÃ©cision."}</p></div>)}</div></div>}
+    {missing.length > 0 && <div className="dashboard-section"><h3>Données manquantes</h3><div className="missing-list">{missing.map((m: any, i: number) => <div key={i}><b>{m.label || m.field_key}</b><p>{m.suggested_question || m.impact || "À vérifier avant décision."}</p></div>)}</div></div>}
   </section>;
 }
 
@@ -182,7 +182,7 @@ function CadastralPanel({ propertyId, address }: { propertyId: string; address?:
       try {
         const { data } = await supabase.auth.getSession();
         const token = data.session?.access_token;
-        if (!token) throw new Error("Session expirÃ©e.");
+        if (!token) throw new Error("Session expirée.");
         const response = await fetch("/api/cadastre/lookup", {
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
@@ -191,12 +191,12 @@ function CadastralPanel({ propertyId, address }: { propertyId: string; address?:
         const body = await response.json();
         if (cancelled) return;
         if (!response.ok) {
-          setAutoStatus("failed"); setAutoNote(body?.note || body?.error || "DÃ©tection automatique impossible.");
+          setAutoStatus("failed"); setAutoNote(body?.note || body?.error || "Détection automatique impossible.");
           return;
         }
         setResult(body.cadastral); setAutoStatus("success");
       } catch (err) {
-        if (!cancelled) { setAutoStatus("failed"); setAutoNote(err instanceof Error ? err.message : "DÃ©tection automatique impossible."); }
+        if (!cancelled) { setAutoStatus("failed"); setAutoNote(err instanceof Error ? err.message : "Détection automatique impossible."); }
       }
     }
     attemptAutoLookup();
@@ -212,7 +212,7 @@ function CadastralPanel({ propertyId, address }: { propertyId: string; address?:
       try {
         const { data } = await supabase.auth.getSession();
         const token = data.session?.access_token;
-        if (!token) throw new Error("Session expirÃ©e.");
+        if (!token) throw new Error("Session expirée.");
         const response = await fetch("/api/batiment/lookup", {
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
@@ -236,7 +236,7 @@ function CadastralPanel({ propertyId, address }: { propertyId: string; address?:
     try {
       const { data } = await supabase.auth.getSession();
       const token = data.session?.access_token;
-      if (!token) throw new Error("Session expirÃ©e.");
+      if (!token) throw new Error("Session expirée.");
       const response = await fetch("/api/cadastre/plan", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
@@ -245,39 +245,39 @@ function CadastralPanel({ propertyId, address }: { propertyId: string; address?:
       const body = await response.json();
       if (!response.ok) throw new Error(body?.error || "Plan cadastral indisponible.");
       setResult(body.cadastral);
-    } catch (err) { setError(err instanceof Error ? err.message : "Impossible de gÃ©nÃ©rer le plan."); }
+    } catch (err) { setError(err instanceof Error ? err.message : "Impossible de générer le plan."); }
     finally { setLoading(false); }
   }
 
   const manualVisible = showManual || autoStatus === "failed" || (!address && autoStatus === "idle");
 
   return <div className="dashboard-section cadastral-card">
-    <div className="section-heading"><div><span className="eyebrow">DonnÃ©e fonciÃ¨re</span><h3>Plan cadastral</h3><small>RÃ©fÃ©rence parcellaire + extrait officiel DGFiP</small></div>{result && <span className="market-badge">â RÃ©fÃ©rence enregistrÃ©e</span>}</div>
-    <p className="empty-note">Bricky rattache la parcelle au bien et prÃ©pare son plan cadastral. On garde la rÃ©fÃ©rence exacte et la source pour la traÃ§abilitÃ©.</p>
-    {autoStatus === "loading" && <div className="extract-note">DÃ©tection automatique de la parcelle Ã  partir de l'adresseâ¦</div>}
-    {autoStatus === "failed" && <div className="error-box">{autoNote} Renseigne la rÃ©fÃ©rence manuellement ci-dessous.</div>}
+    <div className="section-heading"><div><span className="eyebrow">Donnée foncière</span><h3>Plan cadastral</h3><small>Référence parcellaire + extrait officiel DGFiP</small></div>{result && <span className="market-badge">✓ Référence enregistrée</span>}</div>
+    <p className="empty-note">Bricky rattache la parcelle au bien et prépare son plan cadastral. On garde la référence exacte et la source pour la traçabilité.</p>
+    {autoStatus === "loading" && <div className="extract-note">Détection automatique de la parcelle à partir de l'adresse…</div>}
+    {autoStatus === "failed" && <div className="error-box">{autoNote} Renseigne la référence manuellement ci-dessous.</div>}
     {!manualVisible && !result && autoStatus !== "loading" && (
       <button type="button" className="secondary-button" onClick={() => setShowManual(true)}>Saisir la parcelle manuellement</button>
     )}
     {manualVisible && !result && (
-      <div className="cadastral-form"><label>Commune INSEE<input value={communeCode} onChange={(e) => setCommuneCode(e.target.value.toUpperCase())} placeholder="97209" maxLength={5} /></label><label>PrÃ©fixe<input value={prefix} onChange={(e) => setPrefix(e.target.value)} placeholder="000" maxLength={3} /></label><label>Section<input value={section} onChange={(e) => setSection(e.target.value.toUpperCase())} placeholder="AB" maxLength={2} /></label><label>Parcelle<input value={parcel} onChange={(e) => setParcel(e.target.value)} placeholder="123" maxLength={4} /></label><button type="button" className="secondary-button" onClick={generatePlan} disabled={loading || !communeCode || !section || !parcel}>{loading ? "GÃ©nÃ©rationâ¦" : "GÃ©nÃ©rer le plan â"}</button></div>
+      <div className="cadastral-form"><label>Commune INSEE<input value={communeCode} onChange={(e) => setCommuneCode(e.target.value.toUpperCase())} placeholder="97209" maxLength={5} /></label><label>Préfixe<input value={prefix} onChange={(e) => setPrefix(e.target.value)} placeholder="000" maxLength={3} /></label><label>Section<input value={section} onChange={(e) => setSection(e.target.value.toUpperCase())} placeholder="AB" maxLength={2} /></label><label>Parcelle<input value={parcel} onChange={(e) => setParcel(e.target.value)} placeholder="123" maxLength={4} /></label><button type="button" className="secondary-button" onClick={generatePlan} disabled={loading || !communeCode || !section || !parcel}>{loading ? "Génération…" : "Générer le plan →"}</button></div>
     )}
     {error && <div className="error-box">{error}</div>}
-    {result && <div className="cadastral-result"><div><b>Parcelle {result.section} {result.parcel_number}</b><span>{result.parcel_id} Â· commune {result.commune_code}</span>{typeof result.parcel_area_m2 === "number" && <span>Surface parcelle : {result.parcel_area_m2.toLocaleString("fr-FR")} mÂ²</span>}</div><a className="primary-button" href={result.plan_url} target="_blank" rel="noreferrer">Ouvrir lâextrait cadastral</a><small>Source : {result.source}{autoStatus === "success" ? " Â· dÃ©tectÃ©e automatiquement" : ""}</small></div>}
+    {result && <div className="cadastral-result"><div><b>Parcelle {result.section} {result.parcel_number}</b><span>{result.parcel_id} · commune {result.commune_code}</span>{typeof result.parcel_area_m2 === "number" && <span>Surface parcelle : {result.parcel_area_m2.toLocaleString("fr-FR")} m²</span>}</div><a className="primary-button" href={result.plan_url} target="_blank" rel="noreferrer">Ouvrir l’extrait cadastral</a><small>Source : {result.source}{autoStatus === "success" ? " · détectée automatiquement" : ""}</small></div>}
     {result?.geometry ? <ParcelSchema geometry={result.geometry} areaM2={result.parcel_area_m2} buildingGeometry={building?.geometry} /> : null}
     {building && (building.hauteur_m != null || building.nature || building.usage_1) && (
       <div className="cadastral-result building-result">
         <div>
-          <b>BÃ¢ti dÃ©tectÃ© (BD TOPOÂ®)</b>
-          <span>{building.nature || "Nature non prÃ©cisÃ©e"}{building.usage_1 ? ` Â· ${building.usage_1}` : ""}</span>
-          {building.hauteur_m != null && <span>Hauteur estimÃ©e : {building.hauteur_m.toLocaleString("fr-FR")} m{building.nombre_etages != null ? ` (~${building.nombre_etages} niveau${building.nombre_etages > 1 ? "x" : ""})` : ""}</span>}
-          {building.nombre_logements != null && <span>Logements recensÃ©s : {building.nombre_logements}</span>}
+          <b>Bâti détecté (BD TOPO®)</b>
+          <span>{building.nature || "Nature non précisée"}{building.usage_1 ? ` · ${building.usage_1}` : ""}</span>
+          {building.hauteur_m != null && <span>Hauteur estimée : {building.hauteur_m.toLocaleString("fr-FR")} m{building.nombre_etages != null ? ` (~${building.nombre_etages} niveau${building.nombre_etages > 1 ? "x" : ""})` : ""}</span>}
+          {building.nombre_logements != null && <span>Logements recensés : {building.nombre_logements}</span>}
           {building.date_construction && <span>Construction : {building.date_construction}</span>}
         </div>
-        <small>Source : {building.source}. Empreinte indicative â Ã  recouper avec le relevÃ© de gÃ©omÃ¨tre avant tout projet.</small>
+        <small>Source : {building.source}. Empreinte indicative — à recouper avec le relevé de géomètre avant tout projet.</small>
       </div>
     )}
-    {buildingStatus === "loading" && !building && <div className="extract-note">Recherche de l&apos;empreinte du bÃ¢timent (BD TOPOÂ®)â¦</div>}
+    {buildingStatus === "loading" && !building && <div className="extract-note">Recherche de l&apos;empreinte du bâtiment (BD TOPO®)…</div>}
   </div>;
 }
 
@@ -298,8 +298,8 @@ function ParcelSchema({ geometry, areaM2, buildingGeometry }: { geometry: unknow
   if (rings.length === 0 || !rings[0]?.length) return null;
   const buildingRings = buildingGeometry ? extractRings(buildingGeometry) : [];
 
-  // Origine commune (premier point de la parcelle) et projection Ã©quirectangulaire
-  // partagÃ©es entre parcelle et bÃ¢ti, pour que les deux se superposent correctement.
+  // Origine commune (premier point de la parcelle) et projection équirectangulaire
+  // partagées entre parcelle et bâti, pour que les deux se superposent correctement.
   const allPoints = [...rings.flat(), ...buildingRings.flat()];
   const lats = allPoints.map((p) => p[1]);
   const lons = allPoints.map((p) => p[0]);
@@ -334,17 +334,17 @@ function ParcelSchema({ geometry, areaM2, buildingGeometry }: { geometry: unknow
 
   return (
     <div className="parcel-schema">
-      <div className="section-heading"><div><span className="eyebrow">SchÃ©ma Bricky</span><h3>Parcelle{buildingPaths.length ? " + bÃ¢ti" : ""}</h3><small>Contour approximatif Â· Ã  titre indicatif, le plan officiel ci-dessus fait foi</small></div></div>
-      <svg viewBox={`0 0 ${size} ${size}`} width={size} height={size} role="img" aria-label="SchÃ©ma simplifiÃ© de la parcelle et du bÃ¢timent">
+      <div className="section-heading"><div><span className="eyebrow">Schéma Bricky</span><h3>Parcelle{buildingPaths.length ? " + bâti" : ""}</h3><small>Contour approximatif · à titre indicatif, le plan officiel ci-dessus fait foi</small></div></div>
+      <svg viewBox={`0 0 ${size} ${size}`} width={size} height={size} role="img" aria-label="Schéma simplifié de la parcelle et du bâtiment">
         <rect x={0} y={0} width={size} height={size} fill="#fafaf8" rx={16} />
         {parcelPaths.map((d, i) => <path key={`p-${i}`} d={d} fill="#111" fillOpacity={0.08} stroke="#111" strokeWidth={1.5} />)}
         {buildingPaths.map((d, i) => <path key={`b-${i}`} d={d} fill="#b45309" fillOpacity={0.35} stroke="#b45309" strokeWidth={1.5} />)}
       </svg>
       <div className="parcel-schema-legend">
         <span><i className="legend-swatch legend-parcel" /> Parcelle</span>
-        {buildingPaths.length > 0 && <span><i className="legend-swatch legend-building" /> BÃ¢ti</span>}
+        {buildingPaths.length > 0 && <span><i className="legend-swatch legend-building" /> Bâti</span>}
       </div>
-      {typeof areaM2 === "number" && <small>Surface cadastrale : {areaM2.toLocaleString("fr-FR")} mÂ²</small>}
+      {typeof areaM2 === "number" && <small>Surface cadastrale : {areaM2.toLocaleString("fr-FR")} m²</small>}
     </div>
   );
 }
@@ -362,7 +362,7 @@ function UrbanismePanel({ propertyId, address }: { propertyId: string; address?:
       try {
         const { data } = await supabase.auth.getSession();
         const token = data.session?.access_token;
-        if (!token) throw new Error("Session expirÃ©e.");
+        if (!token) throw new Error("Session expirée.");
         const response = await fetch("/api/urbanisme/lookup", {
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
@@ -387,22 +387,22 @@ function UrbanismePanel({ propertyId, address }: { propertyId: string; address?:
   if (!address) return null;
 
   return <div className="dashboard-section cadastral-card">
-    <div className="section-heading"><div><span className="eyebrow">Analyse urbanistique</span><h3>Zonage PLU / PLUi</h3><small>Document d'urbanisme opposable Â· GÃ©oportail de l'Urbanisme (GPU)</small></div>{result && <span className="market-badge">â Zonage identifiÃ©</span>}</div>
-    {status === "loading" && <div className="extract-note">Recherche du zonage d'urbanisme Ã  partir de l'adresseâ¦</div>}
+    <div className="section-heading"><div><span className="eyebrow">Analyse urbanistique</span><h3>Zonage PLU / PLUi</h3><small>Document d'urbanisme opposable · Géoportail de l'Urbanisme (GPU)</small></div>{result && <span className="market-badge">✓ Zonage identifié</span>}</div>
+    {status === "loading" && <div className="extract-note">Recherche du zonage d'urbanisme à partir de l'adresse…</div>}
     {status === "failed" && <div className="error-box">{note}</div>}
     {result && (
       <div className="cadastral-result">
         <div>
-          <b>{result.zone_label || "Zone non nommÃ©e"}{result.zone_type ? ` (${result.zone_type})` : ""}</b>
-          <span>{result.metadata?.typezone_label || "Type de zone non prÃ©cisÃ©"}{result.insee_code ? ` Â· commune ${result.insee_code}` : ""}</span>
+          <b>{result.zone_label || "Zone non nommée"}{result.zone_type ? ` (${result.zone_type})` : ""}</b>
+          <span>{result.metadata?.typezone_label || "Type de zone non précisé"}{result.insee_code ? ` · commune ${result.insee_code}` : ""}</span>
           {result.destination_dominante && <span>Destination dominante : {result.destination_dominante}</span>}
           {result.zone_label_long && <span>{result.zone_label_long}</span>}
         </div>
-        {result.regulation_url && <a className="primary-button" href={result.regulation_url} target="_blank" rel="noreferrer">Consulter le rÃ¨glement â</a>}
-        <small>Source : {result.source}. Ã vÃ©rifier auprÃ¨s du service urbanisme de la mairie avant tout projet â le PLU peut avoir Ã©voluÃ© depuis la derniÃ¨re synchronisation du GPU.</small>
+        {result.regulation_url && <a className="primary-button" href={result.regulation_url} target="_blank" rel="noreferrer">Consulter le règlement →</a>}
+        <small>Source : {result.source}. À vérifier auprès du service urbanisme de la mairie avant tout projet — le PLU peut avoir évolué depuis la dernière synchronisation du GPU.</small>
       </div>
     )}
   </div>;
 }
 
-function Metric({ label, value, suffix }: { label: string; value: unknown; suffix: string }) { return <div className="metric"><span>{label}</span><b>{value == null || value === "" ? "â" : Number(value).toLocaleString("fr-FR", { maximumFractionDigits: 2 })}{value != null && value !== "" ? suffix : ""}</b></div>; }
+function Metric({ label, value, suffix }: { label: string; value: unknown; suffix: string }) { return <div className="metric"><span>{label}</span><b>{value == null || value === "" ? "—" : Number(value).toLocaleString("fr-FR", { maximumFractionDigits: 2 })}{value != null && value !== "" ? suffix : ""}</b></div>; }
