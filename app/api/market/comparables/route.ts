@@ -58,10 +58,10 @@ export async function POST(request: NextRequest) {
     const rows: Record<string, unknown>[] = Array.isArray(raw)
       ? raw.filter((row): row is Record<string, unknown> => typeof row === "object" && row !== null)
       : Array.isArray(raw?.data)
-        ? raw.data.filter((row: unknown): row is Record<string, unknown> => typeof row === "object" && row !== null)
-        : [];
+      ? raw.data.filter((row: unknown): row is Record<string, unknown> => typeof row === "object" && row !== null)
+      : [];
 
-    const comparables: Comparable[] = rows.map((row) => {
+    const comparables: Comparable[] = rows.map((row): Comparable => {
       const surface = num(row.surface_reelle_bati ?? row.surface_bati ?? row.surface);
       const price = num(row.valeur_fonciere ?? row.prix);
       return {
