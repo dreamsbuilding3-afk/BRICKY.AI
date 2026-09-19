@@ -4,6 +4,17 @@ const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 const DVF_API = "https://api.cquest.org/dvf";
 
+type Comparable = {
+  source: "DVF";
+  transaction_date: unknown;
+  address: unknown;
+  city: unknown;
+  surface_m2: number | null;
+  price: number | null;
+  price_m2: number | null;
+  distance_m: number | null;
+};
+
 function num(value: unknown) {
   const n = Number(value);
   return Number.isFinite(n) ? n : null;
@@ -28,7 +39,7 @@ async function rpc(name: string, body: Record<string, unknown>, authorization: s
   return data;
 }
 
-async function fetchComparables(latitude: number, longitude: number) {
+async function fetchComparables(latitude: number, longitude: number): Promise<Comparable[]> {
   const url = new URL(DVF_API);
   url.searchParams.set("lat", String(latitude));
   url.searchParams.set("lon", String(longitude));
@@ -42,8 +53,13 @@ async function fetchComparables(latitude: number, longitude: number) {
   if (!response.ok) throw new Error(`DVF source unavailable (${response.status})`);
 
   const raw = await response.json();
-  const rows = Array.isArray(raw) ? raw : Array.isArray(raw?.data) ? raw.data : [];
-  return rows.map((row: Record<string, unknown>) => {
+  const rows: Record<string, unknown>[] = Array.isArray(raw)
+    ? raw.filter((row: unknown): row is Record<string, unknown> => typeof row === "object" && row !== null)
+    : Array.isArray(raw?.data)
+    ? raw.data.filter((row: unknown): row is Record<string, unknown> => typeof row === "object" && row !== null)
+    : [];
+
+  return rows.map((row): Comparable => {
     const surface = num(row.surface_reelle_bati ?? row.surface_bati ?? row.surface);
     const price = num(row.valeur_fonciere ?? row.prix);
     return {
@@ -56,7 +72,7 @@ async function fetchComparables(latitude: number, longitude: number) {
       price_m2: surface && price ? Math.round((price / surface) * 100) / 100 : null,
       distance_m: num(row.distance),
     };
-  }).filter((row) => row.surface_m2 && row.price && row.price_m2);
+  }).filter((row) => row.surface_m2 !== null && row.price !== null && row.price_m2 !== null);
 }
 
 export async function POST(request: Request) {
