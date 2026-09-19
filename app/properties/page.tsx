@@ -31,10 +31,10 @@ function latestAnalysis(row: PropertyRow): AnalysisRow | null {
 }
 
 function verdictLabel(verdict: string | null | undefined): { label: string; className: string } {
-  if (verdict === "interesting") return { label: "IntÃ©ressant", className: "verdict-interesting" };
-  if (verdict === "unattractive") return { label: "Peu intÃ©ressant", className: "verdict-unattractive" };
-  if (verdict) return { label: "Ã vÃ©rifier", className: "verdict-pending" };
-  return { label: "Non Ã©valuÃ©", className: "verdict-pending" };
+  if (verdict === "interesting") return { label: "Intéressant", className: "verdict-interesting" };
+  if (verdict === "unattractive") return { label: "Peu intéressant", className: "verdict-unattractive" };
+  if (verdict) return { label: "À vérifier", className: "verdict-pending" };
+  return { label: "Non évalué", className: "verdict-pending" };
 }
 
 export default function PropertiesPage() {
@@ -67,14 +67,14 @@ export default function PropertiesPage() {
   return <main className="page">
     <nav className="nav"><div className="brand"><span className="mark">B</span>Bricky</div><div className="nav-links"><a className="navlink" href="/analyze">Nouvelle analyse</a><span className="navlink">{userEmail || "Mes biens"}</span></div></nav>
     <section className="analysis-shell">
-      <div className="analysis-intro"><span className="eyebrow">Bricky Â· Historique</span><h1>Mes biens analysÃ©s</h1><p className="sub">Retrouvez ici chaque bien que vous avez soumis Ã  Bricky, avec son verdict et ses mÃ©triques clÃ©s.</p></div>
+      <div className="analysis-intro"><span className="eyebrow">Bricky · Historique</span><h1>Mes biens analysés</h1><p className="sub">Retrouvez ici chaque bien que vous avez soumis à Bricky, avec son verdict et ses métriques clés.</p></div>
 
-      {loading && <div className="extract-note">Chargement de vos biensâ¦</div>}
+      {loading && <div className="extract-note">Chargement de vos biens…</div>}
       {error && <div className="error-box">{error}</div>}
 
       {!loading && !error && rows && rows.length === 0 && (
         <div className="result-panel">
-          <p className="empty-note">Vous n'avez pas encore analysÃ© de bien. <a href="/analyze">Lancez votre premiÃ¨re analyse â</a></p>
+          <p className="empty-note">Vous n'avez pas encore analysé de bien. <a href="/analyze">Lancez votre première analyse →</a></p>
         </div>
       )}
 
@@ -87,11 +87,11 @@ export default function PropertiesPage() {
               <a key={row.id} href={`/analyze?property_id=${row.id}`} className="property-row">
                 <div>
                   <b>{row.title || row.address || "Bien sans titre"}</b>
-                  <span>{[row.address, row.city].filter(Boolean).join(", ") || "Adresse non renseignÃ©e"}</span>
+                  <span>{[row.address, row.city].filter(Boolean).join(", ") || "Adresse non renseignée"}</span>
                 </div>
                 <div className="property-row-metrics">
-                  {row.price != null && <span>{row.price.toLocaleString("fr-FR")} â¬</span>}
-                  {row.surface_m2 != null && <span>{row.surface_m2} mÂ²</span>}
+                  {row.price != null && <span>{row.price.toLocaleString("fr-FR")} €</span>}
+                  {row.surface_m2 != null && <span>{row.surface_m2} m²</span>}
                   {analysis?.overall_score != null && <span>Score {analysis.overall_score}/100</span>}
                 </div>
                 <div className="property-row-verdict">
