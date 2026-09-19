@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
     const description = cleanText(html.match(/<meta[^>]+(?:name|property)=["'](?:description|og:description)["'][^>]+content=["']([^"']*)["']/i)?.[1] ?? "");
     const bodyText = cleanText(html.replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>|<[^>]+>/gi, " "));
     const ld = jsonLdValues(html);
-    const product = ld.find((item) => ["Product", "Offer", "RealEstateListing"].includes(String(item["@type"]))) ?? {};
+    const product = (ld.find((item) => ["Product", "Offer", "RealEstateListing"].includes(String(item["@type"]))) ?? {}) as Record<string, unknown>;
     const offers = (product.offers && typeof product.offers === "object" ? product.offers : {}) as Record<string, unknown>;
     const address = typeof product.address === "object" && product.address ? (product.address as Record<string, unknown>) : {};
 
