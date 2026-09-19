@@ -153,6 +153,7 @@ function AnalysisDashboard({ result, address }: { result: AnalysisResult; addres
     <div className="metric-grid"><Metric label="Loyer mensuel" value={metrics.monthly_rent} suffix=" €" /><Metric label="Revenu annuel net" value={metrics.annual_net_income} suffix=" €" /><Metric label="Rendement brut" value={metrics.gross_yield_pct} suffix=" %" /><Metric label="Rendement net" value={metrics.net_yield_pct} suffix=" %" /></div>
     {propertyId && <CadastralPanel propertyId={propertyId} address={address} />}
     {propertyId && <UrbanismePanel propertyId={propertyId} address={address} />}
+{propertyId && <LocationPanel propertyId={propertyId} address={address} />}
     <div className="dashboard-section market-card"><div className="section-heading"><div><h3>Valeur marché</h3><small>Transactions comparables · données disponibles</small></div><span className="market-badge">{marketReady ? `${market.confidence_score ?? 0}% confiance` : "Données insuffisantes"}</span></div>{marketReady ? <div className="market-grid"><Metric label="Prix du bien" value={market.property_price_m2} suffix=" €/m²" /><Metric label="Marché médian" value={market.market_price_m2_median} suffix=" €/m²" /><Metric label="Valeur estimée" value={market.market_value_estimate} suffix=" €" /><Metric label="Écart au marché" value={market.market_gap_pct} suffix=" %" /></div> : <p className="empty-note">Bricky ne dispose pas encore de suffisamment de transactions comparables pour produire une estimation fiable. Aucune valeur n'est inventée.</p>}</div>
     {rows.length > 0 && <div className="dashboard-section"><h3>Scénarios</h3><div className="scenario-grid">{rows.map((key) => <div className="scenario" key={key}><span>{key === "base" ? "Base" : key === "conservative" ? "Conservateur" : "Optimiste"}</span><b>{scenarios[key].net_yield ?? "—"} %</b><small>rendement net</small></div>)}</div></div>}
     {actions.length > 0 && <div className="dashboard-section"><h3>Ce qu’il faut faire</h3><ul>{actions.map((a: string, i: number) => <li key={i}>{a}</li>)}</ul></div>}
@@ -404,6 +405,88 @@ function UrbanismePanel({ propertyId, address }: { propertyId: string; address?:
       </div>
     )}
   </div>;
+}
+
+
+type Poi = { name: string; category: string; category_label: string; distance_m: number };
+type LocationResult = { location: { latitude: number; longitude: number }; pois: Poi[]; counts: Record<string, number>; source: string; note?: string };
+
+function LocationPanel({ propertyId, address }: { propertyId: string; address?: string }) {
+const [result, setResult] = useState<LocationResult | null>(null);
+const [status, setStatus] = useState<"idle" | "loading" | "failed" | "success">("idle");
+const [note, setNote] = useState("");
+
+useEffect(() => {
+if (!address || !address.trim() || result) return;
+let cancelled = false;
+async function attemptLookup() {
+setStatus("loading");
+try {
+const { data } = await supabase.auth.getSession();
+const token = data.session?.access_token;
+if (!token) throw new Error("Session expirée.");
+const response = await fetch("/api/location/lookup", {
+method: "POST",
+headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+body: JSON.stringify({ address }),
+});
+const body = await response.json();
+if (cancelled) return;
+if (!response.ok) {
+setStatus("failed"); setNote(body?.error || "Localisation indisponible pour cette adresse.");
+return;
+}
+setResult(body); setStatus("success");
+} catch (err) {
+if (!cancelled) { setStatus("failed"); setNote(err instanceof Error ? err.message : "Localisation indisponible."); }
+}
+}
+attemptLookup();
+return () => { cancelled = true; };
+// eslint-disable-next-line react-hooks/exhaustive-deps
+}, [address, propertyId]);
+
+if (!address) return null;
+
+const lat = result?.location?.latitude;
+const lon = result?.location?.longitude;
+const bbox = lat != null && lon != null ? `${lon - 0.006},${lat - 0.004},${lon + 0.006},${lat + 0.004}` : null;
+const mapUrl = bbox ? `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&marker=${lat},${lon}&layer=mapnik` : null;
+
+const grouped: Record<string, Poi[]> = {};
+if (result) {
+for (const poi of result.pois) {
+if (!grouped[poi.category]) grouped[poi.category] = [];
+grouped[poi.category].push(poi);
+}
+}
+
+return <div className="dashboard-section cadastral-card location-panel">
+<div className="section-heading"><div><span className="eyebrow">Environnement</span><h3>Localisation &amp; alentours</h3><small>Carte + points d'intérêt à proximité (OpenStreetMap)</small></div>{result && <span className="market-badge">{result.pois.length} points trouvés</span>}</div>
+{status === "loading" && <div className="extract-note">Localisation du bien et recherche des environs…</div>}
+{status === "failed" && <div className="error-box">{note}</div>}
+{mapUrl && (
+<div className="location-map">
+<iframe title="Carte de localisation" src={mapUrl} loading="lazy" />
+</div>
+)}
+{result && Object.keys(grouped).length > 0 && (
+<div className="poi-groups">
+{Object.entries(grouped).map(([category, items]) => (
+<div className="poi-group" key={category}>
+<div className="poi-group-title">{items[0].category_label} <span>({items.length})</span></div>
+<ul>
+{items.slice(0, 5).map((poi, i) => (
+<li key={i}>{poi.name} <span>{poi.distance_m} m</span></li>
+))}
+</ul>
+</div>
+))}
+</div>
+)}
+{result && result.pois.length === 0 && <p className="empty-note">Aucun point d'intérêt répertorié par OpenStreetMap dans un rayon de 700 m autour de ce bien.</p>}
+{result?.note && <small>Source : {result.source}. {result.note}</small>}
+</div>;
 }
 
 function Metric({ label, value, suffix }: { label: string; value: unknown; suffix: string }) { return <div className="metric"><span>{label}</span><b>{value == null || value === "" ? "—" : Number(value).toLocaleString("fr-FR", { maximumFractionDigits: 2 })}{value != null && value !== "" ? suffix : ""}</b></div>; }
