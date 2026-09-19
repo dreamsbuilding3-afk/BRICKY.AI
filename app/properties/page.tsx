@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase/client";
+import { AppNav } from "../../components/AppNav";
 
 type AnalysisRow = {
   id: string;
@@ -65,7 +66,7 @@ export default function PropertiesPage() {
   }, [router]);
 
   return <main className="page">
-    <nav className="nav"><div className="brand"><span className="mark">B</span>Bricky</div><div className="nav-links"><a className="navlink" href="/analyze">Nouvelle analyse</a><span className="navlink">{userEmail || "Mes biens"}</span></div></nav>
+    <AppNav email={userEmail} active="properties" />
     <section className="analysis-shell">
       <div className="analysis-intro"><span className="eyebrow">Bricky · Historique</span><h1>Mes biens <span className="accent">analysés</span></h1><p className="sub">Retrouvez ici chaque bien que vous avez soumis à Bricky, avec son verdict et ses métriques clés.</p></div>
 
