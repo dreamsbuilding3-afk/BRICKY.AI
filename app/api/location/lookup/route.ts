@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { geocodeAddress } from "@/lib/data/geocode";
 
-const OVERPASS_URL = "https://overpass-api.de/api/interpreter";
+const OVERPASS_URLS = [
+  "https://overpass.kumi.systems/api/interpreter",
+  "https://overpass-api.de/api/interpreter",
+  "https://overpass.openstreetmap.ru/api/interpreter",
+];
 const RADIUS_M = 700;
 
 type CategoryKey = "school" | "transport" | "shop" | "health" | "park" | "other";
@@ -81,21 +85,31 @@ export async function POST(request: Request) {
 
   try {
     const query = buildOverpassQuery(latitude, longitude);
-    const response = await fetch(OVERPASS_URL, {
-      method: "POST",
-      headers: { "Content-Type": "text/plain" },
-      body: query,
-      signal: AbortSignal.timeout(12000),
-      cache: "no-store",
-    });
+    let response: Response | null = null;
+    let lastStatus = 0;
+    for (const overpassUrl of OVERPASS_URLS) {
+      try {
+        const attempt = await fetch(overpassUrl, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain" },
+          body: query,
+          signal: AbortSignal.timeout(12000),
+          cache: "no-store",
+        });
+        if (attempt.ok) { response = attempt; break; }
+        lastStatus = attempt.status;
+      } catch {
+        continue;
+      }
+    }
 
-    if (!response.ok) {
+    if (!response) {
       return NextResponse.json({
         location,
         pois: [],
         counts: {},
         source: "OpenStreetMap (Overpass API)",
-        note: "Points d'intérêt indisponibles pour le moment (service Overpass surchargé). La carte reste affichable avec les coordonnées.",
+        note: `Points d'intérêt indisponibles pour le moment (service Overpass surchargé, statut ${lastStatus || "réseau"}). La carte reste affichable avec les coordonnées.`,
       });
     }
 
