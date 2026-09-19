@@ -15,7 +15,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session) router.replace("/analyze");
+      if (data.session) router.replace("/properties");
     });
   }, [router]);
 
@@ -34,7 +34,7 @@ export default function LoginPage() {
     } else if (mode === "signup" && !result.data.session) {
       setMessage("Compte créé. Vérifie ton e-mail pour confirmer ton compte, puis connecte-toi.");
     } else {
-      router.replace("/analyze");
+      router.replace("/properties");
       router.refresh();
     }
     setLoading(false);
