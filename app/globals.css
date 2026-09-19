@@ -7,11 +7,11 @@ button, input, select, textarea { font: inherit; } button { cursor: pointer; }
 .page { min-height: 100vh; }
 .nav { height: 72px; display: flex; align-items: center; justify-content: space-between; padding: 0 40px; border-bottom: 1px solid var(--line); background: rgba(255,255,255,.82); backdrop-filter: blur(18px); position: sticky; top: 0; z-index: 10; }
 .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; letter-spacing: -.04em; font-size: 20px; }
-.mark { width: 30px; height: 30px; border-radius: 9px; background: linear-gradient(165deg, var(--accent-light) 0%, var(--accent) 50%, var(--accent-dark) 100%); color: #fff; display: grid; place-items: center; font-size: 14px; font-weight: 800; box-shadow: inset 0 1.5px 1.5px rgba(255,255,255,.6), inset 0 -5px 7px rgba(0,0,0,.28), 0 3px 7px rgba(0,0,0,.22); }
+.mark { width: 30px; height: 30px; border-radius: 9px; background: var(--accent); color: #fff; display: grid; place-items: center; font-size: 14px; font-weight: 800; }
 .navlink { color: #666; font-size: 14px; text-decoration: none; }
 a.navlink:hover { color: var(--ink); }
-.nav-cta { display: inline-flex; align-items: center; gap: 8px; border: 0; border-radius: 999px; background: linear-gradient(165deg, var(--accent-light) 0%, var(--accent) 50%, var(--accent-dark) 100%); color: #fff; padding: 0 20px; height: 42px; font-weight: 700; font-size: 14px; text-decoration: none; white-space: nowrap; transition: transform .15s ease, box-shadow .15s ease; box-shadow: inset 0 1.5px 1.5px rgba(255,255,255,.55), inset 0 -6px 9px rgba(0,0,0,.25), 0 4px 10px rgba(0,0,0,.2); }
-.nav-cta:hover { transform: translateY(-1px); box-shadow: inset 0 1.5px 1.5px rgba(255,255,255,.55), inset 0 -6px 9px rgba(0,0,0,.3), 0 7px 16px rgba(0,0,0,.26); }
+.nav-cta { display: inline-flex; align-items: center; gap: 8px; border: 0; border-radius: 999px; background: var(--accent); color: #fff; padding: 0 20px; height: 42px; font-weight: 700; font-size: 14px; text-decoration: none; white-space: nowrap; transition: background .15s ease, box-shadow .15s ease; box-shadow: 0 1px 2px rgba(0,0,0,.12); }
+.nav-cta:hover { background: var(--accent-dark); box-shadow: 0 2px 4px rgba(0,0,0,.15); }
 .hero { max-width: 1120px; margin: 0 auto; padding: 100px 24px 70px; text-align: center; }
 .eyebrow { display: inline-flex; align-items: center; gap: 8px; padding: 7px 13px; border: 1px solid #deded9; border-radius: 999px; background: #fff; color: #666; font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
 .eyebrow::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); display: inline-block; }
@@ -21,8 +21,8 @@ h1 .stroke { color: transparent; -webkit-text-stroke: 2px var(--ink); text-strok
 .sub { max-width: 650px; margin: 0 auto 38px; color: #666; font-size: 18px; line-height: 1.55; }
 .analyzer { max-width: 760px; margin: 0 auto; padding: 8px; border: 2px solid var(--ink); background: #fff; border-radius: 18px; box-shadow: 6px 6px 0 var(--ink); display: flex; gap: 8px; }
 .analyzer input { min-width: 0; flex: 1; border: 0; outline: 0; padding: 18px 16px; background: transparent; color: #111; }
-.analyzer button, .primary-button { border: 0; border-radius: 999px; background: linear-gradient(165deg, var(--accent-light) 0%, var(--accent) 50%, var(--accent-dark) 100%); color: #fff; padding: 0 24px; font-weight: 700; transition: transform .15s ease, box-shadow .15s ease; box-shadow: inset 0 1.5px 1.5px rgba(255,255,255,.55), inset 0 -7px 11px rgba(0,0,0,.25), 0 5px 12px rgba(0,0,0,.2); }
-.analyzer button:hover, .primary-button:hover { transform: translateY(-1px); box-shadow: inset 0 1.5px 1.5px rgba(255,255,255,.55), inset 0 -7px 11px rgba(0,0,0,.3), 0 8px 18px rgba(0,0,0,.26); }
+.analyzer button, .primary-button { border: 0; border-radius: 999px; background: var(--accent); color: #fff; padding: 0 24px; font-weight: 700; transition: background .15s ease, box-shadow .15s ease; box-shadow: 0 1px 2px rgba(0,0,0,.12); }
+.analyzer button:hover, .primary-button:hover { background: var(--accent-dark); box-shadow: 0 2px 4px rgba(0,0,0,.15); }
 .secondary-button { border: 2px solid var(--ink); border-radius: 999px; background: #fff; color: var(--ink); padding: 0 24px; font-weight: 700; transition: background .15s ease, color .15s ease; }
 .secondary-button:hover { background: var(--ink); color: #fff; }
 .proof { margin-top: 16px; color: #888; font-size: 12px; }
