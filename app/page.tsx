@@ -3,12 +3,12 @@ export default function Home() {
     <main className="page">
       <nav className="nav">
         <div className="brand"><span className="mark">B</span>Bricky</div>
-        <span className="navlink">Property due diligence</span>
+        <a className="nav-cta" href="/analyze">Analyser un bien →</a>
       </nav>
 
       <section className="hero">
         <span className="eyebrow">Built for smarter property decisions</span>
-        <h1>Know the deal before you make it.</h1>
+        <h1>Know the <span className="stroke">deal</span> before you <span className="accent">make it</span>.</h1>
         <p className="sub">
           Collez une annonce. Bricky croise les données du bien, le marché, les risques et les informations manquantes pour vous aider à décider quoi vérifier avant de vous engager.
         </p>
