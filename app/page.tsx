@@ -71,7 +71,7 @@ export default function Home() {
         <a className="nav-cta" href="/analyze">Lancer une analyse gratuite →</a>
       </section>
 
-      <footer className="footer">Bricky · Property intelligence, built for decisions.</footer>
+      <footer className="footer"><span>Bricky · Property intelligence, built for decisions.</span><span className="footer-links"><a href="/legal/mentions-legales">Mentions légales</a><a href="/legal/cgu">CGU</a><a href="/legal/confidentialite">Confidentialité</a></span></footer>
     </main>
   );
 }
