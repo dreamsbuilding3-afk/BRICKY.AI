@@ -99,7 +99,7 @@ function AnalyzePageInner() {
   }
 
   
-  async function extractFromFile(file) {
+  async function extractFromFile(file: File) {
     setExtractingFile(true); setError(""); setExtractNote("");
     try {
       const { data: sessionData } = await supabase.auth.getSession();
