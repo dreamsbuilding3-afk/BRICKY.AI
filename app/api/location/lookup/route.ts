@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { geocodeAddress } from "@/lib/data/geocode";
 
+export const maxDuration = 45;
+
 const OVERPASS_URLS = [
   "https://overpass.kumi.systems/api/interpreter",
   "https://overpass-api.de/api/interpreter",
@@ -43,7 +45,7 @@ function haversineMeters(lat1: number, lon1: number, lat2: number, lon2: number)
 
 function buildOverpassQuery(lat: number, lon: number): string {
   const around = `around:${RADIUS_M},${lat},${lon}`;
-  return `[out:json][timeout:15];(node(${around})[amenity~"^(school|kindergarten|college|university|pharmacy|hospital|clinic|doctors)$"];node(${around})[shop~"^(supermarket|bakery|convenience|greengrocer|butcher)$"];node(${around})[highway=bus_stop];node(${around})[railway~"^(station|halt|tram_stop)$"];node(${around})[leisure=park];way(${around})[leisure=park];);out center 80;`;
+  return `[out:json][timeout:20];(node(${around})[amenity~"^(school|kindergarten|college|university|pharmacy|hospital|clinic|doctors)$"];node(${around})[shop~"^(supermarket|bakery|convenience|greengrocer|butcher)$"];node(${around})[highway=bus_stop];node(${around})[railway~"^(station|halt|tram_stop)$"];node(${around})[leisure=park];way(${around})[leisure=park];);out center 80;`;
 }
 
 export async function POST(request: Request) {
@@ -98,7 +100,7 @@ export async function POST(request: Request) {
                 "Accept": "application/json",
               },
               body: "data=" + encodeURIComponent(query),
-              signal: AbortSignal.timeout(8000),
+              signal: AbortSignal.timeout(13000),
               cache: "no-store",
             });
             if (attempt.ok) { response = attempt; break; }
