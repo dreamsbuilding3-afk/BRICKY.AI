@@ -164,13 +164,15 @@ export async function POST(request: NextRequest) {
   const analysisRows = analysisRes.ok ? await analysisRes.json() : [];
   const analysis = Array.isArray(analysisRows) && analysisRows[0] ? analysisRows[0] : null;
 
-  const [cadastral, urbanisme, batiment, location, riskRows, missingRows] = await Promise.all([
+  const [cadastral, urbanisme, batiment, location, riskRows, missingRows, propertyFinancials, checklistRows] = await Promise.all([
     fetchOne("property_cadastral", propertyId, authorization),
     fetchOne("property_urbanisme", propertyId, authorization),
     fetchOne("property_batiment", propertyId, authorization),
     fetchOne("property_location", propertyId, authorization),
     analysis ? fetchMany("risks", "analysis_id", String(analysis.id), authorization) : Promise.resolve([] as Record<string, unknown>[]),
     analysis ? fetchMany("missing_information", "analysis_id", String(analysis.id), authorization) : Promise.resolve([] as Record<string, unknown>[]),
+    fetchOne("property_financials", propertyId, authorization),
+    analysis ? fetchMany("checklist_items", "analysis_id", String(analysis.id), authorization) : Promise.resolve([] as Record<string, unknown>[]),
   ]);
 
   const financial = (analysis?.financial_snapshot as Record<string, unknown>) || {};
@@ -216,7 +218,12 @@ export async function POST(request: NextRequest) {
 
   layout.addPage();
   layout.h1("Indicateurs financiers");
-  layout.p(`Loyer mensuel estimé : ${fmtNum(metrics.monthly_rent, " €")}`);
+  layout.p(`Loyer mensuel : ${fmtNum(metrics.monthly_rent, " €")}`);
+  if (propertyFinancials?.rent_estimated) {
+    layout.p("Loyer estime automatiquement a partir des indicateurs de loyer ANIL (Carte des loyers) pour cette commune, non fourni par vous. A verifier par rapport a des annonces locatives comparables reelles avant toute decision.", { size: 9, color: [0.6, 0.4, 0.1] });
+  } else if (metrics.monthly_rent != null) {
+    layout.p("Loyer declare par l utilisateur.", { size: 9, color: [0.5, 0.5, 0.5] });
+  }
   layout.p(`Revenu annuel net : ${fmtNum(metrics.annual_net_income, " €")}`);
   layout.p(`Rendement brut : ${fmtNum(metrics.gross_yield_pct, " %")}`);
   layout.p(`Rendement net : ${fmtNum(metrics.net_yield_pct, " %")}`);
@@ -274,6 +281,16 @@ export async function POST(request: NextRequest) {
     layout.h1("Données manquantes à vérifier");
     for (const m of missingRows) {
       layout.bullet(`${String(m.label || m.field_key)} — ${String(m.suggested_question || m.impact || "à vérifier avant décision")}`);
+    }
+    layout.spacer(10);
+  }
+
+  if (checklistRows.length > 0) {
+    layout.h1("Checklist de vérification");
+    const priorityLabel = (p: unknown) => (p === "critical" ? "Critique" : p === "high" ? "Prioritaire" : "À vérifier");
+    for (const item of checklistRows) {
+      const done = item.completed ? "[x]" : "[ ]";
+      layout.bullet(`${done} ${String(item.title)} (${priorityLabel(item.priority)})`);
     }
   }
 
