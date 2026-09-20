@@ -149,3 +149,69 @@ h1 .stroke { color: transparent; -webkit-text-stroke: 2px var(--ink); text-strok
 .checklist-medium .checklist-priority { background: #eaf3ff; color: #2f6fb0; }
 .checklist-item:has(input:checked) { opacity: .55; }
 .checklist-item:has(input:checked) b { text-decoration: line-through; }
+
+.legal-page {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  padding: 48px 20px 80px;
+}
+
+.legal-card {
+  width: 100%;
+  max-width: 760px;
+  background: #fff;
+  border: 1px solid #e5e5e5;
+  border-radius: 12px;
+  padding: 40px 48px;
+  line-height: 1.6;
+}
+
+.legal-back {
+  display: inline-block;
+  margin-bottom: 24px;
+  font-size: 14px;
+  color: #555;
+  text-decoration: none;
+}
+
+.legal-back:hover {
+  text-decoration: underline;
+}
+
+.legal-card h1 {
+  font-size: 28px;
+  margin-bottom: 4px;
+}
+
+.legal-updated {
+  color: #888;
+  font-size: 13px;
+  margin-bottom: 24px;
+}
+
+.legal-notice {
+  background: #fff8e6;
+  border: 1px solid #f0dca0;
+  border-radius: 8px;
+  padding: 14px 18px;
+  font-size: 14px;
+  color: #6b5000;
+  margin-bottom: 32px;
+}
+
+.legal-card h2 {
+  font-size: 18px;
+  margin-top: 32px;
+  margin-bottom: 8px;
+}
+
+.legal-card p {
+  font-size: 15px;
+  color: #333;
+  margin-bottom: 12px;
+}
+
+.legal-card a {
+  color: #2563eb;
+}
