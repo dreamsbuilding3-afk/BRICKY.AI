@@ -428,7 +428,7 @@ if (!token) throw new Error("Session expirée.");
 const response = await fetch("/api/location/lookup", {
 method: "POST",
 headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-body: JSON.stringify({ address }),
+body: JSON.stringify({ property_id: propertyId, address }),
 });
 const body = await response.json();
 if (cancelled) return;
