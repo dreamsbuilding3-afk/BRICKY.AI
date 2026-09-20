@@ -215,3 +215,8 @@ h1 .stroke { color: transparent; -webkit-text-stroke: 2px var(--ink); text-strok
 .legal-card a {
   color: #2563eb;
 }
+
+.footer { display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; }
+.footer-links { display: flex; gap: 16px; }
+.footer-links a { color: #888; font-size: 13px; text-decoration: none; }
+.footer-links a:hover { color: var(--ink); text-decoration: underline; }
