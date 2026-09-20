@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import pdfParse from "pdf-parse";
+import { extractText, getDocumentProxy } from "unpdf";
 
 export const maxDuration = 30;
 
@@ -52,9 +52,22 @@ export async function POST(request: NextRequest) {
     }
 
     const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-    const parsed = await pdfParse(buffer);
-    const bodyText = cleanText(parsed.text || "");
+    const bytes = new Uint8Array(arrayBuffer);
+
+    let rawText = "";
+    try {
+      const pdf = await getDocumentProxy(bytes);
+      const { text } = await extractText(pdf, { mergePages: true });
+      rawText = Array.isArray(text) ? text.join(" ") : text;
+    } catch (parseError) {
+      const message = parseError instanceof Error ? parseError.message : "lecture impossible";
+      return NextResponse.json(
+        { error: `Impossible de lire ce PDF (${message}). Essaie de le ré-exporter en PDF standard.` },
+        { status: 422 },
+      );
+    }
+
+    const bodyText = cleanText(rawText || "");
 
     if (!bodyText || bodyText.length < 20) {
       return NextResponse.json(
