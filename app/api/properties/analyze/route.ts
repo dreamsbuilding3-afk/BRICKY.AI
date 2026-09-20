@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { enforceRateLimit } from "@/lib/rateLimit";
 import { geocodeAddress } from "@/lib/data/geocode";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -115,6 +116,9 @@ export async function POST(request: Request) {
   if (!authorization?.startsWith("Bearer ")) {
     return NextResponse.json({ error: "Authentication required." }, { status: 401 });
   }
+
+  const rateLimitResponse = await enforceRateLimit(request, { endpoint: "properties.analyze", maxRequests: 20, windowSeconds: 60 });
+  if (rateLimitResponse) return rateLimitResponse;
 
   let payload: unknown;
   try { payload = await request.json(); } catch { return NextResponse.json({ error: "Invalid JSON payload." }, { status: 400 }); }
