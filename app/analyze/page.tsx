@@ -200,7 +200,54 @@ function AnalysisDashboard({ result, address }: { result: AnalysisResult; addres
     {actions.length > 0 && <div className="dashboard-section"><h3>Ce qu’il faut faire</h3><ul>{actions.map((a: string, i: number) => <li key={i}>{a}</li>)}</ul></div>}
     {risks.length > 0 && <div className="dashboard-section"><h3>Points de vigilance</h3><div className="risk-list">{risks.map((r: any, i: number) => <div className="risk-item" key={i}><b>{r.title || "Risque"}</b><span>{r.severity || ""}</span><p>{r.explanation || r.impact || ""}</p></div>)}</div></div>}
     {missing.length > 0 && <div className="dashboard-section"><h3>Données manquantes</h3><div className="missing-list">{missing.map((m: any, i: number) => <div key={i}><b>{m.label || m.field_key}</b><p>{m.suggested_question || m.impact || "À vérifier avant décision."}</p></div>)}</div></div>}
+{result.analysis_id && <ChecklistPanel analysisId={result.analysis_id} />}
   </section>;
+}
+
+type ChecklistItem = { id: string; title: string; description: string | null; priority: string; completed: boolean };
+
+function ChecklistPanel({ analysisId }: { analysisId: string }) {
+const [items, setItems] = useState<ChecklistItem[] | null>(null);
+const [error, setError] = useState("");
+
+useEffect(() => {
+let cancelled = false;
+async function load() {
+const { data, error: queryError } = await supabase
+.from("checklist_items")
+.select("id, title, description, priority, completed")
+.eq("analysis_id", analysisId)
+.order("priority", { ascending: true });
+if (cancelled) return;
+if (queryError) { setError("Impossible de charger la checklist."); return; }
+setItems((data as ChecklistItem[]) || []);
+}
+load();
+return () => { cancelled = true; };
+}, [analysisId]);
+
+async function toggle(item: ChecklistItem) {
+setItems((current) => current ? current.map((i) => (i.id === item.id ? { ...i, completed: !i.completed } : i)) : current);
+await supabase.from("checklist_items").update({ completed: !item.completed }).eq("id", item.id);
+}
+
+if (error) return <div className="dashboard-section"><h3>Checklist de vérification</h3><div className="error-box">{error}</div></div>;
+if (!items || items.length === 0) return null;
+
+const priorityLabel = (p: string) => (p === "critical" ? "Critique" : p === "high" ? "Prioritaire" : "À vérifier");
+const done = items.filter((i) => i.completed).length;
+
+return <div className="dashboard-section">
+<div className="section-heading"><div><h3>Checklist de vérification</h3><small>{done}/{items.length} points traités avant de vous engager</small></div></div>
+<div className="checklist-list">
+{items.map((item) => (
+<label className={`checklist-item checklist-${item.priority}`} key={item.id}>
+<input type="checkbox" checked={item.completed} onChange={() => toggle(item)} />
+<div><b>{item.title}</b><span className="checklist-priority">{priorityLabel(item.priority)}</span></div>
+</label>
+))}
+</div>
+</div>;
 }
 
 function CadastralPanel({ propertyId, address }: { propertyId: string; address?: string }) {
