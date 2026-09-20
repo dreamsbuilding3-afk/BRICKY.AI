@@ -91,8 +91,12 @@ export async function POST(request: Request) {
       try {
         const attempt = await fetch(overpassUrl, {
           method: "POST",
-          headers: { "Content-Type": "text/plain" },
-          body: query,
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+            "User-Agent": "BrickyAI-App/1.0 (immo analysis; contact via app)",
+            "Accept": "application/json",
+          },
+          body: "data=" + encodeURIComponent(query),
           signal: AbortSignal.timeout(12000),
           cache: "no-store",
         });
