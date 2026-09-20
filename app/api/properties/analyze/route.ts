@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { geocodeAddress } from "@/lib/data/geocode";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -125,9 +126,28 @@ export async function POST(request: Request) {
     let result = await rpc("ingest_property", { p_payload: payload }, authorization) as { analysis_id?: string; analysis?: unknown };
     const analysisId = result?.analysis_id;
     const body = payload as Record<string, unknown>;
-    const latitude = num(body.latitude);
-    const longitude = num(body.longitude);
+    let latitude = num(body.latitude);
+    let longitude = num(body.longitude);
+    let inseeCode = typeof body.insee_code === "string" && body.insee_code ? body.insee_code : null;
     const financial = (body.financial as Record<string, unknown> | undefined) || {};
+
+    // Auto-géocodage : si aucune coordonnée n'a été fournie mais qu'on a une
+    // adresse, on géolocalise nous-mêmes (même service que les autres panneaux
+    // de la page d'analyse) pour pouvoir alimenter DVF et l'estimation de loyer
+    // sans dépendre d'une saisie manuelle des coordonnées / du code INSEE.
+    if ((latitude === null || longitude === null || !inseeCode) && typeof body.address === "string" && body.address.trim()) {
+      const fullAddress = [body.address, typeof body.city === "string" ? body.city : null].filter(Boolean).join(", ");
+      try {
+        const geo = await geocodeAddress(fullAddress);
+        if (geo) {
+          if (latitude === null) latitude = geo.latitude;
+          if (longitude === null) longitude = geo.longitude;
+          if (!inseeCode && geo.inseeCode) inseeCode = geo.inseeCode;
+        }
+      } catch {
+        // Géocodage best-effort : on continue sans DVF/estimation de loyer si indisponible.
+      }
+    }
 
     // Step 1: market comparables (DVF), if we have coordinates.
     let market: unknown = { status: "insufficient_data", note: "Coordonnées absentes : aucune recherche DVF automatique." };
@@ -151,12 +171,12 @@ export async function POST(request: Request) {
     // final re-analysis (and its "estimated rent" note) is not wiped out
     // by a later market refresh.
     let rentEstimate: unknown = null;
-    if (analysisId && !num(financial.monthly_rent) && typeof body.insee_code === "string" && body.insee_code) {
+    if (analysisId && !num(financial.monthly_rent) && inseeCode) {
       const surface = num(body.surface_m2);
       if (surface && surface > 0) {
         try {
           const estimate = await estimateMonthlyRent(
-            body.insee_code,
+            inseeCode,
             surface,
             typeof body.property_type === "string" ? body.property_type : null,
             authorization,
