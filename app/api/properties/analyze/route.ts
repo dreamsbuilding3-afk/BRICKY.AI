@@ -75,6 +75,36 @@ async function fetchComparables(latitude: number, longitude: number): Promise<Co
   }).filter((row) => row.surface_m2 !== null && row.price !== null && row.price_m2 !== null);
 }
 
+async function estimateMonthlyRent(
+  inseeCode: string,
+  surfaceM2: number,
+  propertyType: string | null,
+  authorization: string,
+): Promise<{ monthly_rent: number; rent_m2: number; property_type_used: "apartment" | "house"; r2: number | null; nbobs: number | null } | null> {
+  const response = await fetch(
+    `${SUPABASE_URL}/rest/v1/rent_indicators?insee_code=eq.${inseeCode}&select=*`,
+    { headers: { apikey: SUPABASE_ANON_KEY!, Authorization: authorization }, cache: "no-store" },
+  );
+  if (!response.ok) return null;
+  const rows = await response.json();
+  const row = Array.isArray(rows) && rows[0] ? rows[0] : null;
+  if (!row) return null;
+
+  const useHouse = propertyType === "house" || propertyType === "maison";
+  const rentM2 = useHouse ? num(row.rent_m2_house) : num(row.rent_m2_apartment);
+  const r2 = useHouse ? num(row.rent_m2_house_r2) : num(row.rent_m2_apartment_r2);
+  const nbobs = useHouse ? num(row.rent_m2_house_nbobs_commune) : num(row.rent_m2_apartment_nbobs_commune);
+  if (rentM2 === null || rentM2 <= 0) return null;
+
+  return {
+    monthly_rent: Math.round(rentM2 * surfaceM2 * 100) / 100,
+    rent_m2: rentM2,
+    property_type_used: useHouse ? "house" : "apartment",
+    r2,
+    nbobs,
+  };
+}
+
 export async function POST(request: Request) {
   if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
     return NextResponse.json({ error: "Supabase environment variables are not configured." }, { status: 500 });
@@ -92,28 +122,61 @@ export async function POST(request: Request) {
   }
 
   try {
-    const result = await rpc("ingest_property", { p_payload: payload }, authorization) as { analysis_id?: string; analysis?: unknown };
+    let result = await rpc("ingest_property", { p_payload: payload }, authorization) as { analysis_id?: string; analysis?: unknown };
     const analysisId = result?.analysis_id;
     const body = payload as Record<string, unknown>;
     const latitude = num(body.latitude);
     const longitude = num(body.longitude);
+    const financial = (body.financial as Record<string, unknown> | undefined) || {};
 
-    if (!analysisId || latitude === null || longitude === null) {
-      return NextResponse.json({ ...result, market: { status: "insufficient_data", note: "Coordonnées absentes : aucune recherche DVF automatique." } }, { status: 200 });
+    // Step 1: market comparables (DVF), if we have coordinates.
+    let market: unknown = { status: "insufficient_data", note: "Coordonnées absentes : aucune recherche DVF automatique." };
+    if (analysisId && latitude !== null && longitude !== null) {
+      try {
+        const comparables = await fetchComparables(latitude, longitude);
+        const marketIngestion = await rpc("ingest_market_comparables_v1", {
+          p_analysis_id: analysisId,
+          p_comparables: comparables,
+        }, authorization);
+        const refreshed = await rpc("refresh_market_from_comparables_v1", { p_analysis_id: analysisId }, authorization);
+        market = { ingestion: marketIngestion, refreshed };
+        result = { ...result, analysis: (refreshed as { analysis?: unknown })?.analysis ?? result.analysis };
+      } catch (marketError) {
+        market = { status: "unavailable", note: marketError instanceof Error ? marketError.message : "Market data unavailable" };
+      }
     }
 
-    let marketIngestion: unknown = null;
-    try {
-      const comparables = await fetchComparables(latitude, longitude);
-      marketIngestion = await rpc("ingest_market_comparables_v1", {
-        p_analysis_id: analysisId,
-        p_comparables: comparables,
-      }, authorization);
-      const refreshed = await rpc("refresh_market_from_comparables_v1", { p_analysis_id: analysisId }, authorization);
-      return NextResponse.json({ ...result, market: { ingestion: marketIngestion, refreshed } }, { status: 200 });
-    } catch (marketError) {
-      return NextResponse.json({ ...result, market: { status: "unavailable", note: marketError instanceof Error ? marketError.message : "Market data unavailable" } }, { status: 200 });
+    // Step 2: automatic rent estimate (ANIL "Carte des loyers"), only if the
+    // user did not provide a monthly rent themselves. Runs last so its
+    // final re-analysis (and its "estimated rent" note) is not wiped out
+    // by a later market refresh.
+    let rentEstimate: unknown = null;
+    if (analysisId && !num(financial.monthly_rent) && typeof body.insee_code === "string" && body.insee_code) {
+      const surface = num(body.surface_m2);
+      if (surface && surface > 0) {
+        try {
+          const estimate = await estimateMonthlyRent(
+            body.insee_code,
+            surface,
+            typeof body.property_type === "string" ? body.property_type : null,
+            authorization,
+          );
+          if (estimate) {
+            const applied = await rpc("apply_rent_estimate_v1", {
+              p_analysis_id: analysisId,
+              p_monthly_rent: estimate.monthly_rent,
+              p_source: "anil_carte_des_loyers_2025",
+            }, authorization);
+            rentEstimate = { ...estimate, applied };
+            result = { ...result, analysis: (applied as { analysis?: unknown })?.analysis ?? result.analysis };
+          }
+        } catch (rentError) {
+          rentEstimate = { status: "unavailable", note: rentError instanceof Error ? rentError.message : "Rent estimate unavailable" };
+        }
+      }
     }
+
+    return NextResponse.json({ ...result, market, rent_estimate: rentEstimate }, { status: 200 });
   } catch (error) {
     return NextResponse.json({ error: "Property analysis failed.", details: error instanceof Error ? error.message : error }, { status: 422 });
   }
