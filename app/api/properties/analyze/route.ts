@@ -123,13 +123,20 @@ export async function POST(request: Request) {
   }
 
   try {
-    let result = await rpc("ingest_property", { p_payload: payload }, authorization) as { analysis_id?: string; analysis?: unknown };
+    const rawBody = payload as Record<string, unknown>;
+    const payloadForIngest = { ...rawBody };
+    if (rawBody.monthly_rent !== undefined && rawBody.monthly_rent !== null && rawBody.monthly_rent !== "") {
+      const existingFinancial = (rawBody.financial as Record<string, unknown> | undefined) || {};
+      payloadForIngest.financial = { ...existingFinancial, monthly_rent: rawBody.monthly_rent };
+    }
+    let result = await rpc("ingest_property", { p_payload: payloadForIngest }, authorization) as { analysis_id?: string; analysis?: unknown };
     const analysisId = result?.analysis_id;
-    const body = payload as Record<string, unknown>;
+    const body = payloadForIngest as Record<string, unknown>;
     let latitude = num(body.latitude);
     let longitude = num(body.longitude);
     let inseeCode = typeof body.insee_code === "string" && body.insee_code ? body.insee_code : null;
     const financial = (body.financial as Record<string, unknown> | undefined) || {};
+    const userProvidedRent = num(financial.monthly_rent) ?? num(rawBody.monthly_rent);
 
     // Auto-géocodage : si aucune coordonnée n'a été fournie mais qu'on a une
     // adresse, on géolocalise nous-mêmes (même service que les autres panneaux
@@ -171,7 +178,7 @@ export async function POST(request: Request) {
     // final re-analysis (and its "estimated rent" note) is not wiped out
     // by a later market refresh.
     let rentEstimate: unknown = null;
-    if (analysisId && !num(financial.monthly_rent) && inseeCode) {
+    if (analysisId && !userProvidedRent && inseeCode) {
       const surface = num(body.surface_m2);
       if (surface && surface > 0) {
         try {
