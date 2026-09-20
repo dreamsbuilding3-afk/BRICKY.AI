@@ -3,10 +3,14 @@ import { NextRequest, NextResponse } from "next/server";
 const PRICE_RE = /(?:prix|price)[^\d]{0,40}([\d\s.,]+)\s*€?/i;
 const SURFACE_RE = /(?:surface|area)[^\d]{0,40}(\d+(?:[.,]\d+)?)\s*m(?:²|2)/i;
 const ROOMS_RE = /(?:pi[eè]ces?|rooms?)[^\d]{0,20}(\d+)/i;
+const BEDROOMS_RE = /(?:chambres?)[^\d]{0,20}(\d+)/i;
 const RENT_RE = /(?:loyer|rent)[^\d]{0,40}([\d\s.,]+)\s*€?/i;
+const DPE_RE = /\bDPE\b[^A-G]{0,20}\b([A-G])\b/i;
+const GES_RE = /\bGES\b[^A-G]{0,20}\b([A-G])\b/i;
+const CITY_RE = /\b(\d{5})\s+([A-ZÀ-Ü][A-Za-zà-üÀ-Ü' -]{2,40})\b/;
 
 function cleanText(value: string) {
-  return value.replace(/\\s+/g, " ").replace(/&nbsp;/gi, " ").trim();
+  return value.replace(/\s+/g, " ").replace(/&nbsp;/gi, " ").trim();
 }
 
 function numberFrom(value?: string | null) {
@@ -66,8 +70,13 @@ export async function POST(request: NextRequest) {
     const price = numberFrom(String(offers.price ?? product.price ?? firstMatch(bodyText, PRICE_RE) ?? ""));
     const surface = numberFrom(String(product.floorSize && typeof product.floorSize === "object" ? (product.floorSize as Record<string, unknown>).value : firstMatch(bodyText, SURFACE_RE) ?? ""));
     const rooms = numberFrom(String(product.numberOfRooms ?? firstMatch(bodyText, ROOMS_RE) ?? ""));
+    const bedrooms = numberFrom(firstMatch(bodyText, BEDROOMS_RE));
     const monthlyRent = numberFrom(firstMatch(bodyText, RENT_RE));
-    const city = String(address.addressLocality ?? "").trim();
+    const dpe = firstMatch(bodyText, DPE_RE);
+    const ges = firstMatch(bodyText, GES_RE);
+    const ldCity = String(address.addressLocality ?? "").trim();
+    const cityMatch = bodyText.match(CITY_RE);
+    const city = ldCity || (cityMatch ? cityMatch[2].trim() : "");
 
     return NextResponse.json({
       source_url: parsedUrl.toString(),
@@ -78,12 +87,17 @@ export async function POST(request: NextRequest) {
         price,
         surface_m2: surface,
         rooms,
+        bedrooms,
+        dpe_class: dpe ? dpe.toUpperCase() : null,
+        ges_class: ges ? ges.toUpperCase() : null,
         city: city || null,
         monthly_rent: monthlyRent,
       },
       extraction: {
         status: "partial",
-        fields_found: [price, surface, rooms, city, monthlyRent].filter((v) => v !== null && v !== "").length,
+        fields_found: [price, surface, rooms, bedrooms, city, monthlyRent, dpe, ges].filter(
+          (v) => v !== null && v !== "",
+        ).length,
         note: "Les données extraites doivent être vérifiées avant analyse. Bricky n'invente aucune valeur.",
       },
     });
