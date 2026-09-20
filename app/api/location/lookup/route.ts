@@ -87,25 +87,28 @@ export async function POST(request: Request) {
     const query = buildOverpassQuery(latitude, longitude);
     let response: Response | null = null;
     let lastStatus = 0;
-    for (const overpassUrl of OVERPASS_URLS) {
-      try {
-        const attempt = await fetch(overpassUrl, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
-            "User-Agent": "BrickyAI-App/1.0 (immo analysis; contact via app)",
-            "Accept": "application/json",
-          },
-          body: "data=" + encodeURIComponent(query),
-          signal: AbortSignal.timeout(12000),
-          cache: "no-store",
-        });
-        if (attempt.ok) { response = attempt; break; }
-        lastStatus = attempt.status;
-      } catch {
-        continue;
-      }
-    }
+        let lastError = "";
+        for (const overpassUrl of OVERPASS_URLS) {
+          try {
+            const attempt = await fetch(overpassUrl, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+                "User-Agent": "BrickyAI-App/1.0 (immo analysis; contact via app)",
+                "Accept": "application/json",
+              },
+              body: "data=" + encodeURIComponent(query),
+              signal: AbortSignal.timeout(8000),
+              cache: "no-store",
+            });
+            if (attempt.ok) { response = attempt; break; }
+            lastStatus = attempt.status;
+            try { lastError = (await attempt.text()).slice(0, 200); } catch { lastError = ""; }
+          } catch (fetchError) {
+            lastError = fetchError instanceof Error ? `${fetchError.name}: ${fetchError.message}` : String(fetchError);
+            continue;
+          }
+        }
 
     if (!response) {
       return NextResponse.json({
@@ -113,7 +116,7 @@ export async function POST(request: Request) {
         pois: [],
         counts: {},
         source: "OpenStreetMap (Overpass API)",
-        note: `Points d'intérêt indisponibles pour le moment (service Overpass surchargé, statut ${lastStatus || "réseau"}). La carte reste affichable avec les coordonnées.`,
+        note: `Points d'intérêt indisponibles (statut ${lastStatus || 0} - ${lastError || 'inconnu'}).`,
       });
     }
 
