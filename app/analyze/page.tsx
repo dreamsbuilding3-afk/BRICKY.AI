@@ -166,7 +166,7 @@ function AnalysisDashboard({ result, address }: { result: AnalysisResult; addres
     }
   }
   const analysis = (result.analysis as Record<string, any>) || result;
-  const financialSnapshot = (analysis.financial_snapshot || {}) as Record<string, any>;
+  const financialSnapshot = (analysis.financial_snapshot || analysis.financial || {}) as Record<string, any>;
   const metrics = (financialSnapshot.metrics || {}) as Record<string, any>;
   const acquisition = (financialSnapshot.acquisition || {}) as Record<string, any>;
   const financing = (financialSnapshot.financing || {}) as Record<string, any>;
@@ -191,12 +191,12 @@ function AnalysisDashboard({ result, address }: { result: AnalysisResult; addres
   const simAnnualCharges = Number(metrics.annual_charges ?? 0);
   const simCashflow = simMonthlyRent - simAnnualCharges / 12 - simMonthlyPayment;
   const scenarios = (financialSnapshot.scenarios || {}) as Record<string, any>;
-  const decisionSnapshot = (analysis.decision_snapshot || {}) as Record<string, any>;
+  const decisionSnapshot = (analysis.decision_snapshot || analysis || {}) as Record<string, any>;
   const decision = (decisionSnapshot.decision || {}) as Record<string, any>;
   const market = (decisionSnapshot.market || {}) as Record<string, any>;
   const risk = (decisionSnapshot.risk || {}) as Record<string, any>;
   const verdict = decision.verdict || analysis.verdict;
-  const score = analysis.overall_score ?? decision.score;
+  const score = analysis.overall_score ?? analysis.score ?? decision.score;
   const confidence = analysis.confidence_score ?? decision.confidence_score;
   const actions = Array.isArray(decision.actions) ? decision.actions : [];
   const risks = Array.isArray(risk.risks) ? risk.risks : [];
