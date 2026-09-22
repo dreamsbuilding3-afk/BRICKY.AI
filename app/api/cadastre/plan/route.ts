@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { enforceRateLimit } from "@/lib/rateLimit";
+import { logError } from "@/lib/logError";
 import {
   assertPropertyOwnership,
   buildCadastralRecord,
@@ -50,6 +51,7 @@ try {
   const saved = await persistCadastralRecord(record, authorization);
   return NextResponse.json({ cadastral: record, saved }, { status: 200 });
 } catch (error) {
+    await logError("cadastre.plan", error);
   const status = (error as { status?: number })?.status ?? 422;
   return NextResponse.json(
     { error: status === 404 ? "Bien introuvable ou non accessible." : "Impossible de générer le plan cadastral.", details: error instanceof Error ? error.message : "Unknown error" },
