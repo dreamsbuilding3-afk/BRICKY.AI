@@ -26,6 +26,7 @@ function AnalyzePageInner() {
   const [error, setError] = useState("");
   const [extractNote, setExtractNote] = useState("");
   const [result, setResult] = useState<AnalysisResult | null>(null);
+  const [shareStatus, setShareStatus] = useState<{ loading: boolean; url: string | null; error: string | null }>({ loading: false, url: null, error: null });
   const [userEmail, setUserEmail] = useState("");
   const [loadingExisting, setLoadingExisting] = useState(false);
   const [loadError, setLoadError] = useState("");
@@ -117,7 +118,22 @@ function AnalyzePageInner() {
     finally { setExtractingFile(false); }
   }
 
-async function handleSubmit(event: FormEvent) {
+  async function handleShare() {
+    if (!result?.analysis_id) return;
+    setShareStatus({ loading: true, url: null, error: null });
+    try {
+      const { data, error } = await supabase.rpc("enable_analysis_share", { p_analysis_id: result.analysis_id });
+      if (error) throw error;
+      const token = (data as any)?.share_token;
+      if (!token) throw new Error("Lien indisponible");
+      const url = `${window.location.origin}/share/${token}`;
+      setShareStatus({ loading: false, url, error: null });
+    } catch (err: any) {
+      setShareStatus({ loading: false, url: null, error: err?.message || "Erreur lors de la generation du lien" });
+    }
+  }
+
+  async function handleSubmit(event: FormEvent) {
     event.preventDefault(); setLoading(true); setError(""); setResult(null);
     try {
       const { data: sessionData } = await supabase.auth.getSession(); const token = sessionData.session?.access_token;
@@ -195,6 +211,7 @@ function AnalysisDashboard({ result, address }: { result: AnalysisResult; addres
   }
   return <section className="result-panel decision-dashboard"><div className="result-head"><div><span className="eyebrow">Analyse terminée</span><h2>Voici ce que Bricky en pense.</h2></div><div className="result-head-actions">{propertyId && <button type="button" className="secondary-button" onClick={downloadDossier} disabled={downloadingDossier}>{downloadingDossier ? "Génération…" : "Télécharger le dossier complet (PDF) →"}</button>}<span className="status-dot">● Décision</span></div></div>
     <div className="decision-hero"><div><span className="decision-label">Verdict</span><strong>{label}</strong></div><div className="score-block"><span>Score</span><b>{score ?? "—"}<small>/100</small></b></div><div className="score-block"><span>Confiance</span><b>{confidence ?? "—"}<small>%</small></b>{confidenceLabel ? <em className="confidence-tag">{confidenceLabel}</em> : null}</div></div>{missingCount > 0 ? <p className="confidence-note">Score basé sur {missingCount} donnée{missingCount > 1 ? "s" : ""} manquante{missingCount > 1 ? "s" : ""} — plus vous complétez le bien, plus l'estimation est fiable.</p> : null}
+    <div className="share-row"><button type="button" className="share-button" onClick={handleShare} disabled={shareStatus.loading}>{shareStatus.loading ? "Generation du lien..." : shareStatus.url ? "Lien actif" : "Partager cette analyse"}</button>{shareStatus.url ? <div className="share-link"><input type="text" readOnly value={shareStatus.url} onFocus={(e) => e.target.select()} /><button type="button" onClick={() => navigator.clipboard.writeText(shareStatus.url || "")}>Copier</button></div> : null}{shareStatus.error ? <p className="share-error">{shareStatus.error}</p> : null}</div>
     <div className="metric-grid"><Metric label="Loyer mensuel" value={metrics.monthly_rent} suffix=" €" /><Metric label="Revenu annuel net" value={metrics.annual_net_income} suffix=" €" /><Metric label="Rendement brut" value={metrics.gross_yield_pct} suffix=" %" /><Metric label="Rendement net" value={metrics.net_yield_pct} suffix=" %" /></div>
     {propertyId && <CadastralPanel propertyId={propertyId} address={address} />}
     {propertyId && <UrbanismePanel propertyId={propertyId} address={address} />}
