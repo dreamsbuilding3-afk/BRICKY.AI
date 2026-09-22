@@ -21,6 +21,7 @@ export default function Home() {
           <span></span>
         </button>
         <div className={"nav-links" + (menuOpen ? " nav-links-open" : "")}>
+          <a className="navlink" href="/pricing" onClick={() => setMenuOpen(false)}>Tarifs</a>
           <a className="navlink" href="/login" onClick={() => setMenuOpen(false)}>Se connecter</a>
           <a className="nav-cta" href="/analyze" onClick={() => setMenuOpen(false)}>Analyser un bien →</a>
         </div>
