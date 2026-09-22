@@ -1,11 +1,28 @@
+"use client";
+
+import { useState } from "react";
+
 export default function Home() {
+  const [menuOpen, setMenuOpen] = useState(false);
+
   return (
     <main className="page">
-      <nav className="nav">
+      <nav className="nav nav-has-burger">
         <div className="brand"><span className="mark">B</span>Bricky</div>
-        <div className="nav-links">
-          <a className="navlink" href="/login">Se connecter</a>
-          <a className="nav-cta" href="/analyze">Analyser un bien →</a>
+        <button
+          type="button"
+          className={"nav-burger" + (menuOpen ? " nav-burger-open" : "")}
+          aria-label={menuOpen ? "Fermer le menu" : "Ouvrir le menu"}
+          aria-expanded={menuOpen}
+          onClick={() => setMenuOpen((open) => !open)}
+        >
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+        <div className={"nav-links" + (menuOpen ? " nav-links-open" : "")}>
+          <a className="navlink" href="/login" onClick={() => setMenuOpen(false)}>Se connecter</a>
+          <a className="nav-cta" href="/analyze" onClick={() => setMenuOpen(false)}>Analyser un bien →</a>
         </div>
       </nav>
 
@@ -50,6 +67,7 @@ export default function Home() {
       <section className="features">
         <details className="card info-card">
           <summary>
+            <span className="info-number">1</span>
             <h2>Ce qu’on sait</h2>
             <p>Données de l’annonce et sources publiques structurées, avec leur niveau de confiance.</p>
             <span className="info-more-btn">Voir plus <span className="chevron">▾</span></span>
@@ -58,6 +76,7 @@ export default function Home() {
         </details>
         <details className="card info-card">
           <summary>
+            <span className="info-number">2</span>
             <h2>Ce qu’on ne sait pas</h2>
             <p>Les informations critiques absentes sont identifiées au lieu d’être remplacées par des suppositions.</p>
             <span className="info-more-btn">Voir plus <span className="chevron">▾</span></span>
@@ -66,6 +85,7 @@ export default function Home() {
         </details>
         <details className="card info-card">
           <summary>
+            <span className="info-number">3</span>
             <h2>Ce qu’il faut faire</h2>
             <p>Risques, questions à poser, documents à demander et prochaines vérifications avant une offre.</p>
             <span className="info-more-btn">Voir plus <span className="chevron">▾</span></span>
