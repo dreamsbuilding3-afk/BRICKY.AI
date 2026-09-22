@@ -166,6 +166,8 @@ function AnalysisDashboard({ result, address }: { result: AnalysisResult; addres
   const actions = Array.isArray(decision.actions) ? decision.actions : [];
   const risks = Array.isArray(risk.risks) ? risk.risks : [];
   const missing = Array.isArray(financialSnapshot.missing_data) ? financialSnapshot.missing_data : [];
+  const confidenceLabel = confidence == null ? null : confidence >= 75 ? "Élevée" : confidence >= 50 ? "Moyenne" : "Faible";
+  const missingCount = missing.length;
   const rows = ["base", "conservative", "optimistic"].filter((k) => scenarios[k]);
   const label = verdict === "interesting" ? "Intéressant" : verdict === "unattractive" ? "Peu intéressant" : "À vérifier & négocier";
   const marketReady = market.status === "ready";
@@ -192,7 +194,7 @@ function AnalysisDashboard({ result, address }: { result: AnalysisResult; addres
     }
   }
   return <section className="result-panel decision-dashboard"><div className="result-head"><div><span className="eyebrow">Analyse terminée</span><h2>Voici ce que Bricky en pense.</h2></div><div className="result-head-actions">{propertyId && <button type="button" className="secondary-button" onClick={downloadDossier} disabled={downloadingDossier}>{downloadingDossier ? "Génération…" : "Télécharger le dossier complet (PDF) →"}</button>}<span className="status-dot">● Décision</span></div></div>
-    <div className="decision-hero"><div><span className="decision-label">Verdict</span><strong>{label}</strong></div><div className="score-block"><span>Score</span><b>{score ?? "—"}<small>/100</small></b></div><div className="score-block"><span>Confiance</span><b>{confidence ?? "—"}<small>%</small></b></div></div>
+    <div className="decision-hero"><div><span className="decision-label">Verdict</span><strong>{label}</strong></div><div className="score-block"><span>Score</span><b>{score ?? "—"}<small>/100</small></b></div><div className="score-block"><span>Confiance</span><b>{confidence ?? "—"}<small>%</small></b>{confidenceLabel ? <em className="confidence-tag">{confidenceLabel}</em> : null}</div></div>{missingCount > 0 ? <p className="confidence-note">Score basé sur {missingCount} donnée{missingCount > 1 ? "s" : ""} manquante{missingCount > 1 ? "s" : ""} — plus vous complétez le bien, plus l'estimation est fiable.</p> : null}
     <div className="metric-grid"><Metric label="Loyer mensuel" value={metrics.monthly_rent} suffix=" €" /><Metric label="Revenu annuel net" value={metrics.annual_net_income} suffix=" €" /><Metric label="Rendement brut" value={metrics.gross_yield_pct} suffix=" %" /><Metric label="Rendement net" value={metrics.net_yield_pct} suffix=" %" /></div>
     {propertyId && <CadastralPanel propertyId={propertyId} address={address} />}
     {propertyId && <UrbanismePanel propertyId={propertyId} address={address} />}
