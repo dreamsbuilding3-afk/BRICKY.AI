@@ -141,7 +141,23 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Authentication required." }, { status: 401 });
   }
 
-  let propertyId: string | undefined;
+  const subRes = await fetch(`${SUPABASE_URL}/rest/v1/rpc/get_my_subscription`, {
+  method: "POST",
+  headers: { apikey: SUPABASE_ANON_KEY as string, Authorization: authorization, "Content-Type": "application/json" },
+  body: "{}",
+  cache: "no-store",
+});
+if (subRes.ok) {
+  const sub = await subRes.json();
+  if (sub && sub.can_download_pdf === false) {
+    return NextResponse.json(
+      { error: "pdf_not_included_in_plan", message: "Le telechargement du dossier PDF necessite un abonnement Essentiel ou superieur." },
+      { status: 402 },
+    );
+  }
+}
+
+let propertyId: string | undefined;
   try {
     const body = await request.json();
     propertyId = typeof body?.property_id === "string" ? body.property_id : undefined;
