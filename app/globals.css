@@ -366,3 +366,113 @@ h1 .stroke { color: transparent; -webkit-text-stroke: 2px var(--ink); text-strok
   accent-color: var(--accent);
   width: 100%;
 }
+
+
+.nav-has-burger { position: relative; }
+
+.nav-burger {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+  width: 40px;
+  height: 40px;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.nav-burger span {
+  display: block;
+  width: 22px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--ink);
+  transition: transform .2s ease, opacity .2s ease;
+}
+
+.nav-burger-open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.nav-burger-open span:nth-child(2) { opacity: 0; }
+.nav-burger-open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+.info-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--ink);
+  color: #fff;
+  font-weight: 800;
+  font-size: 12px;
+  margin-bottom: 10px;
+}
+
+.info-card:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: -14px;
+  width: 14px;
+  height: 2px;
+  background: var(--line);
+  transform: translateY(-50%);
+  z-index: 1;
+}
+
+@media (max-width: 900px) {
+  .nav-has-burger .nav-burger { display: flex; }
+  .nav-has-burger .nav-links {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    background: #fff;
+    border-bottom: 1px solid var(--line);
+    box-shadow: 0 16px 32px -18px rgba(17,17,17,.25);
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    visibility: hidden;
+    transition: max-height .25s ease, opacity .2s ease;
+  }
+  .nav-has-burger .nav-links.nav-links-open {
+    max-height: 400px;
+    opacity: 1;
+    visibility: visible;
+  }
+  .nav-has-burger .nav-links .navlink,
+  .nav-has-burger .nav-links .nav-cta,
+  .nav-has-burger .nav-links .navlink-logout {
+    width: 100%;
+    padding: 18px 20px;
+    border-bottom: 1px solid var(--line);
+    text-align: left;
+    border-radius: 0;
+    box-shadow: none;
+    display: flex;
+  }
+  .nav-has-burger .nav-links .nav-cta { justify-content: center; }
+  .nav-has-burger .nav-links > *:last-child { border-bottom: 0; }
+}
+
+@media (max-width: 720px) {
+  .info-card:not(:last-child)::after {
+    top: auto;
+    right: auto;
+    bottom: -14px;
+    left: 24px;
+    width: 2px;
+    height: 14px;
+    transform: none;
+  }
+  .features { gap: 20px; }
+  .info-card { padding: 20px; }
+  .info-more-btn { width: 100%; justify-content: center; }
+}
