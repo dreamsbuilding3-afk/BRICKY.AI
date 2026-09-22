@@ -48,9 +48,30 @@ export default function Home() {
       </section>
 
       <section className="features">
-        <article className="card"><h2>Ce qu’on sait</h2><p>Données de l’annonce et sources publiques structurées, avec leur niveau de confiance.</p></article>
-        <article className="card"><h2>Ce qu’on ne sait pas</h2><p>Les informations critiques absentes sont identifiées au lieu d’être remplacées par des suppositions.</p></article>
-        <article className="card"><h2>Ce qu’il faut faire</h2><p>Risques, questions à poser, documents à demander et prochaines vérifications avant une offre.</p></article>
+        <details className="card info-card">
+          <summary>
+            <h2>Ce qu’on sait</h2>
+            <p>Données de l’annonce et sources publiques structurées, avec leur niveau de confiance.</p>
+            <span className="info-more-btn">Voir plus <span className="chevron">▾</span></span>
+          </summary>
+          <div className="info-more">Prix affiché, surface Carrez, nombre de pièces, étage, DPE/GES, année de construction, taxe foncière estimée, prix au m² comparé au marché local — chaque donnée est tracée avec sa source et son niveau de confiance.</div>
+        </details>
+        <details className="card info-card">
+          <summary>
+            <h2>Ce qu’on ne sait pas</h2>
+            <p>Les informations critiques absentes sont identifiées au lieu d’être remplacées par des suppositions.</p>
+            <span className="info-more-btn">Voir plus <span className="chevron">▾</span></span>
+          </summary>
+          <div className="info-more">Travaux réalisés, charges de copropriété exactes, procédures en cours, nuisances de voisinage, historique des sinistres : Bricky les signale comme lacunes plutôt que de deviner à votre place.</div>
+        </details>
+        <details className="card info-card">
+          <summary>
+            <h2>Ce qu’il faut faire</h2>
+            <p>Risques, questions à poser, documents à demander et prochaines vérifications avant une offre.</p>
+            <span className="info-more-btn">Voir plus <span className="chevron">▾</span></span>
+          </summary>
+          <div className="info-more">Diagnostics à réclamer, PV d’AG et règlement de copropriété, questions précises à poser au vendeur, points de négociation et vérifications à faire sur place avant de vous engager.</div>
+        </details>
       </section>
 
       <section className="highlight-band">
@@ -59,10 +80,30 @@ export default function Home() {
           <h2>Tout ce qu’il faut pour décider, au même endroit.</h2>
         </div>
         <div className="highlight-grid">
-          <div className="highlight-item"><h3>Localisation détaillée</h3><p>Carte précise du bien avec transports, commerces, écoles et services à proximité, distance par distance.</p></div>
-          <div className="highlight-item"><h3>Cadastre &amp; urbanisme</h3><p>Parcelle, zonage PLU, bâti recensé — les données officielles croisées automatiquement.</p></div>
-          <div className="highlight-item"><h3>Dossier PDF complet</h3><p>Synthèse, finances, risques, cadastre et environnement réunis dans un document téléchargeable en un clic.</p></div>
-          <div className="highlight-item"><h3>Fichiers acceptés</h3><p>Lien d’annonce ou PDF déposé directement — Bricky s’adapte à ce que vous avez sous la main.</p></div>
+          <div className="highlight-item">
+            <div className="highlight-item-top"><span className="highlight-icon">01</span><span className="highlight-tag">Localisation</span></div>
+            <h3>Localisation détaillée</h3>
+            <p>Carte précise du bien avec transports, commerces, écoles et services à proximité, distance par distance.</p>
+            <div className="highlight-stat">300+ points d’intérêt croisés</div>
+          </div>
+          <div className="highlight-item">
+            <div className="highlight-item-top"><span className="highlight-icon">02</span><span className="highlight-tag">Officiel</span></div>
+            <h3>Cadastre &amp; urbanisme</h3>
+            <p>Parcelle, zonage PLU, bâti recensé — les données officielles croisées automatiquement.</p>
+            <div className="highlight-stat">Cadastre.gouv.fr · Géorisques</div>
+          </div>
+          <div className="highlight-item">
+            <div className="highlight-item-top"><span className="highlight-icon">03</span><span className="highlight-tag">Livrable</span></div>
+            <h3>Dossier PDF complet</h3>
+            <p>Synthèse, finances, risques, cadastre et environnement réunis dans un document téléchargeable en un clic.</p>
+            <div className="highlight-stat">Prêt en quelques secondes</div>
+          </div>
+          <div className="highlight-item">
+            <div className="highlight-item-top"><span className="highlight-icon">04</span><span className="highlight-tag">Flexible</span></div>
+            <h3>Fichiers acceptés</h3>
+            <p>Lien d’annonce ou PDF déposé directement — Bricky s’adapte à ce que vous avez sous la main.</p>
+            <div className="highlight-stat">URL ou PDF, au choix</div>
+          </div>
         </div>
       </section>
 
