@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { enforceRateLimit } from "@/lib/rateLimit";
+import { logError } from "@/lib/logError";
 import { geocodeAddress } from "@/lib/data/geocode";
 import { assertPropertyOwnership, cleanValue } from "@/lib/data/cadastre";
 import { buildBatimentRecord, findBatiment, persistBatimentRecord } from "@/lib/data/batiment";
@@ -65,6 +66,7 @@ export async function POST(request: Request) {
       geocode: geocodeLabel ? { label: geocodeLabel, latitude, longitude } : { latitude, longitude },
     }, { status: 200 });
   } catch (error) {
+    await logError("batiment.lookup", error);
     const status = (error as { status?: number })?.status ?? 422;
     return NextResponse.json(
       { error: status === 404 ? "Bien introuvable ou non accessible." : "Impossible de déterminer l'empreinte du bâtiment automatiquement.", details: error instanceof Error ? error.message : "Unknown error" },
