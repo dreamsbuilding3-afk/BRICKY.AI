@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { enforceRateLimit } from "@/lib/rateLimit";
+import { logError } from "@/lib/logError";
 import { geocodeAddress } from "@/lib/data/geocode";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -209,6 +210,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ ...result, market, rent_estimate: rentEstimate }, { status: 200 });
   } catch (error) {
+    await logError("properties.analyze", error);
     return NextResponse.json({ error: "Property analysis failed.", details: error instanceof Error ? error.message : error }, { status: 422 });
   }
 }
