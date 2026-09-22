@@ -32,7 +32,8 @@ const propertyId = cleanValue(body.property_id, 64);
   const commune = cleanValue(body.commune_code, 5).toUpperCase();
   const prefix = cleanValue(body.section_prefix || "000", 3);
   const section = cleanValue(body.section, 2).toUpperCase();
-  const parcel = cleanValue(body.parcel_number, 4);
+  const parcelRaw = cleanValue(body.parcel_number, 4);
+  const parcel = parcelRaw ? parcelRaw.padStart(4, "0") : parcelRaw;
 
 if (!isValidCommune(commune) || !isValidPrefix(prefix) || !isValidSection(section) || !isValidParcel(parcel)) {
   return NextResponse.json({ error: "Référence cadastrale invalide. Utilise commune, préfixe, section et numéro de parcelle." }, { status: 400 });
