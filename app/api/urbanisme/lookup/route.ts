@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { enforceRateLimit } from "@/lib/rateLimit";
+import { logError } from "@/lib/logError";
 import { geocodeAddress } from "@/lib/data/geocode";
 import { assertPropertyOwnership, cleanValue } from "@/lib/data/cadastre";
 import { buildUrbanismeRecord, findZonage, persistUrbanismeRecord } from "@/lib/data/urbanisme";
@@ -65,6 +66,7 @@ export async function POST(request: Request) {
       geocode: geocodeLabel ? { label: geocodeLabel, latitude, longitude } : { latitude, longitude },
     }, { status: 200 });
   } catch (error) {
+    await logError("urbanisme.lookup", error);
     const status = (error as { status?: number })?.status ?? 422;
     return NextResponse.json(
       { error: status === 404 ? "Bien introuvable ou non accessible." : "Impossible de déterminer le zonage d'urbanisme automatiquement.", details: error instanceof Error ? error.message : "Unknown error" },
