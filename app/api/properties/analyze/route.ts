@@ -130,9 +130,15 @@ export async function POST(request: Request) {
   try {
     const rawBody = payload as Record<string, unknown>;
     const payloadForIngest = { ...rawBody };
-    if (rawBody.monthly_rent !== undefined && rawBody.monthly_rent !== null && rawBody.monthly_rent !== "") {
-      const existingFinancial = (rawBody.financial as Record<string, unknown> | undefined) || {};
-      payloadForIngest.financial = { ...existingFinancial, monthly_rent: rawBody.monthly_rent };
+    const financialFieldKeys = ["monthly_rent", "down_payment", "loan_rate_pct", "loan_duration_years", "renovation_budget"];
+    const existingFinancial = (rawBody.financial as Record<string, unknown> | undefined) || {};
+    const financialUpdates: Record<string, unknown> = {};
+    for (const key of financialFieldKeys) {
+      const v = rawBody[key];
+      if (v !== undefined && v !== null && v !== "") financialUpdates[key] = v;
+    }
+    if (Object.keys(financialUpdates).length > 0) {
+      payloadForIngest.financial = { ...existingFinancial, ...financialUpdates };
     }
     let result = await rpc("ingest_property", { p_payload: payloadForIngest }, authorization) as { analysis_id?: string; analysis?: unknown };
     const analysisId = result?.analysis_id;
