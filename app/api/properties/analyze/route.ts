@@ -121,6 +121,24 @@ export async function POST(request: Request) {
   const rateLimitResponse = await enforceRateLimit(request, { endpoint: "properties.analyze", maxRequests: 20, windowSeconds: 60 });
   if (rateLimitResponse) return rateLimitResponse;
 
+  const quotaCheck = await rpc("check_analysis_quota", {}, authorization) as { allowed?: boolean; reason?: string; plan_code?: string; quota?: number; used?: number };
+  if (quotaCheck && quotaCheck.allowed === false) {
+    return NextResponse.json(
+      {
+        error: "quota_reached",
+        reason: quotaCheck.reason,
+        plan_code: quotaCheck.plan_code,
+        quota: quotaCheck.quota,
+        used: quotaCheck.used,
+        message:
+          quotaCheck.reason === "lifetime_quota_reached"
+            ? "Vous avez deja utilise votre analyse gratuite. Passez a un abonnement payant pour continuer."
+            : "Vous avez atteint le quota d'analyses de votre abonnement pour cette periode. Passez a un palier superieur pour continuer.",
+      },
+      { status: 402 },
+    );
+  }
+
   let payload: unknown;
   try { payload = await request.json(); } catch { return NextResponse.json({ error: "Invalid JSON payload." }, { status: 400 }); }
   if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
