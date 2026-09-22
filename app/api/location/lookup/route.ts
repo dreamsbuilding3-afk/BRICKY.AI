@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { enforceRateLimit } from "@/lib/rateLimit";
 import { geocodeAddress } from "@/lib/data/geocode";
 
 export const maxDuration = 45;
@@ -144,6 +145,9 @@ async function persistLocationCache(
 }
 
 export async function POST(request: Request) {
+  const rateLimitResponse = await enforceRateLimit(request, { endpoint: "location.lookup", maxRequests: 30, windowSeconds: 60 });
+  if (rateLimitResponse) return rateLimitResponse;
+
   const authorization = request.headers.get("authorization");
   if (!authorization?.startsWith("Bearer ")) {
     return NextResponse.json({ error: "Authentication required." }, { status: 401 });
