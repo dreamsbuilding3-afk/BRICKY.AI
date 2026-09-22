@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { enforceRateLimit } from "@/lib/rateLimit";
 import {
   assertPropertyOwnership,
   buildCadastralRecord,
@@ -11,6 +12,9 @@ import {
 } from "@/lib/data/cadastre";
 
 export async function POST(request: Request) {
+  const rateLimitResponse = await enforceRateLimit(request, { endpoint: "cadastre.plan", maxRequests: 20, windowSeconds: 60 });
+  if (rateLimitResponse) return rateLimitResponse;
+
   const authorization = request.headers.get("authorization");
   if (!authorization?.startsWith("Bearer ")) {
     return NextResponse.json({ error: "Authentication required." }, { status: 401 });
