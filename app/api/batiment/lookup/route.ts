@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { enforceRateLimit } from "@/lib/rateLimit";
 import { geocodeAddress } from "@/lib/data/geocode";
 import { assertPropertyOwnership, cleanValue } from "@/lib/data/cadastre";
 import { buildBatimentRecord, findBatiment, persistBatimentRecord } from "@/lib/data/batiment";
@@ -9,6 +10,9 @@ function toNumber(value: unknown): number | null {
 }
 
 export async function POST(request: Request) {
+  const rateLimitResponse = await enforceRateLimit(request, { endpoint: "batiment.lookup", maxRequests: 30, windowSeconds: 60 });
+  if (rateLimitResponse) return rateLimitResponse;
+
   const authorization = request.headers.get("authorization");
   if (!authorization?.startsWith("Bearer ")) {
     return NextResponse.json({ error: "Authentication required." }, { status: 401 });
