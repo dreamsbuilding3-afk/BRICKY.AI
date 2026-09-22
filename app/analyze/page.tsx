@@ -26,7 +26,6 @@ function AnalyzePageInner() {
   const [error, setError] = useState("");
   const [extractNote, setExtractNote] = useState("");
   const [result, setResult] = useState<AnalysisResult | null>(null);
-  const [shareStatus, setShareStatus] = useState<{ loading: boolean; url: string | null; error: string | null }>({ loading: false, url: null, error: null });
   const [userEmail, setUserEmail] = useState("");
   const [loadingExisting, setLoadingExisting] = useState(false);
   const [loadError, setLoadError] = useState("");
@@ -118,22 +117,7 @@ function AnalyzePageInner() {
     finally { setExtractingFile(false); }
   }
 
-  async function handleShare() {
-    if (!result?.analysis_id) return;
-    setShareStatus({ loading: true, url: null, error: null });
-    try {
-      const { data, error } = await supabase.rpc("enable_analysis_share", { p_analysis_id: result.analysis_id });
-      if (error) throw error;
-      const token = (data as any)?.share_token;
-      if (!token) throw new Error("Lien indisponible");
-      const url = `${window.location.origin}/share/${token}`;
-      setShareStatus({ loading: false, url, error: null });
-    } catch (err: any) {
-      setShareStatus({ loading: false, url: null, error: err?.message || "Erreur lors de la generation du lien" });
-    }
-  }
-
-  async function handleSubmit(event: FormEvent) {
+async function handleSubmit(event: FormEvent) {
     event.preventDefault(); setLoading(true); setError(""); setResult(null);
     try {
       const { data: sessionData } = await supabase.auth.getSession(); const token = sessionData.session?.access_token;
@@ -166,6 +150,21 @@ function AnalyzePageInner() {
 }
 
 function AnalysisDashboard({ result, address }: { result: AnalysisResult; address?: string }) {
+  const [shareStatus, setShareStatus] = useState<{ loading: boolean; url: string | null; error: string | null }>({ loading: false, url: null, error: null });
+  async function handleShare() {
+    if (!result?.analysis_id) return;
+    setShareStatus({ loading: true, url: null, error: null });
+    try {
+      const { data, error } = await supabase.rpc("enable_analysis_share", { p_analysis_id: result.analysis_id });
+      if (error) throw error;
+      const token = (data as any)?.share_token;
+      if (!token) throw new Error("Lien indisponible");
+      const shareUrl = `${window.location.origin}/share/${token}`;
+      setShareStatus({ loading: false, url: shareUrl, error: null });
+    } catch (err: any) {
+      setShareStatus({ loading: false, url: null, error: err?.message || "Erreur lors de la generation du lien" });
+    }
+  }
   const analysis = (result.analysis as Record<string, any>) || result;
   const financialSnapshot = (analysis.financial_snapshot || {}) as Record<string, any>;
   const metrics = (financialSnapshot.metrics || {}) as Record<string, any>;
