@@ -61,6 +61,9 @@ export function AppNav({ email, active }: AppNavProps) {
         >
           {email || "Mon compte"}
         </Link>
+        <Link className="navlink" href="/pricing" onClick={closeMenu}>
+          Tarifs
+        </Link>
         <button type="button" className="navlink navlink-logout" onClick={handleLogout}>
           Déconnexion
         </button>
