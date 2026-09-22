@@ -74,10 +74,18 @@ export default function PropertiesPage() {
       {error && <div className="error-box">{error}</div>}
 
       {!loading && !error && rows && rows.length === 0 && (
-        <div className="result-panel">
-          <p className="empty-note">Vous n'avez pas encore analysé de bien. <a href="/analyze">Lancez votre première analyse →</a></p>
-        </div>
-      )}
+<div className="result-panel" style={{ textAlign: "center" }}>
+<span className="eyebrow">Bienvenue sur Bricky</span>
+<h2 style={{ margin: "14px 0 8px" }}>Analysez votre premier bien</h2>
+<p className="empty-note" style={{ maxWidth: 480, margin: "0 auto 28px" }}>Collez une annonce ou déposez un PDF : Bricky calcule le rendement, le cash-flow, les risques et tout ce qu'il faut vérifier avant de vous engager.</p>
+<div className="steps-grid" style={{ textAlign: "left", marginBottom: 28 }}>
+<div className="card step-card"><span className="step-number">1</span><b>Collez ou déposez</b><p className="empty-note">Un lien d'annonce ou un PDF (annonce, dossier).</p></div>
+<div className="card step-card"><span className="step-number">2</span><b>Bricky analyse</b><p className="empty-note">Rendement, cash-flow, risques, cadastre et urbanisme.</p></div>
+<div className="card step-card"><span className="step-number">3</span><b>Vous décidez</b><p className="empty-note">Un verdict clair et un dossier PDF à télécharger.</p></div>
+</div>
+<a href="/analyze" className="primary-button" style={{ display: "inline-flex", width: "auto", padding: "0 28px", textDecoration: "none", alignItems: "center", justifyContent: "center", minHeight: 54 }}>Lancer ma première analyse →</a>
+</div>
+)}
 
       {!loading && !error && rows && rows.length > 0 && (
         <div className="properties-list">
