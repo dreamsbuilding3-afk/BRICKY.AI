@@ -7,7 +7,7 @@ import { supabase } from "../lib/supabase/client";
 
 type AppNavProps = {
   email?: string | null;
-  active?: "analyze" | "properties" | "account" | "alerts";
+  active?: "analyze" | "properties" | "account" | "alerts" | "team";
 };
 
 export function AppNav({ email, active }: AppNavProps) {
@@ -67,6 +67,13 @@ export function AppNav({ email, active }: AppNavProps) {
           onClick={closeMenu}
         >
           Alertes
+        </Link>
+        <Link
+          className={"navlink" + (active === "team" ? " navlink-active" : "")}
+          href="/team"
+          onClick={closeMenu}
+        >
+          Équipe
         </Link>
         <Link className="navlink" href="/pricing" onClick={closeMenu}>
           Tarifs
