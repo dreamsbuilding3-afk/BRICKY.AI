@@ -147,6 +147,7 @@ export async function POST(request: NextRequest) {
   body: "{}",
   cache: "no-store",
 });
+let whiteLabel = false;
 if (subRes.ok) {
   const sub = await subRes.json();
   if (sub && sub.can_download_pdf === false) {
@@ -154,6 +155,25 @@ if (subRes.ok) {
       { error: "pdf_not_included_in_plan", message: "Le telechargement du dossier PDF necessite un abonnement Essentiel ou superieur." },
       { status: 402 },
     );
+  }
+  whiteLabel = Boolean(sub && sub.white_label === true);
+}
+
+let brandName = "Bricky.AI";
+let brandTagline = "";
+if (whiteLabel) {
+  try {
+    const brandRes = await fetch(`${SUPABASE_URL}/rest/v1/agency_branding?select=agency_name,agency_tagline`, {
+      headers: { apikey: SUPABASE_ANON_KEY as string, Authorization: authorization },
+    });
+    if (brandRes.ok) {
+      const brandRows = await brandRes.json();
+      const brand = Array.isArray(brandRows) && brandRows[0] ? brandRows[0] : null;
+      if (brand?.agency_name) brandName = String(brand.agency_name);
+      if (brand?.agency_tagline) brandTagline = String(brand.agency_tagline);
+    }
+  } catch {
+    // fall back to default branding
   }
 }
 
@@ -206,17 +226,18 @@ let propertyId: string | undefined;
   const actions = Array.isArray(decision.actions) ? (decision.actions as unknown[]) : [];
 
   const pdfDoc = await PDFDocument.create();
-  pdfDoc.setTitle(`Dossier Bricky - ${String(property.title || "Bien immobilier")}`);
-  pdfDoc.setProducer("Bricky.AI");
+  pdfDoc.setTitle(`Dossier ${brandName} - ${String(property.title || "Bien immobilier")}`);
+  pdfDoc.setProducer(brandName);
   const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
   const bold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
   const layout = new Layout(pdfDoc, font, bold);
 
-  layout.title("Bricky — Dossier d'analyse complet");
+  layout.title(`${brandName} — Dossier d'analyse complet`);
+  if (brandTagline) layout.p(brandTagline, { size: 9.5, color: [0.5, 0.5, 0.5] });
   layout.p(String(property.title || "Bien immobilier"), { size: 13, bold: true });
   layout.p(`${fmtStr(property.address)}${property.city ? ", " + String(property.city) : ""}`);
   layout.spacer(4);
-  layout.p(`Généré le ${new Date().toLocaleDateString("fr-FR")} par Bricky.AI`, { size: 9, color: [0.5, 0.5, 0.5] });
+  layout.p(`Généré le ${new Date().toLocaleDateString("fr-FR")} par ${brandName}`, { size: 9, color: [0.5, 0.5, 0.5] });
   layout.spacer(16);
   layout.divider();
 
@@ -378,7 +399,7 @@ let propertyId: string | undefined;
 
   layout.spacer(20);
   layout.divider();
-  layout.p("Ce dossier a été généré automatiquement par Bricky.AI à partir des données disponibles au moment de l'analyse. Les informations foncières, d'urbanisme et de marché doivent être vérifiées auprès des sources officielles avant toute décision d'investissement. Bricky n'invente aucune valeur : les champs marqués comme non identifiés reflètent une absence de donnée fiable.", { size: 8.5, color: [0.55, 0.55, 0.55] });
+  layout.p(`Ce dossier a été généré automatiquement par ${brandName} à partir des données disponibles au moment de l'analyse. Les informations foncières, d'urbanisme et de marché doivent être vérifiées auprès des sources officielles avant toute décision d'investissement. Aucune valeur n'est inventée : les champs marqués comme non identifiés reflètent une absence de donnée fiable.`, { size: 8.5, color: [0.55, 0.55, 0.55] });
 
   const pdfBytes = await pdfDoc.save();
 
