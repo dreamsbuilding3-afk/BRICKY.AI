@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { classifyPropertyType } from "@/lib/data/propertyTypeClassifier";
 
 const PRICE_RE = /(?:prix|price)[^\d]{0,40}([\d\s.,]+)\s*€?/i;
 const SURFACE_RE = /(?:surface|area)[^\d]{0,40}(\d+(?:[.,]\d+)?)\s*m(?:²|2)/i;
@@ -77,12 +78,14 @@ export async function POST(request: NextRequest) {
     const ldCity = String(address.addressLocality ?? "").trim();
     const cityMatch = bodyText.match(CITY_RE);
     const city = ldCity || (cityMatch ? cityMatch[2].trim() : "");
+    const resolvedTitle = String(product.name ?? title).trim();
+    const propertyType = classifyPropertyType(resolvedTitle, description, bodyText.slice(0, 4000));
 
     return NextResponse.json({
       source_url: parsedUrl.toString(),
       source_domain: parsedUrl.hostname,
       extracted: {
-        title: String(product.name ?? title).trim(),
+        title: resolvedTitle,
         description,
         price,
         surface_m2: surface,
@@ -92,11 +95,14 @@ export async function POST(request: NextRequest) {
         ges_class: ges ? ges.toUpperCase() : null,
         city: city || null,
         monthly_rent: monthlyRent,
+        property_type: propertyType?.type ?? null,
+        property_type_label: propertyType?.label ?? null,
+        property_type_confidence: propertyType?.confidence ?? null,
       },
       extraction: {
         status: "partial",
-        fields_found: [price, surface, rooms, bedrooms, city, monthlyRent, dpe, ges].filter(
-          (v) => v !== null && v !== "",
+        fields_found: [price, surface, rooms, bedrooms, city, monthlyRent, dpe, ges, propertyType?.type].filter(
+          (v) => v !== null && v !== "" && v !== undefined,
         ).length,
         note: "Les données extraites doivent être vérifiées avant analyse. Bricky n'invente aucune valeur.",
       },
