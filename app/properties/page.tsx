@@ -38,6 +38,8 @@ function verdictLabel(verdict: string | null | undefined): { label: string; clas
   return { label: "Non évalué", className: "verdict-pending" };
 }
 
+const EMPTY_SEEN_KEY = "bricky_empty_seen";
+
 export default function PropertiesPage() {
   const router = useRouter();
   const [userEmail, setUserEmail] = useState("");
@@ -46,6 +48,7 @@ export default function PropertiesPage() {
   const [loading, setLoading] = useState(true);
   const [canCompare, setCanCompare] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
+  const [showFirstAnalysisCongrats, setShowFirstAnalysisCongrats] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -72,6 +75,20 @@ export default function PropertiesPage() {
     return () => { cancelled = true; };
   }, [router]);
 
+  useEffect(() => {
+    if (loading || error || !rows) return;
+    try {
+      if (rows.length === 0) {
+        window.localStorage.setItem(EMPTY_SEEN_KEY, "1");
+      } else if (window.localStorage.getItem(EMPTY_SEEN_KEY) === "1") {
+        setShowFirstAnalysisCongrats(true);
+        window.localStorage.removeItem(EMPTY_SEEN_KEY);
+      }
+    } catch {
+      // localStorage indisponible (navigation privée, etc.) : pas grave, on ignore.
+    }
+  }, [loading, error, rows]);
+
   function toggleSelect(id: string, e: React.MouseEvent | React.ChangeEvent) {
     e.preventDefault();
     e.stopPropagation();
@@ -96,9 +113,18 @@ export default function PropertiesPage() {
 
       {!loading && !error && rows && rows.length === 0 && (
         <div className="result-panel" style={{ textAlign: "center" }}>
+          <img src="/mascot-avatar-round.png" alt="" className="welcome-mascot" />
           <span className="eyebrow">Bienvenue sur Bricky</span>
           <h2 style={{ margin: "14px 0 8px" }}>Analysez votre premier bien</h2>
-          <p className="empty-note" style={{ maxWidth: 480, margin: "0 auto 28px" }}>Collez une annonce ou déposez un PDF : Bricky calcule le rendement, le cash-flow, les risques et tout ce qu'il faut vérifier avant de vous engager.</p>
+          <p className="empty-note" style={{ maxWidth: 480, margin: "0 auto 20px" }}>Collez une annonce ou déposez un PDF : Bricky calcule le rendement, le cash-flow, les risques et tout ce qu'il faut vérifier avant de vous engager.</p>
+          <div className="onboarding-checklist">
+            <b>Avant de commencer, préparez :</b>
+            <ul>
+              <li>L'adresse du bien</li>
+              <li>Le prix d'achat (ou le lien de l'annonce)</li>
+              <li>Le loyer si vous le connaissez déjà — sinon Bricky l'estime automatiquement</li>
+            </ul>
+          </div>
           <div className="steps-grid" style={{ textAlign: "left", marginBottom: 28 }}>
             <div className="card step-card"><span className="step-number">1</span><b>Collez ou déposez</b><p className="empty-note">Un lien d'annonce ou un PDF (annonce, dossier).</p></div>
             <div className="card step-card"><span className="step-number">2</span><b>Bricky analyse</b><p className="empty-note">Rendement, cash-flow, risques, cadastre et urbanisme.</p></div>
@@ -109,36 +135,48 @@ export default function PropertiesPage() {
       )}
 
       {!loading && !error && rows && rows.length > 0 && (
-        <div className="properties-list">
-          {rows.map((row) => {
-            const analysis = latestAnalysis(row);
-            const verdict = verdictLabel(analysis?.verdict);
-            const isSelected = selected.includes(row.id);
-            return (
-              <a key={row.id} href={"/analyze?property_id=" + row.id} className={"property-row" + (isSelected ? " property-row-selected" : "")}>
-                <label
-                  className={"property-row-check" + (canCompare ? "" : " property-row-check-locked")}
-                  title={canCompare ? "Sélectionner pour comparer" : "Comparaison disponible avec le palier Pro"}
-                  onClick={(e) => toggleSelect(row.id, e)}
-                >
-                  <input type="checkbox" checked={isSelected} readOnly />
-                </label>
-                <div>
-                  <b>{row.title || row.address || "Bien sans titre"}</b>
-                  <span>{[row.address, row.city].filter(Boolean).join(", ") || "Adresse non renseignée"}</span>
-                </div>
-                <div className="property-row-metrics">
-                  {row.price != null && <span>{row.price.toLocaleString("fr-FR")} €</span>}
-                  {row.surface_m2 != null && <span>{row.surface_m2} m²</span>}
-                  {analysis?.overall_score != null && <span>Score {analysis.overall_score}/100</span>}
-                </div>
-                <div className="property-row-verdict">
-                  <span className={"verdict-pill " + verdict.className}>{verdict.label}</span>
-                </div>
-              </a>
-            );
-          })}
-        </div>
+        <>
+          {showFirstAnalysisCongrats && (
+            <div className="first-analysis-banner">
+              <img src="/mascot-avatar-round.png" alt="" />
+              <div>
+                <b>Bravo, votre première analyse est prête !</b>
+                <p>Consultez le verdict ci-dessous, téléchargez le dossier PDF, ou lancez une nouvelle analyse pour comparer un autre bien.</p>
+              </div>
+              <button type="button" className="first-analysis-dismiss" aria-label="Fermer" onClick={() => setShowFirstAnalysisCongrats(false)}>×</button>
+            </div>
+          )}
+          <div className="properties-list">
+            {rows.map((row) => {
+              const analysis = latestAnalysis(row);
+              const verdict = verdictLabel(analysis?.verdict);
+              const isSelected = selected.includes(row.id);
+              return (
+                <a key={row.id} href={"/analyze?property_id=" + row.id} className={"property-row" + (isSelected ? " property-row-selected" : "")}>
+                  <label
+                    className={"property-row-check" + (canCompare ? "" : " property-row-check-locked")}
+                    title={canCompare ? "Sélectionner pour comparer" : "Comparaison disponible avec le palier Pro"}
+                    onClick={(e) => toggleSelect(row.id, e)}
+                  >
+                    <input type="checkbox" checked={isSelected} readOnly />
+                  </label>
+                  <div>
+                    <b>{row.title || row.address || "Bien sans titre"}</b>
+                    <span>{[row.address, row.city].filter(Boolean).join(", ") || "Adresse non renseignée"}</span>
+                  </div>
+                  <div className="property-row-metrics">
+                    {row.price != null && <span>{row.price.toLocaleString("fr-FR")} €</span>}
+                    {row.surface_m2 != null && <span>{row.surface_m2} m²</span>}
+                    {analysis?.overall_score != null && <span>Score {analysis.overall_score}/100</span>}
+                  </div>
+                  <div className="property-row-verdict">
+                    <span className={"verdict-pill " + verdict.className}>{verdict.label}</span>
+                  </div>
+                </a>
+              );
+            })}
+          </div>
+        </>
       )}
     </section>
 
