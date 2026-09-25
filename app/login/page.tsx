@@ -42,8 +42,9 @@ export default function LoginPage() {
 
   return (
     <main className="page">
-      <nav className="nav"><div className="brand"><span className="mark">B</span>Bricky</div><span className="navlink">Decision intelligence</span></nav>
+      <nav className="nav"><div className="brand"><img src="/bricky-logo.png" alt="Bricky" className="brand-logo" /></div><span className="navlink">Decision intelligence</span></nav>
       <section className="analysis-shell login-shell">
+        <img src="/mascot-avatar-square.png" alt="" className="login-mascot" />
         <div className="analysis-intro">
           <span className="eyebrow">Bricky · V1</span>
           <h1>Décidez avec les données du bien.</h1>
