@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { extractText, getDocumentProxy } from "unpdf";
+import { classifyPropertyType } from "@/lib/data/propertyTypeClassifier";
 
 export const maxDuration = 30;
 
@@ -86,6 +87,7 @@ export async function POST(request: NextRequest) {
     const cityMatch = bodyText.match(CITY_RE);
     const city = cityMatch ? cityMatch[2].trim() : null;
     const titleGuess = cleanText(bodyText.slice(0, 120));
+    const propertyType = classifyPropertyType(titleGuess, bodyText.slice(0, 4000));
 
     return NextResponse.json({
       source_url: file.name,
@@ -101,11 +103,14 @@ export async function POST(request: NextRequest) {
         ges_class: ges ? ges.toUpperCase() : null,
         city,
         monthly_rent: monthlyRent,
+        property_type: propertyType?.type ?? null,
+        property_type_label: propertyType?.label ?? null,
+        property_type_confidence: propertyType?.confidence ?? null,
       },
       extraction: {
         status: "partial",
-        fields_found: [price, surface, rooms, bedrooms, monthlyRent, dpe, ges, city].filter(
-          (v) => v !== null && v !== "",
+        fields_found: [price, surface, rooms, bedrooms, monthlyRent, dpe, ges, city, propertyType?.type].filter(
+          (v) => v !== null && v !== "" && v !== undefined,
         ).length,
         note: "Données extraites du PDF fourni (lecture directe du texte, sans IA). Bricky n'invente aucune valeur : vérifie chaque champ avant analyse.",
       },
