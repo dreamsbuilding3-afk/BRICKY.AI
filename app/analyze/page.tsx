@@ -4,9 +4,10 @@ import { FormEvent, Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabase/client";
 import { AppNav } from "../../components/AppNav";
+import { PROPERTY_TYPE_LABELS } from "../../lib/data/propertyTypeClassifier";
 
 type AnalysisResult = { property_id?: string; analysis_id?: string; [key: string]: unknown };
-type Payload = { title: string; city: string; address: string; price: string; surface_m2: string; rooms: string; bedrooms: string; dpe_class: string; ges_class: string; monthly_rent: string; down_payment: string; loan_rate_pct: string; loan_duration_years: string; renovation_budget: string; source_url: string };
+type Payload = { title: string; city: string; address: string; price: string; surface_m2: string; rooms: string; bedrooms: string; property_type: string; dpe_class: string; ges_class: string; monthly_rent: string; down_payment: string; loan_rate_pct: string; loan_duration_years: string; renovation_budget: string; source_url: string };
 type CadastralResult = { cadastral?: { commune_code: string; section_prefix: string; section: string; parcel_number: string; parcel_id: string; source: string; source_url: string; plan_url: string; geometry?: unknown; parcel_area_m2?: number }; error?: string };
 type UrbanismeResult = { urbanisme?: { zone_type: string | null; zone_label: string | null; zone_label_long: string | null; destination_dominante: string | null; regulation_url: string | null; insee_code: string | null; source: string; metadata?: { typezone_label?: string | null } }; error?: string; note?: string };
 type BatimentResult = { batiment?: { hauteur_m: number | null; nature: string | null; usage_1: string | null; usage_2: string | null; nombre_etages: number | null; nombre_logements: number | null; date_construction: string | null; geometry?: unknown; source: string }; error?: string; note?: string };
@@ -19,7 +20,7 @@ function AnalyzePageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const propertyIdParam = searchParams.get("property_id");
-  const [payload, setPayload] = useState<Payload>({ title: "", city: "", address: "", price: "", surface_m2: "", rooms: "", bedrooms: "", dpe_class: "", ges_class: "", monthly_rent: "", down_payment: "", loan_rate_pct: "", loan_duration_years: "", renovation_budget: "", source_url: "" });
+  const [payload, setPayload] = useState<Payload>({ title: "", city: "", address: "", price: "", surface_m2: "", rooms: "", bedrooms: "", property_type: "", dpe_class: "", ges_class: "", monthly_rent: "", down_payment: "", loan_rate_pct: "", loan_duration_years: "", renovation_budget: "", source_url: "" });
   const [loading, setLoading] = useState(false);
   const [extracting, setExtracting] = useState(false);
   const [extractingFile, setExtractingFile] = useState(false);
@@ -40,7 +41,7 @@ function AnalyzePageInner() {
       try {
         const { data: propertyRow, error: propertyError } = await supabase
           .from("properties")
-          .select("id, title, city, address, price, surface_m2")
+          .select("id, title, city, address, price, surface_m2, property_type")
           .eq("id", propertyIdParam)
           .single();
         if (propertyError || !propertyRow) throw new Error("Bien introuvable ou non accessible.");
@@ -60,6 +61,7 @@ function AnalyzePageInner() {
           address: propertyRow.address || "",
           price: propertyRow.price != null ? String(propertyRow.price) : "",
           surface_m2: propertyRow.surface_m2 != null ? String(propertyRow.surface_m2) : "",
+          property_type: propertyRow.property_type || "",
         }));
         if (analysisRow) {
           setResult({
@@ -84,6 +86,29 @@ function AnalyzePageInner() {
     return () => { cancelled = true; };
   }, [propertyIdParam]);
 
+  async function refreshAnalysisFromDb(propertyId: string) {
+    const { data: analysisRow } = await supabase
+      .from("analyses")
+      .select("id, property_id, financial_snapshot, decision_snapshot, overall_score, confidence_score, verdict, status, created_at")
+      .eq("property_id", propertyId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (analysisRow) {
+      setResult({
+        property_id: propertyId,
+        analysis_id: analysisRow.id,
+        analysis: {
+          financial_snapshot: analysisRow.financial_snapshot,
+          decision_snapshot: analysisRow.decision_snapshot,
+          overall_score: analysisRow.overall_score,
+          confidence_score: analysisRow.confidence_score,
+          verdict: analysisRow.verdict,
+        },
+      });
+    }
+  }
+
   async function extractListing() {
     if (!payload.source_url.trim()) return;
     setExtracting(true); setError(""); setExtractNote("");
@@ -92,13 +117,13 @@ function AnalyzePageInner() {
       const data = await response.json();
       if (!response.ok) throw new Error(data?.error || "Impossible de lire cette annonce.");
       const e = data.extracted || {};
-      setPayload((current) => ({ ...current, title: e.title || current.title, city: e.city || current.city, address: e.address || current.address, price: e.price != null ? String(e.price) : current.price, surface_m2: e.surface_m2 != null ? String(e.surface_m2) : current.surface_m2, rooms: e.rooms != null ? String(e.rooms) : current.rooms, bedrooms: e.bedrooms != null ? String(e.bedrooms) : current.bedrooms, dpe_class: e.dpe_class || current.dpe_class, ges_class: e.ges_class || current.ges_class, monthly_rent: e.monthly_rent != null ? String(e.monthly_rent) : current.monthly_rent }));
-      setExtractNote(`${data.extraction?.fields_found ?? 0} données détectées. Vérifie-les avant de lancer l'analyse.`);
+      setPayload((current) => ({ ...current, title: e.title || current.title, city: e.city || current.city, address: e.address || current.address, price: e.price != null ? String(e.price) : current.price, surface_m2: e.surface_m2 != null ? String(e.surface_m2) : current.surface_m2, rooms: e.rooms != null ? String(e.rooms) : current.rooms, bedrooms: e.bedrooms != null ? String(e.bedrooms) : current.bedrooms, property_type: e.property_type || current.property_type, dpe_class: e.dpe_class || current.dpe_class, ges_class: e.ges_class || current.ges_class, monthly_rent: e.monthly_rent != null ? String(e.monthly_rent) : current.monthly_rent }));
+      const typeNote = e.property_type_label ? ` Type détecté : ${e.property_type_label}.` : "";
+      setExtractNote(`${data.extraction?.fields_found ?? 0} données détectées.${typeNote} Vérifie-les avant de lancer l'analyse.`);
     } catch (err) { setError(err instanceof Error ? err.message : "Extraction impossible."); }
     finally { setExtracting(false); }
   }
 
-  
   async function extractFromFile(file: File) {
     setExtractingFile(true); setError(""); setExtractNote("");
     try {
@@ -111,13 +136,14 @@ function AnalyzePageInner() {
       const data = await response.json();
       if (!response.ok) throw new Error(data?.error || "Impossible de lire ce fichier.");
       const e = data.extracted || {};
-      setPayload((current) => ({ ...current, title: e.title || current.title, city: e.city || current.city, price: e.price != null ? String(e.price) : current.price, surface_m2: e.surface_m2 != null ? String(e.surface_m2) : current.surface_m2, rooms: e.rooms != null ? String(e.rooms) : current.rooms, bedrooms: e.bedrooms != null ? String(e.bedrooms) : current.bedrooms, dpe_class: e.dpe_class || current.dpe_class, ges_class: e.ges_class || current.ges_class, monthly_rent: e.monthly_rent != null ? String(e.monthly_rent) : current.monthly_rent }));
-      setExtractNote(`${data.extraction?.fields_found ?? 0} données détectées dans le fichier. Vérifie-les avant de lancer l'analyse.`);
+      setPayload((current) => ({ ...current, title: e.title || current.title, city: e.city || current.city, price: e.price != null ? String(e.price) : current.price, surface_m2: e.surface_m2 != null ? String(e.surface_m2) : current.surface_m2, rooms: e.rooms != null ? String(e.rooms) : current.rooms, bedrooms: e.bedrooms != null ? String(e.bedrooms) : current.bedrooms, property_type: e.property_type || current.property_type, dpe_class: e.dpe_class || current.dpe_class, ges_class: e.ges_class || current.ges_class, monthly_rent: e.monthly_rent != null ? String(e.monthly_rent) : current.monthly_rent }));
+      const typeNote = e.property_type_label ? ` Type détecté : ${e.property_type_label}.` : "";
+      setExtractNote(`${data.extraction?.fields_found ?? 0} données détectées dans le fichier.${typeNote} Vérifie-les avant de lancer l'analyse.`);
     } catch (err) { setError(err instanceof Error ? err.message : "Extraction du fichier impossible."); }
     finally { setExtractingFile(false); }
   }
 
-async function handleSubmit(event: FormEvent) {
+  async function handleSubmit(event: FormEvent) {
     event.preventDefault(); setLoading(true); setError(""); setResult(null);
     try {
       const { data: sessionData } = await supabase.auth.getSession(); const token = sessionData.session?.access_token;
@@ -141,15 +167,15 @@ async function handleSubmit(event: FormEvent) {
         <div className="url-import"><label>URL de l'annonce<input value={payload.source_url} onChange={(e) => update("source_url", e.target.value)} placeholder="https://..." /></label><button type="button" className="secondary-button" onClick={extractListing} disabled={extracting || !payload.source_url.trim()}>{extracting ? "Lecture…" : "Extraire les données"}</button></div><div className="url-import file-import"><label>Ou dépose un fichier (PDF de l'annonce ou du dossier)<input type="file" accept="application/pdf" onChange={(e) => { const f = e.target.files?.[0]; if (f) extractFromFile(f); e.target.value = ""; }} disabled={extractingFile} /></label>{extractingFile && <span className="extract-note">Lecture du fichier…</span>}</div>
         {extractNote && <div className="extract-note">✓ {extractNote}</div>}
         <form className="property-form" onSubmit={handleSubmit}><div className="form-grid">
-          <label>Titre<input value={payload.title} onChange={(e) => update("title", e.target.value)} /></label><label>Ville<input value={payload.city} onChange={(e) => update("city", e.target.value)} placeholder="Fort-de-France" /></label><label>Adresse<input value={payload.address} onChange={(e) => update("address", e.target.value)} placeholder="Adresse du bien" /></label><label>Prix (€)<input required type="number" min="1" value={payload.price} onChange={(e) => update("price", e.target.value)} placeholder="250000" /></label><label>Surface (m²)<input required type="number" min="1" value={payload.surface_m2} onChange={(e) => update("surface_m2", e.target.value)} placeholder="65" /></label><label>Loyer mensuel (€)<input type="number" min="0" value={payload.monthly_rent} onChange={(e) => update("monthly_rent", e.target.value)} placeholder="1200" /></label><label>Apport (€)<input type="number" min="0" value={payload.down_payment} onChange={(e) => update("down_payment", e.target.value)} placeholder="40000" /></label><label>Taux du prêt (%)<input type="number" min="0" step="0.1" value={payload.loan_rate_pct} onChange={(e) => update("loan_rate_pct", e.target.value)} placeholder="3.9" /></label><label>Durée du prêt (années)<input type="number" min="1" value={payload.loan_duration_years} onChange={(e) => update("loan_duration_years", e.target.value)} placeholder="20" /></label><label>Budget travaux (€)<input type="number" min="0" value={payload.renovation_budget} onChange={(e) => update("renovation_budget", e.target.value)} placeholder="0" /></label><label>Pièces<input type="number" min="0" value={payload.rooms} onChange={(e) => update("rooms", e.target.value)} placeholder="3" /></label><label>Chambres<input type="number" min="0" value={payload.bedrooms} onChange={(e) => update("bedrooms", e.target.value)} placeholder="2" /></label><label>DPE<input value={payload.dpe_class} onChange={(e) => update("dpe_class", e.target.value.toUpperCase())} placeholder="D" maxLength={1} /></label><label>GES<input value={payload.ges_class} onChange={(e) => update("ges_class", e.target.value.toUpperCase())} placeholder="D" maxLength={1} /></label>
+          <label>Titre<input value={payload.title} onChange={(e) => update("title", e.target.value)} /></label><label>Ville<input value={payload.city} onChange={(e) => update("city", e.target.value)} placeholder="Fort-de-France" /></label><label>Adresse<input value={payload.address} onChange={(e) => update("address", e.target.value)} placeholder="Adresse du bien" /></label><label>Type de bien<select value={payload.property_type} onChange={(e) => update("property_type", e.target.value)}><option value="">Non précisé (détection auto si possible)</option>{Object.entries(PROPERTY_TYPE_LABELS).map(([code, label]) => <option key={code} value={code}>{label}</option>)}</select></label><label>Prix (€)<input required type="number" min="1" value={payload.price} onChange={(e) => update("price", e.target.value)} placeholder="250000" /></label><label>Surface (m²)<input required type="number" min="1" value={payload.surface_m2} onChange={(e) => update("surface_m2", e.target.value)} placeholder="65" /></label><label>Loyer mensuel (€)<input type="number" min="0" value={payload.monthly_rent} onChange={(e) => update("monthly_rent", e.target.value)} placeholder="1200" /></label><label>Apport (€)<input type="number" min="0" value={payload.down_payment} onChange={(e) => update("down_payment", e.target.value)} placeholder="40000" /></label><label>Taux du prêt (%)<input type="number" min="0" step="0.1" value={payload.loan_rate_pct} onChange={(e) => update("loan_rate_pct", e.target.value)} placeholder="3.9" /></label><label>Durée du prêt (années)<input type="number" min="1" value={payload.loan_duration_years} onChange={(e) => update("loan_duration_years", e.target.value)} placeholder="20" /></label><label>Budget travaux (€)<input type="number" min="0" value={payload.renovation_budget} onChange={(e) => update("renovation_budget", e.target.value)} placeholder="0" /></label><label>Pièces<input type="number" min="0" value={payload.rooms} onChange={(e) => update("rooms", e.target.value)} placeholder="3" /></label><label>Chambres<input type="number" min="0" value={payload.bedrooms} onChange={(e) => update("bedrooms", e.target.value)} placeholder="2" /></label><label>DPE<input value={payload.dpe_class} onChange={(e) => update("dpe_class", e.target.value.toUpperCase())} placeholder="D" maxLength={1} /></label><label>GES<input value={payload.ges_class} onChange={(e) => update("ges_class", e.target.value.toUpperCase())} placeholder="D" maxLength={1} /></label>
         </div><button className="primary-button" disabled={loading}>{loading ? "Analyse en cours…" : "Lancer l’analyse Bricky →"}</button>{error && <div className="error-box">{error}</div>}</form>
       </>}
-      {result && <AnalysisDashboard result={result} address={payload.address} />}
+      {result && <AnalysisDashboard result={result} address={payload.address} onResultRefresh={refreshAnalysisFromDb} />}
     </section>
   </main>;
 }
 
-function AnalysisDashboard({ result, address }: { result: AnalysisResult; address?: string }) {
+function AnalysisDashboard({ result, address, onResultRefresh }: { result: AnalysisResult; address?: string; onResultRefresh?: (propertyId: string) => void }) {
   const [shareStatus, setShareStatus] = useState<{ loading: boolean; url: string | null; error: string | null }>({ loading: false, url: null, error: null });
   async function handleShare() {
     if (!result?.analysis_id) return;
@@ -234,7 +260,8 @@ function AnalysisDashboard({ result, address }: { result: AnalysisResult; addres
     <div className="metric-grid"><Metric label="Loyer mensuel" value={metrics.monthly_rent} suffix=" €" /><Metric label="Revenu annuel net" value={metrics.annual_net_income} suffix=" €" /><Metric label="Rendement brut" value={metrics.gross_yield_pct} suffix=" %" /><Metric label="Rendement net" value={metrics.net_yield_pct} suffix=" %" /></div>
     {propertyId && <CadastralPanel propertyId={propertyId} address={address} />}
     {propertyId && <UrbanismePanel propertyId={propertyId} address={address} />}
-{propertyId && <LocationPanel propertyId={propertyId} address={address} />}
+    {propertyId && <EnvironmentalRiskPanel propertyId={propertyId} address={address} onAnalysisRefreshed={() => onResultRefresh?.(propertyId)} />}
+    {propertyId && <LocationPanel propertyId={propertyId} address={address} />}
     <div className="dashboard-section"><h3>Achat &amp; financement (estimation)</h3><div className="metric-grid"><Metric label="Frais de notaire" value={acquisition.notary_fees} suffix=" €" /><Metric label="Frais de garantie" value={acquisition.guarantee_fees} suffix=" €" /><Metric label="Travaux" value={acquisition.renovation_budget} suffix=" €" /><Metric label="Coût total d'acquisition" value={acquisition.total_acquisition_cost} suffix=" €" /></div><div className="metric-grid" style={{marginTop:12}}><Metric label="Mensualité de prêt" value={financing.monthly_loan_payment} suffix=" €/mois" /><Metric label="Cash-flow mensuel" value={financing.monthly_cashflow} suffix=" €" /><Metric label="Rentabilité brute (coût total)" value={acquisition.gross_yield_on_total_cost_pct} suffix=" %" /><Metric label="Rentabilité nette (coût total)" value={acquisition.net_yield_on_total_cost_pct} suffix=" %" /></div>{financing.is_estimated ? <p className="extract-note">Estimation Bricky (apport ~10%, taux ~3,9% sur 20 ans, garantie ~1,2%) tant que ces données ne sont pas renseignées — à affiner avec votre courtier.</p> : null}</div>
     <div className="dashboard-section"><h3>Simulateur de financement</h3><div className="sim-grid"><label>Apport ({simDownPct}%)<input type="range" min={0} max={50} step={1} value={simDownPct} onChange={(e) => setSimDownPct(Number(e.target.value))} /></label><label>Taux ({simRate.toFixed(2)}%)<input type="range" min={0.5} max={7} step={0.1} value={simRate} onChange={(e) => setSimRate(Number(e.target.value))} /></label><label>Duree ({simDuration} ans)<input type="range" min={5} max={30} step={1} value={simDuration} onChange={(e) => setSimDuration(Number(e.target.value))} /></label></div><div className="metric-grid"><Metric label="Apport" value={Math.round(simDownPayment)} suffix=" €" /><Metric label="Montant emprunte" value={Math.round(simLoanAmount)} suffix=" €" /><Metric label="Mensualite" value={Math.round(simMonthlyPayment)} suffix=" €" /><Metric label="Cashflow mensuel" value={Math.round(simCashflow)} suffix=" €" /></div><p className="extract-note">Simulation en direct — ajustez les curseurs pour voir l'impact sur la mensualite et le cashflow.</p></div>
     <div className="dashboard-section market-card"><div className="section-heading"><div><h3>Valeur marché</h3><small>Transactions comparables · données disponibles</small></div><span className="market-badge">{marketReady ? `${market.confidence_score ?? 0}% confiance` : "Données insuffisantes"}</span></div>{marketReady ? <div className="market-grid"><Metric label="Prix du bien" value={market.property_price_m2} suffix=" €/m²" /><Metric label="Marché médian" value={market.market_price_m2_median} suffix=" €/m²" /><Metric label="Valeur estimée" value={market.market_value_estimate} suffix=" €" /><Metric label="Écart au marché" value={market.market_gap_pct} suffix=" %" /></div> : <p className="empty-note">Bricky ne dispose pas encore de suffisamment de transactions comparables pour produire une estimation fiable. Aucune valeur n'est inventée.</p>}</div>
@@ -242,54 +269,54 @@ function AnalysisDashboard({ result, address }: { result: AnalysisResult; addres
     {actions.length > 0 && <div className="dashboard-section"><h3>Ce qu’il faut faire</h3><ul>{actions.map((a: string, i: number) => <li key={i}>{a}</li>)}</ul></div>}
     {risks.length > 0 && <div className="dashboard-section"><h3>Points de vigilance</h3><div className="risk-list">{risks.map((r: any, i: number) => <div className="risk-item" key={i}><b>{r.title || "Risque"}</b><span>{r.severity || ""}</span><p>{r.explanation || r.impact || ""}</p></div>)}</div></div>}
     {missing.length > 0 && <div className="dashboard-section"><h3>Données manquantes</h3><div className="missing-list">{missing.map((m: any, i: number) => <div key={i}><b>{m.label || m.field_key}</b><p>{m.suggested_question || m.impact || "À vérifier avant décision."}</p></div>)}</div></div>}
-{result.analysis_id && <ChecklistPanel analysisId={result.analysis_id} />}
+    {result.analysis_id && <ChecklistPanel analysisId={result.analysis_id} />}
   </section>;
 }
 
 type ChecklistItem = { id: string; title: string; description: string | null; priority: string; completed: boolean };
 
 function ChecklistPanel({ analysisId }: { analysisId: string }) {
-const [items, setItems] = useState<ChecklistItem[] | null>(null);
-const [error, setError] = useState("");
+  const [items, setItems] = useState<ChecklistItem[] | null>(null);
+  const [error, setError] = useState("");
 
-useEffect(() => {
-let cancelled = false;
-async function load() {
-const { data, error: queryError } = await supabase
-.from("checklist_items")
-.select("id, title, description, priority, completed")
-.eq("analysis_id", analysisId)
-.order("priority", { ascending: true });
-if (cancelled) return;
-if (queryError) { setError("Impossible de charger la checklist."); return; }
-setItems((data as ChecklistItem[]) || []);
-}
-load();
-return () => { cancelled = true; };
-}, [analysisId]);
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      const { data, error: queryError } = await supabase
+        .from("checklist_items")
+        .select("id, title, description, priority, completed")
+        .eq("analysis_id", analysisId)
+        .order("priority", { ascending: true });
+      if (cancelled) return;
+      if (queryError) { setError("Impossible de charger la checklist."); return; }
+      setItems((data as ChecklistItem[]) || []);
+    }
+    load();
+    return () => { cancelled = true; };
+  }, [analysisId]);
 
-async function toggle(item: ChecklistItem) {
-setItems((current) => current ? current.map((i) => (i.id === item.id ? { ...i, completed: !i.completed } : i)) : current);
-await supabase.from("checklist_items").update({ completed: !item.completed }).eq("id", item.id);
-}
+  async function toggle(item: ChecklistItem) {
+    setItems((current) => current ? current.map((i) => (i.id === item.id ? { ...i, completed: !i.completed } : i)) : current);
+    await supabase.from("checklist_items").update({ completed: !item.completed }).eq("id", item.id);
+  }
 
-if (error) return <div className="dashboard-section"><h3>Checklist de vérification</h3><div className="error-box">{error}</div></div>;
-if (!items || items.length === 0) return null;
+  if (error) return <div className="dashboard-section"><h3>Checklist de vérification</h3><div className="error-box">{error}</div></div>;
+  if (!items || items.length === 0) return null;
 
-const priorityLabel = (p: string) => (p === "critical" ? "Critique" : p === "high" ? "Prioritaire" : "À vérifier");
-const done = items.filter((i) => i.completed).length;
+  const priorityLabel = (p: string) => (p === "critical" ? "Critique" : p === "high" ? "Prioritaire" : "À vérifier");
+  const done = items.filter((i) => i.completed).length;
 
-return <div className="dashboard-section">
-<div className="section-heading"><div><h3>Checklist de vérification</h3><small>{done}/{items.length} points traités avant de vous engager</small></div></div>
-<div className="checklist-list">
-{items.map((item) => (
-<label className={`checklist-item checklist-${item.priority}`} key={item.id}>
-<input type="checkbox" checked={item.completed} onChange={() => toggle(item)} />
-<div><b>{item.title}</b><span className="checklist-priority">{priorityLabel(item.priority)}</span></div>
-</label>
-))}
-</div>
-</div>;
+  return <div className="dashboard-section">
+    <div className="section-heading"><div><h3>Checklist de vérification</h3><small>{done}/{items.length} points traités avant de vous engager</small></div></div>
+    <div className="checklist-list">
+      {items.map((item) => (
+        <label className={`checklist-item checklist-${item.priority}`} key={item.id}>
+          <input type="checkbox" checked={item.completed} onChange={() => toggle(item)} />
+          <div><b>{item.title}</b><span className="checklist-priority">{priorityLabel(item.priority)}</span></div>
+        </label>
+      ))}
+    </div>
+  </div>;
 }
 
 function CadastralPanel({ propertyId, address }: { propertyId: string; address?: string }) {
@@ -537,86 +564,189 @@ function UrbanismePanel({ propertyId, address }: { propertyId: string; address?:
   </div>;
 }
 
+type EnvironmentalRiskResult = {
+  flood_risk?: boolean | null;
+  groundwater_rise_risk?: boolean | null;
+  seismic_risk?: boolean | null;
+  seismic_level?: string | null;
+  ground_movement_risk?: boolean | null;
+  clay_shrink_swell_risk?: boolean | null;
+  clay_shrink_swell_level?: string | null;
+  radon_risk?: boolean | null;
+  radon_level?: string | null;
+  icpe_risk?: boolean | null;
+  soil_pollution_risk?: boolean | null;
+  mining_risk?: boolean | null;
+  humidity_building_alert_level?: string | null;
+  underground_study_recommended?: boolean | null;
+  risk_count?: number | null;
+};
+
+function EnvironmentalRiskPanel({ propertyId, address, onAnalysisRefreshed }: { propertyId: string; address?: string; onAnalysisRefreshed?: () => void }) {
+  const [result, setResult] = useState<EnvironmentalRiskResult | null>(null);
+  const [reportUrl, setReportUrl] = useState<string | null>(null);
+  const [status, setStatus] = useState<"idle" | "loading" | "failed" | "success">("idle");
+  const [note, setNote] = useState("");
+
+  useEffect(() => {
+    if (!address || !address.trim() || result) return;
+    let cancelled = false;
+    async function attemptLookup() {
+      setStatus("loading");
+      try {
+        const { data } = await supabase.auth.getSession();
+        const token = data.session?.access_token;
+        if (!token) throw new Error("Session expirée.");
+        const response = await fetch("/api/environmental-risks/lookup", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ property_id: propertyId, address }),
+        });
+        const body = await response.json();
+        if (cancelled) return;
+        if (!response.ok) {
+          setStatus("failed"); setNote(body?.error || "Étude de terrain indisponible pour cette adresse.");
+          return;
+        }
+        setResult(body.environmental_risks || null);
+        setReportUrl(body.report_url || null);
+        setStatus("success");
+        if (body.analysis_refreshed && onAnalysisRefreshed) onAnalysisRefreshed();
+      } catch (err) {
+        if (!cancelled) { setStatus("failed"); setNote(err instanceof Error ? err.message : "Étude de terrain indisponible."); }
+      }
+    }
+    attemptLookup();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [address, propertyId]);
+
+  if (!address) return null;
+
+  const levelLabel = (level?: string | null) => (level === "eleve" || level === "fort") ? "Élevé" : level === "moyen" ? "Moyen" : (level === "faible" || level === "indetermine") ? "Faible" : "Non connu";
+  const levelClass = (level?: string | null) => (level === "eleve" || level === "fort") ? "risk-badge-high" : level === "moyen" ? "risk-badge-medium" : "risk-badge-low";
+
+  const otherRisks = result ? [
+    { label: "Inondation", present: result.flood_risk },
+    { label: "Remontée de nappe", present: result.groundwater_rise_risk },
+    { label: "Séisme", present: result.seismic_risk, level: result.seismic_level },
+    { label: "Radon", present: result.radon_risk, level: result.radon_level },
+    { label: "Installations classées (ICPE)", present: result.icpe_risk },
+  ] : [];
+
+  return <div className="dashboard-section cadastral-card">
+    <div className="section-heading"><div><span className="eyebrow">Étude du terrain</span><h3>Risques de sol &amp; environnement</h3><small>Géorisques (BRGM / ministère de la Transition écologique)</small></div>{result && <span className="market-badge">{result.risk_count ?? 0} aléa(s) recensé(s)</span>}</div>
+    {status === "loading" && <div className="extract-note">Analyse du sol et des risques environnementaux à partir de l&apos;adresse…</div>}
+    {status === "failed" && <div className="error-box">{note}</div>}
+    {result && (
+      <div className="env-risk-grid">
+        <div className="env-risk-card">
+          <b>Potentiel humidité vers la bâtisse</b>
+          <span className={`risk-badge ${levelClass(result.humidity_building_alert_level)}`}>{levelLabel(result.humidity_building_alert_level)}</span>
+          <p>Basé sur le retrait-gonflement des argiles{result.groundwater_rise_risk ? " et la remontée de nappe" : ""} recensés sur cette zone : le sol peut travailler lors des cycles sécheresse/humidité et fissurer les fondations.</p>
+        </div>
+        <div className="env-risk-card">
+          <b>Étude du sol souterrain</b>
+          <span className={`risk-badge ${result.underground_study_recommended ? "risk-badge-medium" : "risk-badge-low"}`}>{result.underground_study_recommended ? "Étude recommandée" : "Pas de signal fort"}</span>
+          <p>{result.mining_risk ? "Cavité souterraine ou risque minier répertorié. " : ""}{result.soil_pollution_risk ? "Site à proximité d'une pollution des sols recensée. " : ""}{result.ground_movement_risk ? "Mouvement de terrain répertorié sur la commune. " : ""}{!result.mining_risk && !result.soil_pollution_risk && !result.ground_movement_risk ? "Aucun signal fort de cavité, pollution ou mouvement de terrain sur cette zone." : ""}</p>
+        </div>
+      </div>
+    )}
+    {result && otherRisks.length > 0 && (
+      <div className="env-risk-list">
+        {otherRisks.map((r) => (
+          <div className={`env-risk-chip ${r.present ? "env-risk-chip-present" : ""}`} key={r.label}>
+            <span>{r.label}</span>
+            <b>{r.present ? (r.level ? levelLabel(r.level) : "Recensé") : "Non recensé"}</b>
+          </div>
+        ))}
+      </div>
+    )}
+    {result && (
+      <small>Source : Géorisques (data.gouv.fr / BRGM). Indicatif — ne remplace pas une étude de sol (norme NF P94-500) ou un état des risques (ERP) officiel.{reportUrl ? <> · <a href={reportUrl} target="_blank" rel="noreferrer">Voir le rapport officiel →</a></> : null}</small>
+    )}
+  </div>;
+}
 
 type Poi = { name: string; category: string; category_label: string; distance_m: number };
 type LocationResult = { location: { latitude: number; longitude: number }; pois: Poi[]; counts: Record<string, number>; source: string; note?: string };
 
 function LocationPanel({ propertyId, address }: { propertyId: string; address?: string }) {
-const [result, setResult] = useState<LocationResult | null>(null);
-const [status, setStatus] = useState<"idle" | "loading" | "failed" | "success">("idle");
-const [note, setNote] = useState("");
+  const [result, setResult] = useState<LocationResult | null>(null);
+  const [status, setStatus] = useState<"idle" | "loading" | "failed" | "success">("idle");
+  const [note, setNote] = useState("");
 
-useEffect(() => {
-if (!address || !address.trim() || result) return;
-let cancelled = false;
-async function attemptLookup() {
-setStatus("loading");
-try {
-const { data } = await supabase.auth.getSession();
-const token = data.session?.access_token;
-if (!token) throw new Error("Session expirée.");
-const response = await fetch("/api/location/lookup", {
-method: "POST",
-headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-body: JSON.stringify({ property_id: propertyId, address }),
-});
-const body = await response.json();
-if (cancelled) return;
-if (!response.ok) {
-setStatus("failed"); setNote(body?.error || "Localisation indisponible pour cette adresse.");
-return;
-}
-setResult(body); setStatus("success");
-} catch (err) {
-if (!cancelled) { setStatus("failed"); setNote(err instanceof Error ? err.message : "Localisation indisponible."); }
-}
-}
-attemptLookup();
-return () => { cancelled = true; };
-// eslint-disable-next-line react-hooks/exhaustive-deps
-}, [address, propertyId]);
+  useEffect(() => {
+    if (!address || !address.trim() || result) return;
+    let cancelled = false;
+    async function attemptLookup() {
+      setStatus("loading");
+      try {
+        const { data } = await supabase.auth.getSession();
+        const token = data.session?.access_token;
+        if (!token) throw new Error("Session expirée.");
+        const response = await fetch("/api/location/lookup", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ property_id: propertyId, address }),
+        });
+        const body = await response.json();
+        if (cancelled) return;
+        if (!response.ok) {
+          setStatus("failed"); setNote(body?.error || "Localisation indisponible pour cette adresse.");
+          return;
+        }
+        setResult(body); setStatus("success");
+      } catch (err) {
+        if (!cancelled) { setStatus("failed"); setNote(err instanceof Error ? err.message : "Localisation indisponible."); }
+      }
+    }
+    attemptLookup();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [address, propertyId]);
 
-if (!address) return null;
+  if (!address) return null;
 
-const lat = result?.location?.latitude;
-const lon = result?.location?.longitude;
-const bbox = lat != null && lon != null ? `${lon - 0.006},${lat - 0.004},${lon + 0.006},${lat + 0.004}` : null;
-const mapUrl = bbox ? `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&marker=${lat},${lon}&layer=mapnik` : null;
+  const lat = result?.location?.latitude;
+  const lon = result?.location?.longitude;
+  const bbox = lat != null && lon != null ? `${lon - 0.006},${lat - 0.004},${lon + 0.006},${lat + 0.004}` : null;
+  const mapUrl = bbox ? `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&marker=${lat},${lon}&layer=mapnik` : null;
 
-const grouped: Record<string, Poi[]> = {};
-if (result) {
-for (const poi of result.pois) {
-if (!grouped[poi.category]) grouped[poi.category] = [];
-grouped[poi.category].push(poi);
-}
-}
+  const grouped: Record<string, Poi[]> = {};
+  if (result) {
+    for (const poi of result.pois) {
+      if (!grouped[poi.category]) grouped[poi.category] = [];
+      grouped[poi.category].push(poi);
+    }
+  }
 
-return <div className="dashboard-section cadastral-card location-panel">
-<div className="section-heading"><div><span className="eyebrow">Environnement</span><h3>Localisation &amp; alentours</h3><small>Carte + points d'intérêt à proximité (OpenStreetMap)</small></div>{result && <span className="market-badge">{result.pois.length} points trouvés</span>}</div>
-{status === "loading" && <div className="extract-note">Localisation du bien et recherche des environs…</div>}
-{status === "failed" && <div className="error-box">{note}</div>}
-{mapUrl && (
-<div className="location-map">
-<iframe title="Carte de localisation" src={mapUrl} loading="lazy" />
-</div>
-)}
-{result && Object.keys(grouped).length > 0 && (
-<div className="poi-groups">
-{Object.entries(grouped).map(([category, items]) => (
-<div className="poi-group" key={category}>
-<div className="poi-group-title">{items[0].category_label} <span>({items.length})</span></div>
-<ul>
-{items.slice(0, 5).map((poi, i) => (
-<li key={i}>{poi.name} <span>{poi.distance_m} m</span></li>
-))}
-</ul>
-</div>
-))}
-</div>
-)}
-{result && result.pois.length === 0 && <p className="empty-note">Aucun point d'intérêt répertorié par OpenStreetMap dans un rayon de 700 m autour de ce bien.</p>}
-{result?.note && <small>Source : {result.source}. {result.note}</small>}
-</div>;
+  return <div className="dashboard-section cadastral-card location-panel">
+    <div className="section-heading"><div><span className="eyebrow">Environnement</span><h3>Localisation &amp; alentours</h3><small>Carte + points d'intérêt à proximité (OpenStreetMap)</small></div>{result && <span className="market-badge">{result.pois.length} points trouvés</span>}</div>
+    {status === "loading" && <div className="extract-note">Localisation du bien et recherche des environs…</div>}
+    {status === "failed" && <div className="error-box">{note}</div>}
+    {mapUrl && (
+      <div className="location-map">
+        <iframe title="Carte de localisation" src={mapUrl} loading="lazy" />
+      </div>
+    )}
+    {result && Object.keys(grouped).length > 0 && (
+      <div className="poi-groups">
+        {Object.entries(grouped).map(([category, items]) => (
+          <div className="poi-group" key={category}>
+            <div className="poi-group-title">{items[0].category_label} <span>({items.length})</span></div>
+            <ul>
+              {items.slice(0, 5).map((poi, i) => (
+                <li key={i}>{poi.name} <span>{poi.distance_m} m</span></li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+    )}
+    {result && result.pois.length === 0 && <p className="empty-note">Aucun point d'intérêt répertorié par OpenStreetMap dans un rayon de 700 m autour de ce bien.</p>}
+    {result?.note && <small>Source : {result.source}. {result.note}</small>}
+  </div>;
 }
 
 function Metric({ label, value, suffix }: { label: string; value: unknown; suffix: string }) { return <div className="metric"><span>{label}</span><b>{value == null || value === "" ? "—" : Number(value).toLocaleString("fr-FR", { maximumFractionDigits: 2 })}{value != null && value !== "" ? suffix : ""}</b></div>; }
