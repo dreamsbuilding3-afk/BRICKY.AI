@@ -25,9 +25,9 @@ export function AppNav({ email, active }: AppNavProps) {
 
   return (
     <nav className="nav nav-has-burger">
-      <div className="brand">
-        <span className="mark">B</span>Bricky
-      </div>
+      <Link href="/properties" className="brand" onClick={closeMenu}>
+        <img src="/bricky-logo.png" alt="Bricky" className="brand-logo" />
+      </Link>
       <button
         type="button"
         className={"nav-burger" + (menuOpen ? " nav-burger-open" : "")}
