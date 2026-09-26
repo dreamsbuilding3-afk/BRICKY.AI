@@ -6,6 +6,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const blogPosts = [
     "calcul-rentabilite-locative",
     "cash-flow-immobilier-negatif-positif",
+    "estimer-loyer-avant-achat",
+    "lmnp-ou-micro-foncier",
+    "erreurs-premier-investissement-locatif",
   ];
 
   return [
