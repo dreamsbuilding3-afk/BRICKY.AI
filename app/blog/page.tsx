@@ -17,6 +17,21 @@ const posts = [
     title: "Cash-flow immobilier : pourquoi c'est plus important que le rendement",
     excerpt: "Un bien peut afficher un excellent rendement et vous coûter de l'argent chaque mois. Voici comment calculer votre vrai cash-flow avant d'acheter.",
   },
+  {
+    slug: "estimer-loyer-avant-achat",
+    title: "Comment estimer le loyer d'un bien avant de l'acheter",
+    excerpt: "Un loyer surestimé de 100 €/mois peut transformer un bon investissement en gouffre. Les sources fiables pour vérifier un loyer avant de signer.",
+  },
+  {
+    slug: "lmnp-ou-micro-foncier",
+    title: "LMNP ou micro-foncier : quel régime fiscal choisir",
+    excerpt: "Location nue ou meublée, micro-foncier, régime réel ou LMNP : ces choix fiscaux changent radicalement la rentabilité nette d'un bien.",
+  },
+  {
+    slug: "erreurs-premier-investissement-locatif",
+    title: "Les erreurs à éviter pour son premier investissement locatif",
+    excerpt: "Loyer surestimé, charges oubliées, mauvais emplacement, financement mal négocié : les erreurs les plus fréquentes des primo-investisseurs.",
+  },
 ];
 
 export default function BlogIndexPage() {
