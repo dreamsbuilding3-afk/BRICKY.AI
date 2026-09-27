@@ -22,6 +22,13 @@ type Plan = {
   sort_order: number;
 };
 
+const PLAN_AUDIENCE: Record<string, string> = {
+  decouverte: "Particuliers : un premier avis avant d'acheter",
+  essentiel: "Investisseurs particuliers actifs",
+  pro: "Indépendants & auto-entrepreneurs de l'immobilier",
+  agence: "Agences & équipes",
+};
+
 function formatPrice(cents: number) {
   if (cents === 0) return "Gratuit";
   return (cents / 100).toLocaleString("fr-FR", { maximumFractionDigits: 0 }) + " €/mois";
@@ -37,14 +44,14 @@ function analysesLabel(plan: Plan) {
 
 function featureList(plan: Plan): string[] {
   const items: string[] = [analysesLabel(plan)];
-  items.push(plan.can_download_pdf ? "Dossier PDF téléchargeable" : "Dossier PDF non téléchargeable");
-  items.push(plan.can_use_financing_simulator ? "Simulateur de financement" : "Pas de simulateur de financement");
-  if (plan.can_share_link) items.push("Partage de lien en lecture seule");
-  if (plan.can_compare_properties) items.push("Comparaison multi-biens");
-  if (plan.can_set_alerts) items.push("Alertes sur nouvelles annonces");
-  if (plan.white_label) items.push("Dossier en marque blanche");
-  if (plan.multi_user) items.push("Comptes multi-utilisateurs");
-  if (plan.api_export) items.push("Export API / CSV");
+  items.push(plan.can_download_pdf ? "Dossier PDF téléchargeable, prêt à partager" : "Dossier PDF non téléchargeable");
+  items.push(plan.can_use_financing_simulator ? "Simulateur de financement pour chiffrer vos dossiers" : "Pas de simulateur de financement");
+  if (plan.can_share_link) items.push("Partage de lien en lecture seule avec clients ou associés");
+  if (plan.can_compare_properties) items.push("Comparaison multi-biens pour arbitrer entre plusieurs opportunités");
+  if (plan.can_set_alerts) items.push("Alertes sur les nouvelles annonces correspondant à vos critères");
+  if (plan.white_label) items.push("Dossier en marque blanche, aux couleurs de votre agence");
+  if (plan.multi_user) items.push("Comptes multi-utilisateurs pour toute l'équipe");
+  if (plan.api_export) items.push("Export API / CSV pour connecter vos outils internes");
   return items;
 }
 
@@ -96,7 +103,7 @@ export default function PricingPage() {
         </Link>
         <div className="nav-links">
           <Link className="navlink" href="/login">Se connecter</Link>
-          <Link className="nav-cta" href="/analyze">Essai gratuit →</Link>
+          <Link className="nav-cta" href="/analyze">Essai gratuit de 7 jours →</Link>
         </div>
       </nav>
 
@@ -104,8 +111,10 @@ export default function PricingPage() {
         <span className="eyebrow">Tarifs</span>
         <h1>Un abonnement pour chaque niveau d'investisseur.</h1>
         <p className="sub">
-          Commencez avec une analyse gratuite. Passez à un palier supérieur quand vous avez besoin de plus d'analyses,
-          du dossier PDF, du partage ou des outils pensés pour les professionnels.
+          Du particulier qui vérifie un premier achat à l'agence qui traite des dizaines de dossiers par mois :
+          chaque palier est pensé pour un usage précis — particulier, auto-entrepreneur, indépendant, investisseur
+          ou agence. Commencez avec une analyse gratuite, puis profitez de 7 jours d'essai gratuit sur les paliers
+          payants, sans carte bancaire.
         </p>
       </section>
 
@@ -118,6 +127,9 @@ export default function PricingPage() {
             >
               {currentPlan === plan.plan_code ? <span className="pricing-current-badge">Votre palier actuel</span> : null}
               <h2>{plan.name}</h2>
+              {PLAN_AUDIENCE[plan.plan_code] ? (
+                <div className="pricing-audience">{PLAN_AUDIENCE[plan.plan_code]}</div>
+              ) : null}
               <div className="pricing-price">{formatPrice(plan.price_monthly_cents)}</div>
               {plan.price_yearly_cents ? (
                 <div className="pricing-yearly">
@@ -139,7 +151,7 @@ export default function PricingPage() {
                 </Link>
               ) : (
                 <Link className="primary-button pricing-cta" href="/account">
-                  Choisir ce palier
+                  Choisir ce palier — 7 jours d'essai gratuit
                 </Link>
               )}
             </div>
@@ -152,7 +164,7 @@ export default function PricingPage() {
           <div className="pricing-compare-intro">
             <span className="eyebrow">Comparatif</span>
             <h2>Comparer tous les paliers en détail</h2>
-            <p>Chaque ligne compte : repérez en un coup d'œil ce qui change d'un palier à l'autre, et choisissez le vôtre directement depuis le tableau.</p>
+            <p>Chaque ligne compte : repérez en un coup d'œil ce qui change d'un palier à l'autre — du particulier à l'agence — et choisissez le vôtre directement depuis le tableau.</p>
           </div>
           <div className="pricing-compare-scroll">
             <table className="pricing-compare-table">
@@ -163,6 +175,9 @@ export default function PricingPage() {
                     <th key={plan.plan_code} className={plan.plan_code === "pro" ? "pricing-compare-highlight" : ""}>
                       {plan.name}
                       {plan.plan_code === "pro" ? <span className="pricing-compare-popular">Populaire</span> : null}
+                      {PLAN_AUDIENCE[plan.plan_code] ? (
+                        <span className="pricing-compare-audience">{PLAN_AUDIENCE[plan.plan_code]}</span>
+                      ) : null}
                     </th>
                   ))}
                 </tr>
@@ -199,7 +214,7 @@ export default function PricingPage() {
                   <td colSpan={plans.length + 1}>Partage &amp; comparaison</td>
                 </tr>
                 <tr>
-                  <td>Partage de lien en lecture seule</td>
+                  <td>Partage de lien (clients, associés)</td>
                   {plans.map((plan) => (
                     <td key={plan.plan_code} className={plan.plan_code === "pro" ? "pricing-compare-highlight" : ""}>
                       <Check ok={plan.can_share_link} />
@@ -207,7 +222,7 @@ export default function PricingPage() {
                   ))}
                 </tr>
                 <tr>
-                  <td>Comparaison multi-biens</td>
+                  <td>Comparaison multi-biens (investisseurs)</td>
                   {plans.map((plan) => (
                     <td key={plan.plan_code} className={plan.plan_code === "pro" ? "pricing-compare-highlight" : ""}>
                       <Check ok={plan.can_compare_properties} />
@@ -226,7 +241,7 @@ export default function PricingPage() {
                   <td colSpan={plans.length + 1}>Agence &amp; équipe</td>
                 </tr>
                 <tr>
-                  <td>Dossier en marque blanche</td>
+                  <td>Dossier en marque blanche (agences)</td>
                   {plans.map((plan) => (
                     <td key={plan.plan_code} className={plan.plan_code === "pro" ? "pricing-compare-highlight" : ""}>
                       <Check ok={plan.white_label} />
@@ -234,7 +249,7 @@ export default function PricingPage() {
                   ))}
                 </tr>
                 <tr>
-                  <td>Comptes multi-utilisateurs</td>
+                  <td>Comptes multi-utilisateurs (équipes)</td>
                   {plans.map((plan) => (
                     <td key={plan.plan_code} className={plan.plan_code === "pro" ? "pricing-compare-highlight" : ""}>
                       <Check ok={plan.multi_user} />
@@ -242,7 +257,7 @@ export default function PricingPage() {
                   ))}
                 </tr>
                 <tr>
-                  <td>Export API / CSV</td>
+                  <td>Export API / CSV (outils internes)</td>
                   {plans.map((plan) => (
                     <td key={plan.plan_code} className={plan.plan_code === "pro" ? "pricing-compare-highlight" : ""}>
                       <Check ok={plan.api_export} />
