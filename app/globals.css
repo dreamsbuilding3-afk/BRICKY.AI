@@ -1206,3 +1206,79 @@ body::before {
   .pricing-compare { padding: 0 14px; }
   .pricing-compare-table th, .pricing-compare-table td { padding: 11px 14px; font-size: 12.5px; }
 }
+
+
+/* ===== Accueil : nav flottante en verre, fluide et ergonomique ===== */
+.nav-floating {
+  position: sticky;
+  top: 14px;
+  z-index: 30;
+  max-width: 1120px;
+  margin: 14px auto 0;
+  height: 64px;
+  padding: 0 10px 0 22px;
+  border: 1px solid rgba(17, 17, 17, .08);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .68);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 1px 1px rgba(17, 17, 17, .03), 0 18px 40px -20px rgba(17, 17, 17, .3);
+  transition: top .25s ease, margin .25s ease, height .25s ease, background .25s ease, box-shadow .25s ease;
+}
+.nav-floating .nav-cta { height: 44px; }
+.nav-floating-scrolled {
+  top: 8px;
+  margin-top: 8px;
+  height: 58px;
+  background: rgba(255, 255, 255, .88);
+  box-shadow: 0 1px 1px rgba(17, 17, 17, .04), 0 14px 30px -16px rgba(17, 17, 17, .35);
+}
+@media (max-width: 900px) {
+  .nav-floating { margin-left: 14px; margin-right: 14px; }
+}
+@media (max-width: 640px) {
+  .nav-floating { border-radius: 24px; padding: 0 8px 0 16px; }
+}
+
+/* ===== Tarifs : arrangement titre / prix dans chaque carte ===== */
+.pricing-card { padding: 28px 24px 26px; }
+.pricing-card h2 { margin: 0 0 10px; font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: #888; font-weight: 800; }
+.pricing-price { font-size: 32px; font-weight: 800; letter-spacing: -.03em; }
+.pricing-yearly { margin-top: 4px; }
+.pricing-features { padding-top: 18px; border-top: 1px solid var(--line); }
+
+/* ===== Tarifs : tableau comparatif optimisé (structure, fluidité, CTA) ===== */
+.pricing-compare-intro p { margin: 10px auto 0; max-width: 520px; color: #666; font-size: 14.5px; line-height: 1.5; }
+.pricing-compare-scroll {
+  border-radius: 20px;
+  background: linear-gradient(180deg, rgba(255,255,255,.98), rgba(255,255,255,.92));
+  box-shadow: 0 1px 1px rgba(17,17,17,.03), 0 22px 48px -26px rgba(17,17,17,.28);
+}
+.pricing-compare-table thead th { padding-top: 24px; padding-bottom: 16px; }
+.pricing-compare-table tbody tr:not(.pricing-compare-section):not(.pricing-compare-cta-row):hover td {
+  background: rgba(17, 17, 17, .025);
+}
+.pricing-compare-table tbody tr:hover td.pricing-compare-highlight { background: rgba(255, 90, 31, .09); }
+.pricing-compare-check {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 20px; height: 20px; border-radius: 50%;
+  background: rgba(30, 122, 30, .12); color: #1e7a1e; font-size: 11px; font-weight: 800;
+}
+.pricing-compare-dash { color: #ccc; }
+.pricing-compare-table thead th.pricing-compare-highlight {
+  border-radius: 16px 16px 0 0;
+  box-shadow: inset 1px 0 0 rgba(255,90,31,.25), inset -1px 0 0 rgba(255,90,31,.25), inset 0 1px 0 rgba(255,90,31,.25);
+}
+.pricing-compare-table td.pricing-compare-highlight {
+  box-shadow: inset 1px 0 0 rgba(255,90,31,.15), inset -1px 0 0 rgba(255,90,31,.15);
+}
+.pricing-compare-cta-row td { padding: 18px; border-top: 1px solid var(--line); border-bottom: 0; background: #fafaf8; }
+.pricing-compare-cta-row td.pricing-compare-highlight {
+  border-radius: 0 0 16px 16px;
+  background: rgba(255, 90, 31, .08);
+  box-shadow: inset 1px 0 0 rgba(255,90,31,.25), inset -1px 0 0 rgba(255,90,31,.25), inset 0 -1px 0 rgba(255,90,31,.25);
+}
+.pricing-compare-cta { display: inline-flex; align-items: center; justify-content: center; text-decoration: none; }
+.pricing-compare-cta.primary-button, .pricing-compare-cta.secondary-button {
+  width: auto; min-height: 0; height: 38px; margin: 0; padding: 0 18px; font-size: 13px;
+}
