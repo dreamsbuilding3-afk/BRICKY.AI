@@ -1004,3 +1004,68 @@ body::before {
     animation: none;
   }
 }
+
+/* ===== Résultats d'analyse : grilles plus libres et fluides (mobile) ===== */
+
+.metric-grid {
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+
+.scenario-grid {
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+}
+
+@media (max-width: 720px) {
+  .analysis-shell {
+    padding: 40px 14px 80px;
+  }
+
+  .result-panel {
+    padding: 18px;
+    border-radius: 18px;
+  }
+
+  .decision-hero {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .decision-hero > div:first-child {
+    grid-column: 1 / -1;
+  }
+
+  .decision-hero > div,
+  .metric,
+  .scenario,
+  .risk-item,
+  .missing-list > div {
+    padding: 14px;
+    border-radius: 14px;
+  }
+
+  .metric-grid,
+  .scenario-grid {
+    gap: 10px;
+  }
+
+  .decision-hero strong {
+    font-size: 23px;
+  }
+
+  .score-block b {
+    font-size: 28px;
+  }
+
+  .metric b {
+    font-size: 19px;
+  }
+
+  .scenario b {
+    font-size: 21px;
+  }
+
+  .dashboard-section {
+    margin-top: 24px;
+    padding-top: 20px;
+  }
+}
