@@ -52,6 +52,18 @@ function Check({ ok }: { ok: boolean }) {
   return ok ? <span className="pricing-compare-check">✓</span> : <span className="pricing-compare-dash">—</span>;
 }
 
+function ctaLabel(plan: Plan) {
+  if (plan.plan_code === "decouverte") return "Commencer";
+  if (plan.plan_code === "agence") return "Nous contacter";
+  return "Choisir";
+}
+
+function ctaHref(plan: Plan) {
+  if (plan.plan_code === "decouverte") return "/analyze";
+  if (plan.plan_code === "agence") return "/account";
+  return "/account";
+}
+
 export default function PricingPage() {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [currentPlan, setCurrentPlan] = useState<string | null>(null);
@@ -140,6 +152,7 @@ export default function PricingPage() {
           <div className="pricing-compare-intro">
             <span className="eyebrow">Comparatif</span>
             <h2>Comparer tous les paliers en détail</h2>
+            <p>Chaque ligne compte : repérez en un coup d'œil ce qui change d'un palier à l'autre, et choisissez le vôtre directement depuis le tableau.</p>
           </div>
           <div className="pricing-compare-scroll">
             <table className="pricing-compare-table">
@@ -233,6 +246,19 @@ export default function PricingPage() {
                   {plans.map((plan) => (
                     <td key={plan.plan_code} className={plan.plan_code === "pro" ? "pricing-compare-highlight" : ""}>
                       <Check ok={plan.api_export} />
+                    </td>
+                  ))}
+                </tr>
+                <tr className="pricing-compare-cta-row">
+                  <td></td>
+                  {plans.map((plan) => (
+                    <td key={plan.plan_code} className={plan.plan_code === "pro" ? "pricing-compare-highlight" : ""}>
+                      <Link
+                        className={(plan.plan_code === "decouverte" || plan.plan_code === "agence" ? "secondary-button" : "primary-button") + " pricing-compare-cta"}
+                        href={ctaHref(plan)}
+                      >
+                        {ctaLabel(plan)}
+                      </Link>
                     </td>
                   ))}
                 </tr>
