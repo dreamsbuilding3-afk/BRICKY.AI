@@ -1282,3 +1282,34 @@ body::before {
 .pricing-compare-cta.primary-button, .pricing-compare-cta.secondary-button {
   width: auto; min-height: 0; height: 38px; margin: 0; padding: 0 18px; font-size: 13px;
 }
+
+
+/* ===== Essai gratuit : mention 7 jours ===== */
+.trial-note {
+  margin-top: 14px;
+  font-size: 13px;
+  color: #888;
+  letter-spacing: .01em;
+}
+.trial-note-light {
+  color: rgba(255, 255, 255, .75);
+}
+.cta-band .trial-note-light { color: #888; }
+
+/* ===== Tarifs : différenciation par profil (particulier, indépendant, agence...) ===== */
+.pricing-audience {
+  margin: -4px 0 14px;
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: #888;
+  font-weight: 600;
+}
+.pricing-compare-audience {
+  display: block;
+  margin-top: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #999;
+  text-transform: none;
+  letter-spacing: 0;
+}
