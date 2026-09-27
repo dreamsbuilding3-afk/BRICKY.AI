@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const CAPABILITY_ROW_1 = [
   { label: "Rendement net & cash-flow réel", color: "accent" },
@@ -45,10 +45,18 @@ function CapabilityMarquee() {
 
 export default function Home() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 12);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   return (
     <main className="page">
-      <nav className="nav nav-has-burger">
+      <nav className={"nav nav-has-burger nav-floating" + (scrolled ? " nav-floating-scrolled" : "")}>
         <div className="brand"><span className="mark">B</span>Bricky</div>
         <button
           type="button"
