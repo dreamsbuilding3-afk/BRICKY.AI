@@ -48,6 +48,10 @@ function featureList(plan: Plan): string[] {
   return items;
 }
 
+function Check({ ok }: { ok: boolean }) {
+  return ok ? <span className="pricing-compare-check">✓</span> : <span className="pricing-compare-dash">—</span>;
+}
+
 export default function PricingPage() {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [currentPlan, setCurrentPlan] = useState<string | null>(null);
@@ -80,7 +84,7 @@ export default function PricingPage() {
         </Link>
         <div className="nav-links">
           <Link className="navlink" href="/login">Se connecter</Link>
-          <Link className="nav-cta" href="/analyze">Analyser un bien →</Link>
+          <Link className="nav-cta" href="/analyze">Essai gratuit →</Link>
         </div>
       </nav>
 
@@ -128,6 +132,113 @@ export default function PricingPage() {
               )}
             </div>
           ))}
+        </section>
+      )}
+
+      {!loading && plans.length > 0 && (
+        <section className="pricing-compare">
+          <div className="pricing-compare-intro">
+            <span className="eyebrow">Comparatif</span>
+            <h2>Comparer tous les paliers en détail</h2>
+          </div>
+          <div className="pricing-compare-scroll">
+            <table className="pricing-compare-table">
+              <thead>
+                <tr>
+                  <th></th>
+                  {plans.map((plan) => (
+                    <th key={plan.plan_code} className={plan.plan_code === "pro" ? "pricing-compare-highlight" : ""}>
+                      {plan.name}
+                      {plan.plan_code === "pro" ? <span className="pricing-compare-popular">Populaire</span> : null}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                <tr className="pricing-compare-section">
+                  <td colSpan={plans.length + 1}>Analyses &amp; rapports</td>
+                </tr>
+                <tr>
+                  <td>Analyses incluses</td>
+                  {plans.map((plan) => (
+                    <td key={plan.plan_code} className={plan.plan_code === "pro" ? "pricing-compare-highlight" : ""}>
+                      {analysesLabel(plan)}
+                    </td>
+                  ))}
+                </tr>
+                <tr>
+                  <td>Dossier PDF téléchargeable</td>
+                  {plans.map((plan) => (
+                    <td key={plan.plan_code} className={plan.plan_code === "pro" ? "pricing-compare-highlight" : ""}>
+                      <Check ok={plan.can_download_pdf} />
+                    </td>
+                  ))}
+                </tr>
+                <tr>
+                  <td>Simulateur de financement</td>
+                  {plans.map((plan) => (
+                    <td key={plan.plan_code} className={plan.plan_code === "pro" ? "pricing-compare-highlight" : ""}>
+                      <Check ok={plan.can_use_financing_simulator} />
+                    </td>
+                  ))}
+                </tr>
+                <tr className="pricing-compare-section">
+                  <td colSpan={plans.length + 1}>Partage &amp; comparaison</td>
+                </tr>
+                <tr>
+                  <td>Partage de lien en lecture seule</td>
+                  {plans.map((plan) => (
+                    <td key={plan.plan_code} className={plan.plan_code === "pro" ? "pricing-compare-highlight" : ""}>
+                      <Check ok={plan.can_share_link} />
+                    </td>
+                  ))}
+                </tr>
+                <tr>
+                  <td>Comparaison multi-biens</td>
+                  {plans.map((plan) => (
+                    <td key={plan.plan_code} className={plan.plan_code === "pro" ? "pricing-compare-highlight" : ""}>
+                      <Check ok={plan.can_compare_properties} />
+                    </td>
+                  ))}
+                </tr>
+                <tr>
+                  <td>Alertes sur nouvelles annonces</td>
+                  {plans.map((plan) => (
+                    <td key={plan.plan_code} className={plan.plan_code === "pro" ? "pricing-compare-highlight" : ""}>
+                      <Check ok={plan.can_set_alerts} />
+                    </td>
+                  ))}
+                </tr>
+                <tr className="pricing-compare-section">
+                  <td colSpan={plans.length + 1}>Agence &amp; équipe</td>
+                </tr>
+                <tr>
+                  <td>Dossier en marque blanche</td>
+                  {plans.map((plan) => (
+                    <td key={plan.plan_code} className={plan.plan_code === "pro" ? "pricing-compare-highlight" : ""}>
+                      <Check ok={plan.white_label} />
+                    </td>
+                  ))}
+                </tr>
+                <tr>
+                  <td>Comptes multi-utilisateurs</td>
+                  {plans.map((plan) => (
+                    <td key={plan.plan_code} className={plan.plan_code === "pro" ? "pricing-compare-highlight" : ""}>
+                      <Check ok={plan.multi_user} />
+                    </td>
+                  ))}
+                </tr>
+                <tr>
+                  <td>Export API / CSV</td>
+                  {plans.map((plan) => (
+                    <td key={plan.plan_code} className={plan.plan_code === "pro" ? "pricing-compare-highlight" : ""}>
+                      <Check ok={plan.api_export} />
+                    </td>
+                  ))}
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </section>
       )}
 
