@@ -970,3 +970,37 @@ animation: bricky-bounce 1.1s ease-in-out infinite;
 .blog-back:hover {
   text-decoration: underline;
 }
+
+/* ===== Fond grille 3D en filigrane (très discret, façon papier quadrillé) ===== */
+
+body {
+  position: relative;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: -10%;
+  z-index: -1;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(17, 17, 17, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(17, 17, 17, 0.04) 1px, transparent 1px);
+  background-size: 46px 46px;
+  transform: perspective(800px) rotateX(4deg);
+  transform-origin: top center;
+  -webkit-mask-image: radial-gradient(ellipse 65% 55% at 50% 0%, #000 30%, transparent 75%);
+  mask-image: radial-gradient(ellipse 65% 55% at 50% 0%, #000 30%, transparent 75%);
+  animation: bg-grid-drift 60s linear infinite;
+}
+
+@keyframes bg-grid-drift {
+  from { background-position: 0 0, 0 0; }
+  to { background-position: 46px 46px, 46px 46px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body::before {
+    animation: none;
+  }
+}
