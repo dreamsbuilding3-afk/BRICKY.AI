@@ -72,7 +72,7 @@ export default function Home() {
         <div className={"nav-links" + (menuOpen ? " nav-links-open" : "")}>
           <a className="navlink" href="/pricing" onClick={() => setMenuOpen(false)}>Tarifs</a>
           <a className="navlink" href="/login" onClick={() => setMenuOpen(false)}>Se connecter</a>
-          <a className="nav-cta" href="/analyze" onClick={() => setMenuOpen(false)}>Essai gratuit →</a>
+          <a className="nav-cta" href="/analyze" onClick={() => setMenuOpen(false)}>Essai gratuit de 7 jours →</a>
         </div>
       </nav>
 
@@ -88,6 +88,7 @@ export default function Home() {
           <button type="submit">Analyser le bien</button>
         </form>
         <div className="proof">Prix · comparables · rendement · risques · données manquantes · actions</div>
+        <div className="trial-note">7 jours d’essai gratuit sur les paliers payants · sans carte bancaire</div>
       </section>
 
       <CapabilityMarquee />
@@ -181,7 +182,8 @@ export default function Home() {
 
       <section className="cta-band">
         <h2>Prêt à savoir si ce bien mérite votre attention ?</h2>
-        <a className="nav-cta" href="/analyze">Essai gratuit →</a>
+        <a className="nav-cta" href="/analyze">Essai gratuit de 7 jours →</a>
+        <div className="trial-note trial-note-light">Sans carte bancaire · résiliable à tout moment</div>
       </section>
 
       <footer className="footer"><span>Bricky · Property intelligence, built for decisions.</span><span className="footer-links"><a href="/legal/mentions-legales">Mentions légales</a><a href="/legal/cgu">CGU</a><a href="/legal/confidentialite">Confidentialité</a></span></footer>
