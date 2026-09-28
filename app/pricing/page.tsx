@@ -150,9 +150,12 @@ export default function PricingPage() {
                   Nous contacter
                 </Link>
               ) : (
+                <div className="pricing-cta-wrap">
                 <Link className="primary-button pricing-cta" href="/account">
-                  Choisir ce palier — 7 jours d'essai gratuit
+                  Essai gratuit
                 </Link>
+                <span className="pricing-cta-note">7 jours offerts, sans carte</span>
+                </div>
               )}
             </div>
           ))}
