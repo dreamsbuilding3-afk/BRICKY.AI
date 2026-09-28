@@ -1398,6 +1398,60 @@ body::before {
   .testimonials { padding: 50px 16px 60px; }
 }
 
+/* Avis mobile façon post-it */
+.mobile-reviews { display: none; }
+@media (max-width: 640px) {
+  .testimonials { display: none; }
+  .mobile-reviews {
+    display: block;
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 50px 20px 66px;
+  }
+}
+.mobile-reviews-intro { text-align: center; max-width: 420px; margin: 0 auto 34px; }
+.mobile-reviews-track { display: flex; flex-direction: column; gap: 26px; padding: 6px 4px; }
+.mreview-card {
+  position: relative;
+  width: 86%;
+  padding: 22px 20px 20px;
+  border-radius: 4px 16px 16px 16px;
+  transform: rotate(-3deg);
+  box-shadow: 0 14px 26px -14px rgba(17,17,17,.28), 0 2px 4px rgba(17,17,17,.06);
+}
+.mreview-card.mreview-right { align-self: flex-end; transform: rotate(3deg); border-radius: 16px 4px 16px 16px; }
+.mreview-peach { background: linear-gradient(160deg, #ffe6d4 0%, #ffd3e0 100%); }
+.mreview-lavender { background: linear-gradient(160deg, #e6e1ff 0%, #d8e8ff 100%); }
+.mreview-pin {
+  position: absolute;
+  top: -9px;
+  left: 22px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  box-shadow: 0 3px 6px rgba(17,17,17,.25), inset 0 -2px 3px rgba(17,17,17,.15), inset 0 2px 2px rgba(255,255,255,.5);
+}
+.mreview-card.mreview-right .mreview-pin { left: auto; right: 22px; }
+.mreview-pin-accent { background: radial-gradient(circle at 35% 30%, #ff8a4d, var(--accent-dark)); }
+.mreview-pin-blue { background: radial-gradient(circle at 35% 30%, #6ea8ff, #2f5fd6); }
+.mreview-number {
+  display: block;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .04em;
+  color: rgba(17,17,17,.4);
+  margin-bottom: 6px;
+}
+.mreview-card .testimonial-stars { margin-bottom: 10px; }
+.mreview-card blockquote {
+  margin: 0 0 14px;
+  font-size: 14.5px;
+  line-height: 1.5;
+  font-weight: 700;
+  color: var(--ink);
+}
+.mreview-name { font-size: 12.5px; font-weight: 700; color: #555; }
+
 
 /* Ring cards (dashboard analyse) */
 .ring-cards { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 20px; }
