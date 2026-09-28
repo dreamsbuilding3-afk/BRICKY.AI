@@ -1467,25 +1467,25 @@ body::before {
 .hero-float-blue .hero-float-dot { background: #2563eb; }
 .hero-float-green .hero-float-dot { background: #16a34a; }
 .hero-float-amber .hero-float-dot { background: #d97706; }
-.hero-float-1 { animation: heroFloat3D-1 14s ease-in-out infinite; }
-.hero-float-2 { animation: heroFloat3D-2 16.5s ease-in-out infinite; animation-delay: -4s; }
-.hero-float-3 { animation: heroFloat3D-3 13s ease-in-out infinite; animation-delay: -7s; }
-.hero-float-4 { animation: heroFloat3D-4 17.5s ease-in-out infinite; animation-delay: -10s; }
+.hero-float-1 { animation: heroFloat3D-1 7.5s ease-in-out infinite; }
+.hero-float-2 { animation: heroFloat3D-2 8.5s ease-in-out infinite; animation-delay: -2s; }
+.hero-float-3 { animation: heroFloat3D-3 7s ease-in-out infinite; animation-delay: -3.5s; }
+.hero-float-4 { animation: heroFloat3D-4 9s ease-in-out infinite; animation-delay: -5s; }
 @keyframes heroFloat3D-1 {
-  0%, 100% { transform: rotate(-1deg) perspective(1100px) rotateX(4deg) rotateY(-20deg) translate3d(0, 0, 0); }
-  50% { transform: rotate(-1deg) perspective(1100px) rotateX(-3deg) rotateY(18deg) translate3d(0, -14px, 24px); }
+  0%, 100% { transform: rotate(-2deg) perspective(1100px) rotateX(7deg) rotateY(-38deg) translate3d(0, 4px, 0); }
+  50% { transform: rotate(-2deg) perspective(1100px) rotateX(-6deg) rotateY(36deg) translate3d(0, -26px, 44px); }
 }
 @keyframes heroFloat3D-2 {
-  0%, 100% { transform: rotate(1deg) perspective(1100px) rotateX(-4deg) rotateY(19deg) translate3d(0, 0, 0); }
-  50% { transform: rotate(1deg) perspective(1100px) rotateX(3deg) rotateY(-17deg) translate3d(0, -16px, -22px); }
+  0%, 100% { transform: rotate(2deg) perspective(1100px) rotateX(-7deg) rotateY(37deg) translate3d(0, -4px, 0); }
+  50% { transform: rotate(2deg) perspective(1100px) rotateX(6deg) rotateY(-35deg) translate3d(0, -30px, -40px); }
 }
 @keyframes heroFloat3D-3 {
-  0%, 100% { transform: rotate(-.8deg) perspective(1100px) rotateX(3deg) rotateY(-18deg) translate3d(0, 0, 0); }
-  50% { transform: rotate(-.8deg) perspective(1100px) rotateX(-4deg) rotateY(20deg) translate3d(0, -12px, 20px); }
+  0%, 100% { transform: rotate(-1.6deg) perspective(1100px) rotateX(6deg) rotateY(-36deg) translate3d(0, 3px, 0); }
+  50% { transform: rotate(-1.6deg) perspective(1100px) rotateX(-7deg) rotateY(38deg) translate3d(0, -22px, 38px); }
 }
 @keyframes heroFloat3D-4 {
-  0%, 100% { transform: rotate(.8deg) perspective(1100px) rotateX(-3deg) rotateY(21deg) translate3d(0, 0, 0); }
-  50% { transform: rotate(.8deg) perspective(1100px) rotateX(4deg) rotateY(-19deg) translate3d(0, -15px, -18px); }
+  0%, 100% { transform: rotate(1.6deg) perspective(1100px) rotateX(-6deg) rotateY(39deg) translate3d(0, -3px, 0); }
+  50% { transform: rotate(1.6deg) perspective(1100px) rotateX(7deg) rotateY(-37deg) translate3d(0, -28px, -34px); }
 }
 @media (max-width: 1100px) {
   .hero-floaters { display: none; }
