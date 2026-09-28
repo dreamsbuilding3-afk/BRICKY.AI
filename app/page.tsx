@@ -138,13 +138,10 @@ return (
 }
 
 const HERO_FLOAT_ITEMS = [
-{ label: "Rendement", top: "10%", left: "16vw", rotate: -6, color: "accent", delay: 0 },
-{ label: "Cash-flow", top: "6%", right: "17vw", rotate: 5, color: "blue", delay: 0.8 },
-{ label: "Marché", top: "32%", left: "11vw", rotate: 4, color: "green", delay: 1.6 },
-{ label: "Risques", top: "36%", right: "12vw", rotate: -5, color: "amber", delay: 2.4 },
-{ label: "Cadastre", top: "58%", left: "16vw", rotate: 6, color: "blue", delay: 3.2 },
-{ label: "Dossier", top: "62%", right: "15vw", rotate: -4, color: "accent", delay: 4 },
-{ label: "DPE", top: "80%", left: "22vw", rotate: 3, color: "green", delay: 4.8 },
+{ label: "Rendement", top: "6%", left: "13vw", n: 1, color: "accent" },
+{ label: "Marché", top: "56%", left: "8vw", n: 2, color: "green" },
+{ label: "Risques", top: "4%", right: "12vw", n: 3, color: "amber" },
+{ label: "Dossier", top: "58%", right: "9vw", n: 4, color: "blue" },
 ];
 
 function HeroFloaters() {
@@ -152,15 +149,13 @@ return (
 <div className="hero-floaters" aria-hidden="true">
 {HERO_FLOAT_ITEMS.map((item) => (
 <div
-className="hero-float-wrap"
 key={item.label}
-style={{ top: item.top, left: item.left, right: item.right, transform: `rotate(${item.rotate}deg)` }}
+className={`hero-float hero-float-${item.n} hero-float-${item.color}`}
+style={{ top: item.top, left: item.left, right: item.right }}
 >
-<span className={`hero-float hero-float-${item.color}`} style={{ animationDelay: `${item.delay}s` }}>
 <span className="hero-float-shine" />
 <span className="hero-float-dot" />
 {item.label}
-</span>
 </div>
 ))}
 </div>
