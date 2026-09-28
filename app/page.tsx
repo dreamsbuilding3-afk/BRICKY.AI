@@ -18,6 +18,29 @@ const CAPABILITY_ROW_2 = [
   { label: "Comparateur de biens", color: "green" },
 ];
 
+const TESTIMONIALS = [
+  {
+    quote: "Avant Bricky, je passais des heures à chercher les infos d'un bien et à faire mes calculs sur plusieurs fichiers. Maintenant, j'ai une vision claire du potentiel du bien en quelques minutes. Je vois immédiatement ce qui est intéressant… et ce qui ne l'est pas.",
+    name: "Thomas",
+    role: "Investisseur immobilier",
+  },
+  {
+    quote: "Je pensais que l'investissement immobilier était réservé aux personnes qui maîtrisent déjà tout. Bricky m'a vraiment simplifié les choses. Les données sont regroupées au même endroit et surtout, je comprends enfin ce que je regarde avant de prendre une décision.",
+    name: "Sarah",
+    role: "Première acquisition",
+  },
+  {
+    quote: "Le plus gros changement pour moi, c'est la vitesse d'analyse. Au lieu de passer énormément de temps sur chaque opportunité, je peux rapidement identifier les biens qui méritent une vraie analyse. Bricky est devenu un réflexe avant même de commencer mes recherches.",
+    name: "Julien",
+    role: "Marchand de biens",
+  },
+  {
+    quote: "Ce que j'aime avec Bricky, ce n'est pas seulement d'avoir des chiffres. C'est de comprendre ce qu'ils veulent dire. En quelques instants, je sais quelles informations sont disponibles, lesquelles manquent et quels éléments doivent être vérifiés avant d'aller plus loin.",
+    name: "Nicolas",
+    role: "Investisseur immobilier",
+  },
+];
+
 function CapabilityMarquee() {
   return (
     <section className="capability-marquee" aria-hidden="true">
@@ -38,6 +61,37 @@ function CapabilityMarquee() {
             </span>
           ))}
         </div>
+      </div>
+    </section>
+  );
+}
+
+function Stars() {
+  return (
+    <div className="testimonial-stars" aria-hidden="true">
+      {"★★★★★"}
+    </div>
+  );
+}
+
+function Testimonials() {
+  return (
+    <section className="testimonials">
+      <div className="testimonials-intro">
+        <span className="eyebrow">Ils utilisent Bricky</span>
+        <h2>Ce que ça change, au quotidien.</h2>
+      </div>
+      <div className="testimonials-track">
+        {TESTIMONIALS.map((t) => (
+          <figure className="testimonial-card" key={t.name}>
+            <Stars />
+            <blockquote>“{t.quote}”</blockquote>
+            <figcaption>
+              <span className="testimonial-name">{t.name}</span>
+              <span className="testimonial-role">{t.role}</span>
+            </figcaption>
+          </figure>
+        ))}
       </div>
     </section>
   );
@@ -146,6 +200,8 @@ export default function Home() {
           <div className="info-more">Diagnostics à réclamer, PV d’AG et règlement de copropriété, questions précises à poser au vendeur, points de négociation et vérifications à faire sur place avant de vous engager.</div>
         </details>
       </section>
+
+      <Testimonials />
 
       <section className="highlight-band">
         <div className="highlight-intro">
