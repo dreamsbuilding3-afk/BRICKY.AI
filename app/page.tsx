@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { PROPERTY_TYPE_LABELS } from "../lib/data/propertyTypeClassifier";
 
 const CAPABILITY_ROW_1 = [
   { label: "Rendement net & cash-flow réel", color: "accent" },
@@ -95,6 +96,39 @@ function Testimonials() {
       </div>
     </section>
   );
+}
+
+const PROPERTY_CATEGORY_ICONS: Record<string, string> = { hotel: "🏨", chateau: "🏰", immeuble: "🏢", penthouse: "🏙️", loft: "🧱", duplex: "🏘️", chalet: "🏔️", local_commercial: "🏬", terrain: "🌳", parking: "🅿️", studio: "🚪", maison: "🏡", appartement: "🏠" };
+
+function PropertyCategoriesShowcase() {
+const categories = Object.entries(PROPERTY_TYPE_LABELS);
+const [active, setActive] = useState(categories[0][0]);
+const activeIndex = categories.findIndex(([code]) => code === active);
+return (
+<section className="categories-band">
+<div className="categories-intro">
+<span className="eyebrow">Un seul outil, tous les biens</span>
+<h2>Maison, immeuble, hôtel, local commercial…<br />Bricky s’adapte au type de bien.</h2>
+<p className="sub">Chaque catégorie a ses propres repères de rentabilité, de risques et de marché. Bricky les prend en compte dans le calcul, quel que soit le bien analysé.</p>
+</div>
+<div className="categories-picker">
+<div className="categories-picker-track">
+{categories.map(([code, label], i) => {
+const isActive = code === active;
+const dist = Math.min(Math.abs(activeIndex - i), 4);
+const itemStyle = { transform: `translateX(${isActive ? -10 : dist * 6}px) scale(${isActive ? 1 : 1 - dist * 0.06})`, opacity: isActive ? 1 : Math.max(0.35, 1 - dist * 0.18) };
+return (
+<button type="button" key={code} className={`categories-picker-item${isActive ? " categories-picker-item-active" : ""}`} style={itemStyle} onClick={() => setActive(code)}>
+<span className="categories-picker-icon">{PROPERTY_CATEGORY_ICONS[code] || "🏠"}</span>
+<span className="categories-picker-label">{label}</span>
+{isActive ? <span className="categories-picker-handle" /> : null}
+</button>
+);
+})}
+</div>
+</div>
+</section>
+);
 }
 
 export default function Home() {
@@ -202,6 +236,8 @@ export default function Home() {
       </section>
 
       <Testimonials />
+
+      <PropertyCategoriesShowcase />
 
       <section className="highlight-band">
         <div className="highlight-intro">
