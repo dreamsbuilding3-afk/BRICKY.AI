@@ -115,12 +115,18 @@ return (
 <div className="categories-picker-track">
 {categories.map(([code, label], i) => {
 const isActive = code === active;
-const dist = Math.min(Math.abs(activeIndex - i), 4);
-const itemStyle = { transform: `translateX(${isActive ? -10 : dist * 6}px) scale(${isActive ? 1 : 1 - dist * 0.06})`, opacity: isActive ? 1 : Math.max(0.35, 1 - dist * 0.18) };
+const dist = Math.min(Math.abs(activeIndex - i), 6);
+const angle = (dist * 14 * Math.PI) / 180;
+const radius = 150;
+const xOffset = isActive ? -16 : radius * (1 - Math.cos(angle));
+const itemScale = isActive ? 1 : Math.max(0.55, 1 - dist * 0.09);
+const itemOpacity = isActive ? 1 : Math.max(0.12, 1 - dist * 0.22);
+const labelOpacity = isActive ? 1 : Math.max(0, 1 - dist * 0.4);
+const itemStyle = { transform: `translateX(${xOffset}px) scale(${itemScale})`, opacity: itemOpacity };
 return (
 <button type="button" key={code} className={`categories-picker-item${isActive ? " categories-picker-item-active" : ""}`} style={itemStyle} onClick={() => setActive(code)}>
 <span className="categories-picker-icon">{PROPERTY_CATEGORY_ICONS[code] || "🏠"}</span>
-<span className="categories-picker-label">{label}</span>
+<span className="categories-picker-label" style={{ opacity: labelOpacity }}>{label}</span>
 {isActive ? <span className="categories-picker-handle" /> : null}
 </button>
 );
