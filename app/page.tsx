@@ -175,13 +175,13 @@ return (
 <div className="categories-picker-track">
 {categories.map(([code, label], i) => {
 const isActive = code === active;
-const dist = Math.min(Math.abs(activeIndex - i), 6);
-const angle = (dist * 14 * Math.PI) / 180;
-const radius = 150;
+const dist = Math.min(Math.abs(activeIndex - i), 2);
+const angle = (dist * 10 * Math.PI) / 180;
+const radius = 70;
 const xOffset = isActive ? -16 : radius * (1 - Math.cos(angle));
-const itemScale = isActive ? 1 : Math.max(0.55, 1 - dist * 0.09);
-const itemOpacity = isActive ? 1 : Math.max(0.12, 1 - dist * 0.22);
-const labelOpacity = isActive ? 1 : Math.max(0, 1 - dist * 0.4);
+const itemScale = isActive ? 1 : Math.max(0.9, 1 - dist * 0.05);
+const itemOpacity = isActive ? 1 : Math.max(0.85, 1 - dist * 0.08);
+const labelOpacity = isActive ? 1 : Math.max(0.9, 1 - dist * 0.05);
 const itemStyle = { transform: `translateX(${xOffset}px) scale(${itemScale})`, opacity: itemOpacity };
 return (
 <button type="button" key={code} className={`categories-picker-item${isActive ? " categories-picker-item-active" : ""}`} style={itemStyle} onClick={() => setActive(code)}>
