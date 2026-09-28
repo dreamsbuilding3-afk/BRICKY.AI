@@ -98,6 +98,66 @@ function Testimonials() {
   );
 }
 
+const MOBILE_REVIEWS = [
+  {
+    number: "01",
+    quote: "J'analyse mes opportunités beaucoup plus rapidement. Bricky me fait gagner un temps énorme.",
+    name: "Thomas",
+    role: "Investisseur",
+    tint: "peach",
+    pin: "accent",
+  },
+  {
+    number: "02",
+    quote: "Enfin un outil qui centralise les données dont j'ai vraiment besoin avant d'investir.",
+    name: "Sarah",
+    role: "Investisseuse",
+    tint: "lavender",
+    pin: "blue",
+  },
+  {
+    number: "03",
+    quote: "Simple, rapide et surtout beaucoup plus clair que mes anciens tableaux Excel.",
+    name: "Julien",
+    role: "Marchand de biens",
+    tint: "peach",
+    pin: "accent",
+  },
+  {
+    number: "04",
+    quote: "Je vois immédiatement les points forts, les risques et les infos qui me manquent.",
+    name: "Nicolas",
+    role: "Investisseur",
+    tint: "lavender",
+    pin: "blue",
+  },
+];
+
+function MobileReviewsShowcase() {
+  return (
+    <section className="mobile-reviews">
+      <div className="mobile-reviews-intro">
+        <span className="eyebrow">Ils utilisent Bricky</span>
+        <h2>Ce que ça change, au quotidien.</h2>
+      </div>
+      <div className="mobile-reviews-track">
+        {MOBILE_REVIEWS.map((r, i) => (
+          <div
+            className={`mreview-card mreview-${r.tint}` + (i % 2 === 1 ? " mreview-right" : "")}
+            key={r.name}
+          >
+            <span className={`mreview-pin mreview-pin-${r.pin}`} />
+            <span className="mreview-number">{r.number}</span>
+            <Stars />
+            <blockquote>“{r.quote}”</blockquote>
+            <div className="mreview-name">— {r.name}, {r.role}</div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 const PROPERTY_CATEGORY_ICONS: Record<string, string> = { hotel: "🏨", chateau: "🏰", immeuble: "🏢", penthouse: "🏙️", loft: "🧱", duplex: "🏘️", chalet: "🏔️", local_commercial: "🏬", terrain: "🌳", parking: "🅿️", studio: "🚪", maison: "🏡", appartement: "🏠" };
 
 function PropertyCategoriesShowcase() {
@@ -268,6 +328,8 @@ export default function Home() {
       </section>
 
       <Testimonials />
+
+      <MobileReviewsShowcase />
 
       <PropertyCategoriesShowcase />
 
