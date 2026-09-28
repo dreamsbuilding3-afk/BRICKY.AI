@@ -1451,23 +1451,47 @@ body::before {
 }
 
 
-/* Éléments flottants glassmorphism dans le hero */
-.hero-floaters { position: absolute; top: 0; left: 50%; width: 100vw; height: 100%; transform: translateX(-50%); pointer-events: none; z-index: -1; overflow: visible; }
-.hero-float-wrap { position: absolute; }
-.hero-float { position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; min-width: 150px; min-height: 78px; padding: 16px 26px; border-radius: 22px; background: linear-gradient(135deg, rgba(255,255,255,.6) 0%, rgba(255,255,255,.16) 55%, rgba(255,255,255,.34) 100%); backdrop-filter: blur(22px) saturate(180%); -webkit-backdrop-filter: blur(22px) saturate(180%); border: 1px solid rgba(255,255,255,.7); box-shadow: 0 16px 38px rgba(31,38,135,.16), inset 0 1px 1px rgba(255,255,255,.85), inset 0 -10px 16px rgba(255,255,255,.08); font-size: 20px; font-weight: 800; letter-spacing: -0.01em; color: var(--ink); text-align: center; white-space: nowrap; animation: heroFloatBob 6.5s ease-in-out infinite; }
-.hero-float-shine { position: absolute; top: -70%; left: -40%; width: 55%; height: 240%; background: linear-gradient(120deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.65) 45%, rgba(255,255,255,0) 65%); transform: rotate(18deg); pointer-events: none; }
+/* Éléments flottants glassmorphism 3D dans le hero */
+.hero-floaters { position: absolute; top: 0; left: 50%; width: 100vw; height: 100%; transform: translateX(-50%); pointer-events: none; z-index: -1; overflow: visible; perspective: 1400px; transform-style: preserve-3d; }
+.hero-float { position: absolute; overflow: hidden; display: flex; align-items: center; justify-content: center; min-width: 160px; min-height: 84px; padding: 18px 28px; border-radius: 24px; background: linear-gradient(135deg, rgba(255,255,255,.62) 0%, rgba(255,255,255,.14) 55%, rgba(255,255,255,.36) 100%); backdrop-filter: blur(24px) saturate(190%); -webkit-backdrop-filter: blur(24px) saturate(190%); border: 1px solid rgba(255,255,255,.75); box-shadow: 0 24px 48px rgba(31,38,135,.22), inset 0 1px 1px rgba(255,255,255,.9), inset 0 -12px 18px rgba(255,255,255,.1); font-size: 21px; font-weight: 800; letter-spacing: -0.01em; color: var(--ink); text-align: center; white-space: nowrap; transform-style: preserve-3d; will-change: transform; }
+.hero-float-shine { position: absolute; top: -70%; left: -40%; width: 55%; height: 240%; background: linear-gradient(120deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.7) 45%, rgba(255,255,255,0) 65%); transform: rotate(18deg); pointer-events: none; }
 .hero-float-dot { position: absolute; top: 12px; right: 14px; width: 8px; height: 8px; border-radius: 50%; }
 .hero-float-accent .hero-float-dot { background: var(--accent); }
 .hero-float-blue .hero-float-dot { background: #2563eb; }
 .hero-float-green .hero-float-dot { background: #16a34a; }
 .hero-float-amber .hero-float-dot { background: #d97706; }
-@keyframes heroFloatBob {
-  0%, 100% { translate: 0 0; }
-  50% { translate: 0 -10px; }
+.hero-float-1 { animation: heroFloat3D-1 9s ease-in-out infinite; }
+.hero-float-2 { animation: heroFloat3D-2 10.5s ease-in-out infinite; animation-delay: -2.4s; }
+.hero-float-3 { animation: heroFloat3D-3 8.5s ease-in-out infinite; animation-delay: -5s; }
+.hero-float-4 { animation: heroFloat3D-4 11s ease-in-out infinite; animation-delay: -7.5s; }
+@keyframes heroFloat3D-1 {
+  0% { transform: rotate(-6deg) perspective(1000px) rotateX(10deg) rotateY(-14deg) rotateZ(-4deg) translate3d(0, 0, 0); }
+  25% { transform: rotate(-6deg) perspective(1000px) rotateX(-8deg) rotateY(10deg) rotateZ(3deg) translate3d(10px, -26px, 60px); }
+  50% { transform: rotate(-6deg) perspective(1000px) rotateX(6deg) rotateY(-6deg) rotateZ(-2deg) translate3d(-8px, -46px, 20px); }
+  75% { transform: rotate(-6deg) perspective(1000px) rotateX(-10deg) rotateY(14deg) rotateZ(4deg) translate3d(14px, -20px, -30px); }
+  100% { transform: rotate(-6deg) perspective(1000px) rotateX(10deg) rotateY(-14deg) rotateZ(-4deg) translate3d(0, 0, 0); }
+}
+@keyframes heroFloat3D-2 {
+  0% { transform: rotate(5deg) perspective(1000px) rotateX(-12deg) rotateY(16deg) rotateZ(5deg) translate3d(0, 0, 0); }
+  30% { transform: rotate(5deg) perspective(1000px) rotateX(9deg) rotateY(-10deg) rotateZ(-3deg) translate3d(-16px, -32px, -40px); }
+  60% { transform: rotate(5deg) perspective(1000px) rotateX(-6deg) rotateY(8deg) rotateZ(4deg) translate3d(12px, -50px, 30px); }
+  100% { transform: rotate(5deg) perspective(1000px) rotateX(-12deg) rotateY(16deg) rotateZ(5deg) translate3d(0, 0, 0); }
+}
+@keyframes heroFloat3D-3 {
+  0% { transform: rotate(-4deg) perspective(1000px) rotateX(8deg) rotateY(12deg) rotateZ(-5deg) translate3d(0, 0, 0); }
+  35% { transform: rotate(-4deg) perspective(1000px) rotateX(-10deg) rotateY(-8deg) rotateZ(3deg) translate3d(14px, -28px, 45px); }
+  70% { transform: rotate(-4deg) perspective(1000px) rotateX(6deg) rotateY(-14deg) rotateZ(-2deg) translate3d(-10px, -44px, -20px); }
+  100% { transform: rotate(-4deg) perspective(1000px) rotateX(8deg) rotateY(12deg) rotateZ(-5deg) translate3d(0, 0, 0); }
+}
+@keyframes heroFloat3D-4 {
+  0% { transform: rotate(6deg) perspective(1000px) rotateX(-9deg) rotateY(-13deg) rotateZ(4deg) translate3d(0, 0, 0); }
+  40% { transform: rotate(6deg) perspective(1000px) rotateX(11deg) rotateY(9deg) rotateZ(-4deg) translate3d(-12px, -34px, 35px); }
+  70% { transform: rotate(6deg) perspective(1000px) rotateX(-7deg) rotateY(15deg) rotateZ(3deg) translate3d(16px, -18px, -35px); }
+  100% { transform: rotate(6deg) perspective(1000px) rotateX(-9deg) rotateY(-13deg) rotateZ(4deg) translate3d(0, 0, 0); }
 }
 @media (max-width: 1100px) {
   .hero-floaters { display: none; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .hero-float { animation: none; }
+  .hero-float-1, .hero-float-2, .hero-float-3, .hero-float-4 { animation: none; }
 }
