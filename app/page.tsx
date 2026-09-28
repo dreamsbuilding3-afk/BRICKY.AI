@@ -137,6 +137,32 @@ return (
 );
 }
 
+const HERO_FLOAT_ITEMS = [
+{ label: "Rendement net", top: "9%", left: "3vw", rotate: -9, color: "accent", delay: 0 },
+{ label: "Cash-flow réel", top: "5%", right: "4vw", rotate: 7, color: "blue", delay: 0.8 },
+{ label: "Comparables marché", top: "34%", left: "1.5vw", rotate: 5, color: "green", delay: 1.6 },
+{ label: "Risques environnementaux", top: "40%", right: "2vw", rotate: -6, color: "amber", delay: 2.4 },
+{ label: "Cadastre & urbanisme", top: "62%", left: "4vw", rotate: 8, color: "blue", delay: 3.2 },
+{ label: "Dossier PDF", top: "68%", right: "5vw", rotate: -7, color: "accent", delay: 4 },
+{ label: "DPE / GES", top: "86%", left: "8vw", rotate: 4, color: "green", delay: 4.8 },
+];
+
+function HeroFloaters() {
+return (
+<div className="hero-floaters" aria-hidden="true">
+{HERO_FLOAT_ITEMS.map((item) => (
+<div
+className="hero-float-wrap"
+key={item.label}
+style={{ top: item.top, left: item.left, right: item.right, transform: `rotate(${item.rotate}deg)` }}
+>
+<span className={`hero-float hero-float-${item.color}`} style={{ animationDelay: `${item.delay}s` }}>{item.label}</span>
+</div>
+))}
+</div>
+);
+}
+
 export default function Home() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -171,6 +197,7 @@ export default function Home() {
       </nav>
 
       <section className="hero">
+        <HeroFloaters />
         <span className="eyebrow">Built for smarter property decisions</span>
         <h1>Know the <span className="stroke">deal</span> before you <span className="accent">make it</span>.</h1>
         <p className="sub">
