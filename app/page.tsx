@@ -138,13 +138,13 @@ return (
 }
 
 const HERO_FLOAT_ITEMS = [
-{ label: "Rendement net", top: "9%", left: "3vw", rotate: -9, color: "accent", delay: 0 },
-{ label: "Cash-flow réel", top: "5%", right: "4vw", rotate: 7, color: "blue", delay: 0.8 },
-{ label: "Comparables marché", top: "34%", left: "1.5vw", rotate: 5, color: "green", delay: 1.6 },
-{ label: "Risques environnementaux", top: "40%", right: "2vw", rotate: -6, color: "amber", delay: 2.4 },
-{ label: "Cadastre & urbanisme", top: "62%", left: "4vw", rotate: 8, color: "blue", delay: 3.2 },
-{ label: "Dossier PDF", top: "68%", right: "5vw", rotate: -7, color: "accent", delay: 4 },
-{ label: "DPE / GES", top: "86%", left: "8vw", rotate: 4, color: "green", delay: 4.8 },
+{ label: "Rendement", top: "10%", left: "16vw", rotate: -6, color: "accent", delay: 0 },
+{ label: "Cash-flow", top: "6%", right: "17vw", rotate: 5, color: "blue", delay: 0.8 },
+{ label: "Marché", top: "32%", left: "11vw", rotate: 4, color: "green", delay: 1.6 },
+{ label: "Risques", top: "36%", right: "12vw", rotate: -5, color: "amber", delay: 2.4 },
+{ label: "Cadastre", top: "58%", left: "16vw", rotate: 6, color: "blue", delay: 3.2 },
+{ label: "Dossier", top: "62%", right: "15vw", rotate: -4, color: "accent", delay: 4 },
+{ label: "DPE", top: "80%", left: "22vw", rotate: 3, color: "green", delay: 4.8 },
 ];
 
 function HeroFloaters() {
@@ -156,7 +156,11 @@ className="hero-float-wrap"
 key={item.label}
 style={{ top: item.top, left: item.left, right: item.right, transform: `rotate(${item.rotate}deg)` }}
 >
-<span className={`hero-float hero-float-${item.color}`} style={{ animationDelay: `${item.delay}s` }}>{item.label}</span>
+<span className={`hero-float hero-float-${item.color}`} style={{ animationDelay: `${item.delay}s` }}>
+<span className="hero-float-shine" />
+<span className="hero-float-dot" />
+{item.label}
+</span>
 </div>
 ))}
 </div>
