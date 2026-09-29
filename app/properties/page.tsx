@@ -188,6 +188,15 @@ export default function PropertiesPage() {
               <button type="button" className="first-analysis-dismiss" aria-label="Fermer" onClick={() => setShowFirstAnalysisCongrats(false)}>×</button>
             </div>
           )}
+          {!showFirstAnalysisCongrats && (
+            <a href={"/analyze?property_id=" + rows[0].id} className="resume-banner">
+              <div>
+                <b>Reprendre : {rows[0].title || rows[0].address || "votre dernier bien"}</b>
+                <p>Continuez où vous en étiez, ou lancez une nouvelle analyse ci-dessous.</p>
+              </div>
+              <span className="primary-button" style={{ width: "auto", padding: "0 22px", minHeight: 42, flexShrink: 0 }}>Reprendre →</span>
+            </a>
+          )}
           <div className="properties-list">
             {rows.map((row) => {
               const analysis = latestAnalysis(row);
