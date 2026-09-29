@@ -269,6 +269,7 @@ export default function Home() {
         </form>
         <div className="proof">Prix · comparables · rendement · risques · données manquantes · actions</div>
         <div className="trial-note">7 jours d’essai gratuit sur les paliers payants · sans carte bancaire</div>
+        <a className="trial-note" href="/demo" style={{ display: "block", textDecoration: "underline" }}>Voir un exemple d’analyse avant de vous inscrire →</a>
       </section>
 
       <CapabilityMarquee />
@@ -362,6 +363,39 @@ export default function Home() {
             <h3>Fichiers acceptés</h3>
             <p>Lien d’annonce ou PDF déposé directement — Bricky s’adapte à ce que vous avez sous la main.</p>
             <div className="highlight-stat">URL ou PDF, au choix</div>
+          </div>
+        </div>
+      </section>
+
+      <section className="highlight-band">
+        <div className="highlight-intro">
+          <span className="eyebrow">Confiance</span>
+          <h2>Vos données, protégées à chaque étape.</h2>
+        </div>
+        <div className="highlight-grid">
+          <div className="highlight-item">
+            <div className="highlight-item-top"><span className="highlight-icon">01</span><span className="highlight-tag">Sécurité</span></div>
+            <h3>Isolation stricte</h3>
+            <p>Chaque compte ne voit et n’accède qu’à ses propres biens et analyses, protégé au niveau de la base de données.</p>
+            <div className="highlight-stat">Règles de sécurité par utilisateur</div>
+          </div>
+          <div className="highlight-item">
+            <div className="highlight-item-top"><span className="highlight-icon">02</span><span className="highlight-tag">Infrastructure</span></div>
+            <h3>Hébergement professionnel</h3>
+            <p>Application et base de données hébergées par Vercel et Supabase, avec authentification chiffrée.</p>
+            <div className="highlight-stat">Vercel · Supabase</div>
+          </div>
+          <div className="highlight-item">
+            <div className="highlight-item-top"><span className="highlight-icon">03</span><span className="highlight-tag">Transparence</span></div>
+            <h3>Jamais revendues</h3>
+            <p>Vos données servent uniquement à générer vos analyses. Elles ne sont ni vendues, ni louées, ni utilisées à des fins publicitaires.</p>
+            <div className="highlight-stat"><a href="/legal/confidentialite" style={{ color: "inherit" }}>Voir notre politique de confidentialité →</a></div>
+          </div>
+          <div className="highlight-item">
+            <div className="highlight-item-top"><span className="highlight-icon">04</span><span className="highlight-tag">Engagement</span></div>
+            <h3>Sans engagement</h3>
+            <p>Résiliable à tout moment sur les paliers payants, sans durée minimale imposée.</p>
+            <div className="highlight-stat">Aucune durée d’engagement</div>
           </div>
         </div>
       </section>
