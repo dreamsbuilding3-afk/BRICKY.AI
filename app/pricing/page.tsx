@@ -142,6 +142,13 @@ export default function PricingPage() {
                   <li key={item}>{item}</li>
                 ))}
               </ul>
+              {plan.plan_code === "agence" ? (
+                <div className="pricing-network">
+                  <span className="pricing-network-badge">🤝 Réseau Privé Bricky</span>
+                  <p className="pricing-network-text">Accédez à notre réseau de 50+ agents immobiliers partenaires et augmentez vos chances de trouver rapidement votre prochain bien.</p>
+                  <a className="secondary-button pricing-compare-cta pricing-network-cta" href="#">→ Accéder au Réseau Privé</a>
+                </div>
+              ) : null}
               {plan.plan_code === "decouverte" ? (
                 <Link className="secondary-button pricing-cta" href="/analyze">
                   Commencer gratuitement
