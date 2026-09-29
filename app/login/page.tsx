@@ -40,6 +40,25 @@ export default function LoginPage() {
     setLoading(false);
   }
 
+  async function handleForgotPassword() {
+    if (!email) {
+      setError("Entre ton e-mail ci-dessus, puis clique sur \"Mot de passe oublie ?\".");
+      return;
+    }
+    setError("");
+    setMessage("");
+    setLoading(true);
+    const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    if (resetError) {
+      setError(resetError.message);
+    } else {
+      setMessage("Email de reinitialisation envoye a " + email + ". Verifie ta boite de reception.");
+    }
+    setLoading(false);
+  }
+
   return (
     <main className="page">
       <nav className="nav"><div className="brand"><img src="/mascot-avatar-round.png" alt="" className="brand-avatar" /><span>Bricky</span></div><span className="navlink">Decision intelligence</span></nav>
@@ -53,6 +72,11 @@ export default function LoginPage() {
         <form className="property-form auth-form" onSubmit={handleSubmit}>
           <label>E-mail<input required type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="vous@exemple.com" /></label>
           <label>Mot de passe<input required type="password" minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" /></label>
+          {mode === "login" && (
+            <button type="button" className="auth-switch auth-forgot" onClick={handleForgotPassword} disabled={loading}>
+              Mot de passe oublié ?
+            </button>
+          )}
           <button className="primary-button" disabled={loading}>{loading ? "Connexion…" : mode === "login" ? "Se connecter →" : "Créer mon compte →"}</button>
           {error && <div className="error-box">{error}</div>}
           {message && <div className="result-panel"><p>{message}</p></div>}
