@@ -149,7 +149,10 @@ async function extractListing() {
 if (!payload.source_url.trim()) return;
 setExtracting(true); setError(""); setExtractNote("");
 try {
-const response = await fetch("/api/properties/preview", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ url: payload.source_url.trim() }) });
+const { data: previewSession } = await supabase.auth.getSession();
+const previewToken = previewSession.session?.access_token;
+if (!previewToken) throw new Error("Session expiree, reconnecte-toi.");
+const response = await fetch("/api/properties/preview", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${previewToken}` }, body: JSON.stringify({ url: payload.source_url.trim() }) });
 const data = await response.json();
 if (!response.ok) throw new Error(data?.error || "Impossible de lire cette annonce.");
 const e = data.extracted || {};
