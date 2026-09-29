@@ -12,6 +12,8 @@ type CadastralResult = { cadastral?: { commune_code: string; section_prefix: str
 type UrbanismeResult = { urbanisme?: { zone_type: string | null; zone_label: string | null; zone_label_long: string | null; destination_dominante: string | null; regulation_url: string | null; insee_code: string | null; source: string; metadata?: { typezone_label?: string | null } }; error?: string; note?: string };
 type BatimentResult = { batiment?: { hauteur_m: number | null; nature: string | null; usage_1: string | null; usage_2: string | null; nombre_etages: number | null; nombre_logements: number | null; date_construction: string | null; geometry?: unknown; source: string }; error?: string; note?: string };
 
+const DRAFT_KEY = "bricky_analyze_draft_v1";
+
 export default function AnalyzePage() {
 return <Suspense fallback={null}><AnalyzePageInner /></Suspense>;
 }
@@ -30,6 +32,7 @@ const [result, setResult] = useState<AnalysisResult | null>(null);
 const [userEmail, setUserEmail] = useState("");
 const [loadingExisting, setLoadingExisting] = useState(false);
 const [loadError, setLoadError] = useState("");
+const [draftRestored, setDraftRestored] = useState(false);
 
 useEffect(() => { supabase.auth.getSession().then(({ data }) => { if (!data.session) router.replace("/login"); else setUserEmail(data.session.user.email ?? ""); }); }, [router]);
 
@@ -85,6 +88,39 @@ if (!cancelled) setLoadingExisting(false);
 loadExisting();
 return () => { cancelled = true; };
 }, [propertyIdParam]);
+
+useEffect(() => {
+if (propertyIdParam) return;
+try {
+const saved = window.localStorage.getItem(DRAFT_KEY);
+if (saved) {
+const parsed = JSON.parse(saved);
+if (parsed && typeof parsed === "object") {
+setPayload((current) => ({ ...current, ...parsed }));
+setDraftRestored(true);
+}
+}
+} catch {
+// localStorage indisponible (navigation privee, etc.) : pas grave, on ignore.
+}
+// eslint-disable-next-line react-hooks/exhaustive-deps
+}, []);
+
+useEffect(() => {
+if (propertyIdParam || result) return;
+try {
+const hasContent = Object.values(payload).some((v) => v && v !== "");
+if (hasContent) window.localStorage.setItem(DRAFT_KEY, JSON.stringify(payload));
+} catch {
+// localStorage indisponible : pas grave, on ignore.
+}
+}, [payload, propertyIdParam, result]);
+
+function clearDraft() {
+setDraftRestored(false);
+setPayload({ title: "", city: "", address: "", price: "", surface_m2: "", rooms: "", bedrooms: "", property_type: "", dpe_class: "", ges_class: "", monthly_rent: "", down_payment: "", loan_rate_pct: "", loan_duration_years: "", renovation_budget: "", source_url: "" });
+try { window.localStorage.removeItem(DRAFT_KEY); } catch {}
+}
 
 async function refreshAnalysisFromDb(propertyId: string) {
 const { data: analysisRow } = await supabase
@@ -150,7 +186,7 @@ const { data: sessionData } = await supabase.auth.getSession(); const token = se
 if (!token) { router.replace("/login"); return; }
 const body = Object.fromEntries(Object.entries(payload).map(([key, value]) => [key, ["price", "surface_m2", "rooms", "bedrooms", "monthly_rent", "down_payment", "loan_rate_pct", "loan_duration_years", "renovation_budget"].includes(key) && value !== "" ? Number(value) : value]));
 const response = await fetch("/api/properties/analyze", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify(body) });
-const data = await response.json(); if (!response.ok) throw new Error(data?.details?.message || data?.error || "Analyse impossible."); setResult(data);
+const data = await response.json(); if (!response.ok) throw new Error(data?.details?.message || data?.error || "Analyse impossible."); setResult(data); try { window.localStorage.removeItem(DRAFT_KEY); } catch {}
 } catch (err) { setError(err instanceof Error ? err.message : "Une erreur est survenue."); }
 finally { setLoading(false); }
 }
@@ -163,6 +199,7 @@ return <main className="page">
 <div className="analysis-intro"><span className="eyebrow">Bricky · V1</span><h1>{propertyIdParam ? "Voici l’analyse de ce bien." : "Est-ce que ce bien mérite votre attention ?"}</h1><p className="sub">{propertyIdParam ? "Analyse enregistrée, telle que calculée par Bricky." : "Collez une annonce ou saisissez les données que vous connaissez. Bricky calcule, vérifie et signale ce qui manque — sans inventer."}</p></div>
 {loadingExisting && <div className="extract-note">Chargement du bien…</div>}
 {loadError && <div className="error-box">{loadError}</div>}
+{draftRestored && !propertyIdParam && <div className="draft-banner"><span>Brouillon restaure automatiquement, votre saisie precedente a ete recuperee.</span><button type="button" className="secondary-button" onClick={clearDraft}>Effacer</button></div>}
 {!propertyIdParam && <>
 <div className="url-import"><label>URL de l'annonce<input value={payload.source_url} onChange={(e) => update("source_url", e.target.value)} placeholder="https://..." /></label><button type="button" className="secondary-button" onClick={extractListing} disabled={extracting || !payload.source_url.trim()}>{extracting ? "Lecture…" : "Extraire les données"}</button></div><div className="url-import file-import"><label>Ou dépose un fichier (PDF de l'annonce ou du dossier)<input type="file" accept="application/pdf" onChange={(e) => { const f = e.target.files?.[0]; if (f) extractFromFile(f); e.target.value = ""; }} disabled={extractingFile} /></label>{extractingFile && <span className="extract-note">Lecture du fichier…</span>}</div>
 {extractNote && <div className="extract-note">✓ {extractNote}</div>}
