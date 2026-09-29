@@ -1,5 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
 import { classifyPropertyType } from "@/lib/data/propertyTypeClassifier";
+import { enforceRateLimit } from "@/lib/rateLimit";
+import dns from "node:dns/promises";
+import net from "node:net";
+
+function isPrivateOrLoopbackIp(ip: string): boolean {
+  if (net.isIPv6(ip)) {
+    const lower = ip.toLowerCase();
+    if (lower === "::1") return true;
+    if (lower.startsWith("fe80:") || lower.startsWith("fc") || lower.startsWith("fd")) return true;
+    if (lower.startsWith("::ffff:")) return isPrivateOrLoopbackIp(lower.slice(7));
+    return false;
+  }
+  const parts = ip.split(".").map(Number);
+  if (parts.length !== 4 || parts.some((p) => !Number.isFinite(p))) return true;
+  const [a, b] = parts;
+  if (a === 127 || a === 10 || a === 0) return true;
+  if (a === 172 && b >= 16 && b <= 31) return true;
+  if (a === 192 && b === 168) return true;
+  if (a === 169 && b === 254) return true;
+  return false;
+}
 
 const PRICE_RE = /(?:prix|price)[^\d]{0,40}([\d\s.,]+)\s*€?/i;
 const SURFACE_RE = /(?:surface|area)[^\d]{0,40}(\d+(?:[.,]\d+)?)\s*m(?:²|2)/i;
@@ -38,6 +59,14 @@ function jsonLdValues(html: string) {
 }
 
 export async function POST(request: NextRequest) {
+  const rateLimitResponse = await enforceRateLimit(request, { endpoint: "properties.preview", maxRequests: 15, windowSeconds: 60 });
+  if (rateLimitResponse) return rateLimitResponse;
+
+  const authorization = request.headers.get("authorization");
+  if (!authorization?.startsWith("Bearer ")) {
+    return NextResponse.json({ error: "Authentication required." }, { status: 401 });
+  }
+
   try {
     const { url } = await request.json();
     if (typeof url !== "string" || !url.trim()) {
@@ -47,6 +76,19 @@ export async function POST(request: NextRequest) {
     const parsedUrl = new URL(url.trim());
     if (!["http:", "https:"].includes(parsedUrl.protocol)) {
       return NextResponse.json({ error: "URL HTTP/HTTPS invalide." }, { status: 400 });
+    }
+
+    const hostname = parsedUrl.hostname.toLowerCase();
+    if (hostname === "localhost" || hostname === "0.0.0.0" || hostname.endsWith(".local")) {
+      return NextResponse.json({ error: "Cette URL est refusee." }, { status: 400 });
+    }
+    try {
+      const resolved = await dns.lookup(hostname);
+      if (isPrivateOrLoopbackIp(resolved.address)) {
+        return NextResponse.json({ error: "Cette URL est refusee." }, { status: 400 });
+      }
+    } catch {
+      return NextResponse.json({ error: "Impossible de resoudre cette adresse." }, { status: 400 });
     }
 
     const response = await fetch(parsedUrl.toString(), {
