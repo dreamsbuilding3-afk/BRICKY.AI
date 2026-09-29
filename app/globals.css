@@ -523,6 +523,13 @@ letter-spacing: .04em;
 .pricing-card .primary-button.pricing-cta:hover { transform: translateY(-1px); box-shadow: 0 10px 24px -8px rgba(255,90,31,.4); }
 .pricing-card .secondary-button.pricing-cta:hover { transform: translateY(-1px); }
 .pricing-cta-note { font-size: 11.5px; color: #9c9c9c; letter-spacing: .01em; }
+
+/* ===== Tarifs : Reseau Prive Bricky (placeholder, palier Agence uniquement) ===== */
+.pricing-network { margin: 0 0 18px; padding: 14px 16px; border: 1.5px solid rgba(17,17,17,.1); border-radius: 14px; background: rgba(255,90,31,.045); display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+.pricing-network-badge { font-size: 13px; font-weight: 800; letter-spacing: -.01em; color: var(--ink); }
+.pricing-network-text { margin: 0; font-size: 12.5px; line-height: 1.5; color: #666; }
+.pricing-network-cta { margin-top: 2px; }
+
 .pricing-card { transition: box-shadow .2s ease, border-color .2s ease; }
 .pricing-card:hover { border-color: rgba(17,17,17,.16); box-shadow: 0 20px 40px -26px rgba(17,17,17,.22); }
 
