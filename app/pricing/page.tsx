@@ -75,14 +75,21 @@ export default function PricingPage() {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [currentPlan, setCurrentPlan] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
 
   useEffect(() => {
     (async () => {
-      const { data: planRows } = await supabase
+      setLoadError("");
+      const { data: planRows, error: plansError } = await supabase
         .from("subscription_plans")
         .select("*")
         .order("sort_order", { ascending: true });
-      setPlans((planRows as Plan[]) || []);
+      if (plansError || !planRows || planRows.length === 0) {
+        setLoadError("Impossible de charger les tarifs pour le moment. Merci de rafraichir la page ou de reessayer dans un instant.");
+        setLoading(false);
+        return;
+      }
+      setPlans(planRows as Plan[]);
 
       const { data: sessionData } = await supabase.auth.getSession();
       if (sessionData.session) {
@@ -119,7 +126,9 @@ export default function PricingPage() {
         <p className="trial-note" style={{ textAlign: "center", margin: "14px auto 0" }}>Sans engagement, résiliable à tout moment sur tous les paliers payants.</p>
       </section>
 
-      {loading ? null : (
+      {loading ? null : loadError ? (
+        <section className="pricing-intro"><div className="error-box" style={{ maxWidth: 520, margin: "0 auto" }}>{loadError}</div></section>
+      ) : (
         <section className="pricing-grid">
           {plans.map((plan) => (
             <div
