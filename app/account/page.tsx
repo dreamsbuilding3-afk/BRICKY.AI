@@ -17,6 +17,10 @@ export default function AccountPage() {
   const [savingBranding, setSavingBranding] = useState(false);
   const [brandingMessage, setBrandingMessage] = useState("");
 
+  const [deleteConfirm, setDeleteConfirm] = useState("");
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
+
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data }) => {
       if (!data.session) {
@@ -59,6 +63,21 @@ export default function AccountPage() {
   async function handleLogout() {
     await supabase.auth.signOut();
     router.replace("/login");
+  }
+
+  async function handleDeleteAccount() {
+    if (deleteConfirm.trim().toUpperCase() !== "SUPPRIMER") return;
+    setDeleting(true);
+    setDeleteError("");
+    try {
+      const { error } = await supabase.rpc("delete_my_account");
+      if (error) throw error;
+      await supabase.auth.signOut();
+      router.replace("/");
+    } catch {
+      setDeleteError("Impossible de supprimer le compte pour le moment. Reessaie dans un instant.");
+      setDeleting(false);
+    }
   }
 
   async function handleSaveBranding(event: FormEvent) {
@@ -131,6 +150,30 @@ export default function AccountPage() {
             </form>
           </div>
         )}
+
+        <div className="account-card account-card-danger" style={{ marginTop: 20 }}>
+          <h1>Supprimer mon compte</h1>
+          <p className="account-danger-note">
+            Cette action est definitive : votre compte, vos biens analyses, vos alertes et toutes vos donnees associees seront supprimes immediatement. Elle ne peut pas etre annulee.
+          </p>
+          <div className="form-grid" style={{ gridTemplateColumns: "1fr" }}>
+            <label>
+              Tape SUPPRIMER pour confirmer
+              <input value={deleteConfirm} onChange={(e) => setDeleteConfirm(e.target.value)} placeholder="SUPPRIMER" />
+            </label>
+          </div>
+          <div className="account-actions">
+            <button
+              type="button"
+              className="danger-button"
+              disabled={deleteConfirm.trim().toUpperCase() !== "SUPPRIMER" || deleting}
+              onClick={handleDeleteAccount}
+            >
+              {deleting ? "Suppression…" : "Supprimer definitivement mon compte"}
+            </button>
+          </div>
+          {deleteError ? <div className="error-box">{deleteError}</div> : null}
+        </div>
       </div>
     </main>
   );
