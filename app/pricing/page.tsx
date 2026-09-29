@@ -116,6 +116,7 @@ export default function PricingPage() {
           ou agence. Commencez avec une analyse gratuite, puis profitez de 7 jours d'essai gratuit sur les paliers
           payants, sans carte bancaire.
         </p>
+        <p className="trial-note" style={{ textAlign: "center", margin: "14px auto 0" }}>Sans engagement, résiliable à tout moment sur tous les paliers payants.</p>
       </section>
 
       {loading ? null : (
