@@ -252,6 +252,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Authentication required." }, { status: 401 });
   }
 
+  try {
+
   const subRes = await fetch(`${SUPABASE_URL}/rest/v1/rpc/get_my_subscription`, {
     method: "POST",
     headers: { apikey: SUPABASE_ANON_KEY as string, Authorization: authorization, "Content-Type": "application/json" },
@@ -687,4 +689,12 @@ export async function POST(request: NextRequest) {
       "Cache-Control": "no-store",
     },
   });
+  } catch (err) {
+    console.error("dossier generation failed", err);
+    const detail = err instanceof Error ? `${err.name}: ${err.message}` : String(err);
+    return NextResponse.json(
+      { error: "dossier_generation_failed", message: `Erreur interne lors de la generation du dossier (${detail}). L'equipe technique a ete alertee.` },
+      { status: 500 },
+    );
+  }
 }
