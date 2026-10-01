@@ -329,27 +329,36 @@ const historyMin = historyYears.length ? Math.min(...historyYears.map((y: any) =
 const historyRange = historyMax - historyMin || historyMax || 1;
 const propertyId = typeof result.property_id === "string" ? result.property_id : typeof analysis.property_id === "string" ? analysis.property_id : "";
 const [downloadingDossier, setDownloadingDossier] = useState(false);
+const [dossierError, setDossierError] = useState<string | null>(null);
 async function downloadDossier() {
 if (!propertyId) return;
 setDownloadingDossier(true);
+setDossierError(null);
 try {
 const { data } = await supabase.auth.getSession();
 const token = data.session?.access_token;
-if (!token) return;
+if (!token) { setDossierError("Session expirée — reconnectez-vous puis réessayez."); return; }
 const response = await fetch("/api/properties/dossier", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ property_id: propertyId }) });
-if (!response.ok) throw new Error("Impossible de générer le dossier.");
+if (!response.ok) {
+let message = `Le dossier n'a pas pu être généré (erreur ${response.status}).`;
+try { const errBody = await response.json(); if (errBody?.message) message = String(errBody.message); } catch {}
+throw new Error(message);
+}
 const blob = await response.blob();
+if (blob.size === 0) throw new Error("Le fichier généré est vide. Réessayez dans un instant.");
 const url = URL.createObjectURL(blob);
 const a = document.createElement("a");
 a.href = url; a.download = `dossier-bricky-${propertyId}.pdf`; document.body.appendChild(a); a.click(); a.remove();
 URL.revokeObjectURL(url);
-} catch {
-// ignore
+} catch (err: any) {
+console.error("Echec telechargement dossier PDF:", err);
+setDossierError(err?.message || "Erreur inattendue lors de la génération du dossier. Réessayez dans un instant.");
 } finally {
 setDownloadingDossier(false);
 }
 }
 return <section className="result-panel decision-dashboard"><div className="result-head"><div><span className="eyebrow">Analyse terminée</span><h2>Voici ce que Bricky en pense.</h2></div><div className="result-head-actions">{propertyId && <button type="button" className="secondary-button" onClick={downloadDossier} disabled={downloadingDossier}>{downloadingDossier ? "Génération…" : "Télécharger le dossier complet (PDF) →"}</button>}<span className="status-dot">● Décision</span></div></div>
+{dossierError ? <p className="share-error" style={{ marginTop: 4 }}>{dossierError}</p> : null}
 <div className="decision-hero"><div><span className="decision-label">Verdict</span><strong>{label}</strong></div><div className="score-block"><span>Score</span><b>{score ?? "—"}<small>/100</small></b></div><div className="score-block"><span>Confiance</span><b>{confidence ?? "—"}<small>%</small></b>{confidenceLabel ? <em className="confidence-tag">{confidenceLabel}</em> : null}</div></div>{missingCount > 0 ? <p className="confidence-note">Score basé sur {missingCount} donnée{missingCount > 1 ? "s" : ""} manquante{missingCount > 1 ? "s" : ""} — plus vous complétez le bien, plus l'estimation est fiable.</p> : null}
 <div className="insights-band"><div className="ring-cards"><RingCard title="Score Bricky" pct={scorePct} colorFrom="#6366f1" colorTo="#3b82f6" gradientId="ringScore" value={`${score ?? "—"}/100`} caption="Fiabilité du score" chipText={confidenceLabel ? `Confiance ${confidenceLabel}` : null} chipTone={confidenceTone} /><RingCard title="Rendement net" pct={yieldPct} colorFrom="#16a34a" colorTo="#4ade80" gradientId="ringYield" value={`${metrics.net_yield_pct ?? "—"}%`} caption="Rendement net annuel" chipText={yieldLabel} chipTone={yieldTone} /><RingCard title="Cash-flow mensuel" pct={cashflowPct} colorFrom={cashflowTone === "bad" ? "#f97316" : "#0ea5e9"} colorTo={cashflowTone === "bad" ? "#fb923c" : "#38bdf8"} gradientId="ringCashflow" value={`${financing.monthly_cashflow ?? "—"} €`} caption="Après charges & prêt" chipText={cashflowLabel} chipTone={cashflowTone} /></div><div className="funnel-card"><h4>Du loyer au cash-flow</h4><div className="funnel-steps"><div className="funnel-step"><span>Loyer mensuel</span><div className="funnel-bar"><div className="funnel-bar-fill" style={{width: "100%"}} /></div><b>{metrics.monthly_rent ?? "—"} €</b></div><div className="funnel-step"><span>Revenu annuel net</span><div className="funnel-bar"><div className="funnel-bar-fill" style={{width: `${Math.min(100, Math.round(((metrics.annual_net_income ?? 0) / (((metrics.monthly_rent ?? 1) * 12) || 1)) * 100))}%`}} /></div><b>{metrics.annual_net_income ?? "—"} €</b></div><div className="funnel-step"><span>Mensualité de prêt</span><div className="funnel-bar"><div className="funnel-bar-fill" style={{width: `${Math.min(100, Math.round(((financing.monthly_loan_payment ?? 0) / ((metrics.monthly_rent ?? 1) || 1)) * 100))}%`}} /></div><b>{financing.monthly_loan_payment ?? "—"} €</b></div><div className="funnel-step"><span>Cash-flow mensuel</span><div className="funnel-bar"><div className="funnel-bar-fill funnel-bar-final" style={{width: `${Math.min(100, Math.max(4, Math.round(Math.abs((financing.monthly_cashflow ?? 0) / ((metrics.monthly_rent ?? 1) || 1)) * 100)))}%`}} /></div><b>{financing.monthly_cashflow ?? "—"} €</b></div></div></div>{rows.length > 0 && <div className="scenario-chart-card"><h4>Rendement net par scénario</h4><div className="scenario-bars">{rows.map((key) => { const val = scenarios[key].net_yield ?? 0; const maxVal = Math.max(...rows.map((k) => scenarios[k].net_yield ?? 0), 1); const pct = Math.max(6, Math.round((val / maxVal) * 100)); return <div className="scenario-bar-col" key={key}><b>{val} %</b><div className="scenario-bar-track"><div className="scenario-bar-fill" style={{height: `${pct}%`}} /></div><span>{key === "base" ? "Base" : key === "conservative" ? "Conservateur" : "Optimiste"}</span></div>; })}</div></div>}</div>
 <div className="share-row"><button type="button" className="share-button" onClick={handleShare} disabled={shareStatus.loading}>{shareStatus.loading ? "Generation du lien..." : shareStatus.url ? "Lien actif" : "Partager cette analyse"}</button>{shareStatus.url ? <div className="share-link"><input type="text" readOnly value={shareStatus.url} onFocus={(e) => e.target.select()} /><button type="button" onClick={() => navigator.clipboard.writeText(shareStatus.url || "")}>Copier</button></div> : null}{shareStatus.error ? <p className="share-error">{shareStatus.error}</p> : null}</div>
