@@ -47,16 +47,30 @@ async function fetchMany(table: string, column: string, id: string, authorizatio
   return Array.isArray(rows) ? rows : [];
 }
 
+// pdf-lib's standard Helvetica font only supports the WinAnsi (CP1252) charset and throws at
+// draw time for any character outside it. Free text in this document comes from many places
+// (scraped listing titles/addresses, AI-generated risk text, locale-aware number formatting)
+// that can contain characters CP1252 doesn't have — most notably U+202F, the narrow no-break
+// space that Node's fr-FR Intl number formatting uses as a thousands separator. Routing every
+// piece of dynamic text through this sanitizer makes that whole class of crash impossible
+// instead of patching one bad character at a time.
+function sanitizeText(text: string): string {
+  return text
+    .replace(/[  -​  　]/g, " ")
+    .replace(/[‌‍﻿]/g, "")
+    .replace(/[^\x00-\xFF]/g, "?");
+}
+
 function fmtNum(value: unknown, suffix = ""): string {
   if (value === null || value === undefined || value === "") return "—";
   const n = Number(value);
   if (!Number.isFinite(n)) return "—";
-  return n.toLocaleString("fr-FR", { maximumFractionDigits: 2 }) + suffix;
+  return sanitizeText(n.toLocaleString("fr-FR", { maximumFractionDigits: 2 }) + suffix);
 }
 
 function fmtStr(value: unknown): string {
   if (value === null || value === undefined || value === "") return "—";
-  return String(value);
+  return sanitizeText(String(value));
 }
 
 async function fetchImage(origin: string, path: string): Promise<ArrayBuffer | null> {
@@ -282,8 +296,8 @@ export async function POST(request: NextRequest) {
       if (brandRes.ok) {
         const brandRows = await brandRes.json();
         const brand = Array.isArray(brandRows) && brandRows[0] ? brandRows[0] : null;
-        if (brand?.agency_name) brandName = String(brand.agency_name);
-        if (brand?.agency_tagline) brandTagline = String(brand.agency_tagline);
+        if (brand?.agency_name) brandName = sanitizeText(String(brand.agency_name));
+        if (brand?.agency_tagline) brandTagline = sanitizeText(String(brand.agency_tagline));
       }
     } catch {
       // fall back to default branding
@@ -360,8 +374,8 @@ export async function POST(request: NextRequest) {
     sealImage = null;
   }
 
-  const propertyTitle = String(property.title || "Bien immobilier");
-  const propertyAddress = fmtStr(property.address) + (property.city ? ", " + String(property.city) : "");
+  const propertyTitle = sanitizeText(String(property.title || "Bien immobilier"));
+  const propertyAddress = fmtStr(property.address) + (property.city ? ", " + sanitizeText(String(property.city)) : "");
   const dossierRef = `BRK-${new Date(property.created_at ? String(property.created_at) : Date.now()).getFullYear()}-${String(propertyId).replace(/-/g, "").slice(0, 6).toUpperCase()}`;
   const generatedDate = new Date().toLocaleDateString("fr-FR");
 
@@ -502,7 +516,7 @@ export async function POST(request: NextRequest) {
     ["DPE / GES", `${fmtStr(property.dpe_class)} / ${fmtStr(property.ges_class)}`],
     ["Prix affiché", fmtNum(property.price, " €")],
   ];
-  if (property.source_url) bienRows.push(["Source de l'annonce", fitOneLine(font, 9.3, colW2 - 140, String(property.source_url))]);
+  if (property.source_url) bienRows.push(["Source de l'annonce", fitOneLine(font, 9.3, colW2 - 140, sanitizeText(String(property.source_url)))]);
   bienRows.forEach(([l, v], i) => { ly = flow.kvRowAt(leftX, ly, colW2, l, v, i % 2 === 0); });
   ly -= 18;
 
@@ -560,9 +574,9 @@ export async function POST(request: NextRequest) {
   flow.section("Points de vigilance");
   if (allRisks.length > 0) {
     for (const r of allRisks) {
-      const title = String(r.title || "Risque");
-      const severityRaw = String(r.severity || "");
-      const detail = String(r.explanation || r.impact || "");
+      const title = sanitizeText(String(r.title || "Risque"));
+      const severityRaw = sanitizeText(String(r.severity || ""));
+      const detail = sanitizeText(String(r.explanation || r.impact || ""));
       flow.riskBox(title, severityRaw ? severityLabel(severityRaw) : "", detail && detail !== "undefined" ? detail : "", severityBg(severityRaw));
     }
   } else {
@@ -572,14 +586,14 @@ export async function POST(request: NextRequest) {
 
   if (missingRows.length > 0) {
     flow.section("Données manquantes à vérifier");
-    for (const m of missingRows) flow.bullet(`${String(m.label || m.field_key)} — ${String(m.suggested_question || m.impact || "à vérifier avant décision")}`);
+    for (const m of missingRows) flow.bullet(sanitizeText(`${String(m.label || m.field_key)} — ${String(m.suggested_question || m.impact || "à vérifier avant décision")}`));
     flow.y -= 10;
   }
 
   if (checklistRows.length > 0) {
     flow.section("Checklist de vérification");
     const priorityLabel = (p: unknown) => (p === "critical" ? "Critique" : p === "high" ? "Prioritaire" : "À vérifier");
-    for (const item of checklistRows) flow.checklistItem(String(item.title), priorityLabel(item.priority), Boolean(item.completed));
+    for (const item of checklistRows) flow.checklistItem(sanitizeText(String(item.title)), priorityLabel(item.priority), Boolean(item.completed));
     flow.y -= 10;
   }
 
@@ -603,7 +617,7 @@ export async function POST(request: NextRequest) {
     flow.page.drawText("Parcelle non identifiée pour ce bien.", { x: fx0, y: yy0, size: 8.6, font, color: MUTED }); yy0 -= 11;
   }
   if (urbanisme) {
-    const label = urbanisme.zone_type ? `${fmtStr(urbanisme.zone_label)} (${String(urbanisme.zone_type)})` : fmtStr(urbanisme.zone_label);
+    const label = urbanisme.zone_type ? `${fmtStr(urbanisme.zone_label)} (${sanitizeText(String(urbanisme.zone_type))})` : fmtStr(urbanisme.zone_label);
     for (const line of wrapText(font, 8.6, foncierColW, label)) { flow.page.drawText(line, { x: fx1, y: yy1, size: 8.6, font, color: INK_SOFT }); yy1 -= 11; }
     if (urbanisme.destination_dominante) { for (const line of wrapText(font, 8.6, foncierColW, `Destination : ${fmtStr(urbanisme.destination_dominante)}`)) { flow.page.drawText(line, { x: fx1, y: yy1, size: 8.6, font, color: INK_SOFT }); yy1 -= 11; } }
     for (const line of wrapText(font, 8.6, foncierColW, `Source : ${fmtStr(urbanisme.source)}. À vérifier en mairie.`)) { flow.page.drawText(line, { x: fx1, y: yy1, size: 8.6, font, color: MUTED }); yy1 -= 11; }
@@ -616,8 +630,8 @@ export async function POST(request: NextRequest) {
     flow.page.drawText("Bâti (BD TOPO®)", { x: fx0, y: flow.y, size: 9, font: bold, color: INK });
     let byy = flow.y - 14;
     const batLines = [
-      `${fmtStr(batiment.nature)}${batiment.usage_1 ? ` · ${String(batiment.usage_1)}` : ""}`,
-      batiment.hauteur_m != null ? `Hauteur estimée : ${fmtNum(batiment.hauteur_m, " m")}${batiment.nombre_etages != null ? ` (~${String(batiment.nombre_etages)} niveaux)` : ""}` : "",
+      `${fmtStr(batiment.nature)}${batiment.usage_1 ? ` · ${sanitizeText(String(batiment.usage_1))}` : ""}`,
+      batiment.hauteur_m != null ? `Hauteur estimée : ${fmtNum(batiment.hauteur_m, " m")}${batiment.nombre_etages != null ? ` (~${sanitizeText(String(batiment.nombre_etages))} niveaux)` : ""}` : "",
       batiment.nombre_logements != null ? `Logements recensés : ${fmtStr(batiment.nombre_logements)}` : "",
     ].filter(Boolean);
     for (const line of batLines) { for (const wrapped of wrapText(font, 8.6, PAGE_WIDTH - 2 * MARGIN, line)) { flow.page.drawText(wrapped, { x: fx0, y: byy, size: 8.6, font, color: INK_SOFT }); byy -= 11; } }
@@ -631,7 +645,7 @@ export async function POST(request: NextRequest) {
   if (pois.length > 0) {
     const grouped: Record<string, Record<string, unknown>[]> = {};
     for (const poi of pois) {
-      const cat = String(poi.category_label || poi.category || "Autres");
+      const cat = sanitizeText(String(poi.category_label || poi.category || "Autres"));
       if (!grouped[cat]) grouped[cat] = [];
       grouped[cat].push(poi);
     }
