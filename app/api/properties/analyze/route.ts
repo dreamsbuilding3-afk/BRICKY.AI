@@ -148,7 +148,7 @@ export async function POST(request: Request) {
   try {
     const rawBody = payload as Record<string, unknown>;
     const payloadForIngest = { ...rawBody };
-    const financialFieldKeys = ["monthly_rent", "down_payment", "loan_rate_pct", "loan_duration_years", "renovation_budget", "annual_property_tax", "annual_insurance", "annual_maintenance", "annual_management_fees", "other_annual_charges", "vacancy_rate"];
+    const financialFieldKeys = ["monthly_rent", "down_payment", "loan_rate_pct", "loan_duration_years", "renovation_budget", "annual_property_tax", "annual_insurance", "annual_maintenance", "annual_management_fees", "other_annual_charges", "vacancy_rate", "agency_fees", "file_fees", "borrower_insurance_annual", "financing_fees", "deferral_months", "loan_type", "rate_type"];
     const existingFinancial = (rawBody.financial as Record<string, unknown> | undefined) || {};
     const financialUpdates: Record<string, unknown> = {};
     for (const key of financialFieldKeys) {
@@ -158,32 +158,57 @@ export async function POST(request: Request) {
     if (Object.keys(financialUpdates).length > 0) {
       payloadForIngest.financial = { ...existingFinancial, ...financialUpdates };
     }
-    let result = await rpc("ingest_property", { p_payload: payloadForIngest }, authorization) as { analysis_id?: string; analysis?: unknown };
-    const analysisId = result?.analysis_id;
-    const body = payloadForIngest as Record<string, unknown>;
-    let latitude = num(body.latitude);
-    let longitude = num(body.longitude);
-    let inseeCode = typeof body.insee_code === "string" && body.insee_code ? body.insee_code : null;
-    const financial = (body.financial as Record<string, unknown> | undefined) || {};
-    const userProvidedRent = num(financial.monthly_rent) ?? num(rawBody.monthly_rent);
 
-    // Auto-géocodage : si aucune coordonnée n'a été fournie mais qu'on a une
-    // adresse, on géolocalise nous-mêmes (même service que les autres panneaux
-    // de la page d'analyse) pour pouvoir alimenter DVF et l'estimation de loyer
-    // sans dépendre d'une saisie manuelle des coordonnées / du code INSEE.
-    if ((latitude === null || longitude === null || !inseeCode) && typeof body.address === "string" && body.address.trim()) {
-      const fullAddress = [body.address, typeof body.city === "string" ? body.city : null].filter(Boolean).join(", ");
+    // Phase B (audit formulaire point 26) : caractéristiques complémentaires du bien,
+    // diagnostics techniques manuels, régime locatif, travaux par horizon — mêmes clés
+    // à plat envoyées par le frontend, regroupées ici dans payload.characteristics
+    // pour ingest_property, suivant exactement le même principe que payload.financial.
+    const characteristicsFieldKeys = ["bathrooms", "toilets", "has_elevator", "has_balcony", "has_terrace", "has_garden", "has_pool", "parking_spaces", "has_garage", "has_cellar", "has_attic", "view_type", "exposure", "renovation_year", "overall_condition", "is_furnished", "exterior_surface_m2", "country", "neighborhood", "energy_consumption_kwh", "energy_cost_annual_estimate", "heating_type", "heating_mode", "hot_water_type", "insulation_quality", "roof_condition", "electrical_compliance", "gas_compliance", "sanitation_type", "asbestos_status", "lead_status", "termite_status", "rental_regime", "seasonality_notes", "immediate_works_budget", "future_works_notes", "major_works_planned"];
+    const existingCharacteristics = (rawBody.characteristics as Record<string, unknown> | undefined) || {};
+    const characteristicsUpdates: Record<string, unknown> = {};
+    for (const key of characteristicsFieldKeys) {
+      const v = rawBody[key];
+      if (v !== undefined && v !== null && v !== "") characteristicsUpdates[key] = v;
+    }
+    if (Object.keys(characteristicsUpdates).length > 0) {
+      payloadForIngest.characteristics = { ...existingCharacteristics, ...characteristicsUpdates };
+    }
+
+    // Auto-géocodage AVANT ingestion (fix Phase A/B, audit point 26) : si aucune
+    // coordonnée/code INSEE/code postal n'a été fourni mais qu'on a une adresse, on
+    // géolocalise nous-mêmes (même service que les autres panneaux de la page
+    // d'analyse) et on injecte le résultat dans payloadForIngest avant d'appeler
+    // ingest_property — jusqu'ici ce géocodage n'avait lieu qu'après l'insertion en
+    // base, donc latitude/longitude/insee_code/postal_code n'étaient jamais
+    // réellement persistés sur la ligne `properties`, seulement utilisés en mémoire
+    // pour DVF/l'estimation de loyer dans le reste de cette requête.
+    const ingestBody = payloadForIngest as Record<string, unknown>;
+    let latitude = num(ingestBody.latitude);
+    let longitude = num(ingestBody.longitude);
+    let inseeCode = typeof ingestBody.insee_code === "string" && ingestBody.insee_code ? ingestBody.insee_code : null;
+    const hasPostalCode = typeof ingestBody.postal_code === "string" && ingestBody.postal_code.trim() !== "";
+    if ((latitude === null || longitude === null || !inseeCode || !hasPostalCode) && typeof ingestBody.address === "string" && ingestBody.address.trim()) {
+      const fullAddress = [ingestBody.address, typeof ingestBody.city === "string" ? ingestBody.city : null].filter(Boolean).join(", ");
       try {
         const geo = await geocodeAddress(fullAddress);
         if (geo) {
-          if (latitude === null) latitude = geo.latitude;
-          if (longitude === null) longitude = geo.longitude;
-          if (!inseeCode && geo.inseeCode) inseeCode = geo.inseeCode;
+          if (latitude === null) { latitude = geo.latitude; payloadForIngest.latitude = geo.latitude; }
+          if (longitude === null) { longitude = geo.longitude; payloadForIngest.longitude = geo.longitude; }
+          if (!inseeCode && geo.inseeCode) { inseeCode = geo.inseeCode; payloadForIngest.insee_code = geo.inseeCode; }
+          if (!hasPostalCode && geo.postalCode) payloadForIngest.postal_code = geo.postalCode;
+          if (!ingestBody.ban_id && geo.banId) payloadForIngest.ban_id = geo.banId;
+          if (!ingestBody.geocoding_confidence && geo.confidence) payloadForIngest.geocoding_confidence = geo.confidence;
         }
       } catch {
         // Géocodage best-effort : on continue sans DVF/estimation de loyer si indisponible.
       }
     }
+
+    let result = await rpc("ingest_property", { p_payload: payloadForIngest }, authorization) as { analysis_id?: string; analysis?: unknown };
+    const analysisId = result?.analysis_id;
+    const body = payloadForIngest as Record<string, unknown>;
+    const financial = (body.financial as Record<string, unknown> | undefined) || {};
+    const userProvidedRent = num(financial.monthly_rent) ?? num(rawBody.monthly_rent);
 
     // Step 1: market comparables (DVF), if we have coordinates.
     let market: unknown = { status: "insufficient_data", note: "Coordonnées absentes : aucune recherche DVF automatique." };
