@@ -38,21 +38,78 @@ const DISCOVERY_OPTIONS = [
 
 const DISCOVERY_NEEDS_DETAIL = new Set(["Réseau social", "Autre"]);
 
-// Questionnaire d'onboarding en 4 questions, affiché une seule fois (tant qu'aucune ligne
-// n'existe dans user_onboarding_responses pour l'utilisateur). Capture le profil et le besoin
-// de l'utilisateur (segmentation produit) ainsi que le canal de découverte (attribution marketing
-// à coût nul) — jamais bloquant : toujours "Passer pour l'instant" visible, jamais de question
-// obligatoire pour continuer à utiliser l'app.
+type StepKey = "profile" | "goal" | "stage" | "discovery";
+
+const STEPS: {
+  key: StepKey;
+  title: string;
+  sub: string;
+  options: string[];
+}[] = [
+  {
+    key: "profile",
+    title: "Quel est votre profil ?",
+    sub: "Pour adapter le niveau de détail de vos analyses.",
+    options: PROFILE_OPTIONS,
+  },
+  {
+    key: "goal",
+    title: "Quel est votre objectif principal avec Bricky ?",
+    sub: "Nous mettrons en avant ce qui compte le plus pour vous.",
+    options: GOAL_OPTIONS,
+  },
+  {
+    key: "stage",
+    title: "Où en êtes-vous dans votre projet ?",
+    sub: "Pour vous proposer les bonnes étapes au bon moment.",
+    options: STAGE_OPTIONS,
+  },
+  {
+    key: "discovery",
+    title: "Comment avez-vous découvert Bricky ?",
+    sub: "Cela nous aide à savoir ce qui fonctionne et à nous améliorer.",
+    options: DISCOVERY_OPTIONS,
+  },
+];
+
+// Questionnaire d'onboarding en 4 étapes, en plein écran, affiché une seule fois juste après la
+// création d'un compte (voir app/onboarding/page.tsx). Capture le profil et le besoin de
+// l'utilisateur (segmentation produit) ainsi que le canal de découverte (attribution marketing à
+// coût nul) — jamais bloquant : "Passer" toujours visible, aucune question n'empêche d'utiliser l'app.
 export function OnboardingQuestionnaire({ onDone }: Props) {
-  const [profileType, setProfileType] = useState<string | null>(null);
-  const [mainGoal, setMainGoal] = useState<string | null>(null);
-  const [projectStage, setProjectStage] = useState<string | null>(null);
-  const [discoveryChannel, setDiscoveryChannel] = useState<string | null>(null);
+  const [stepIndex, setStepIndex] = useState(0);
+  const [answers, setAnswers] = useState<Record<StepKey, string | null>>({
+    profile: null,
+    goal: null,
+    stage: null,
+    discovery: null,
+  });
   const [discoveryDetail, setDiscoveryDetail] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const complete = Boolean(profileType && mainGoal && projectStage && discoveryChannel);
+  const step = STEPS[stepIndex];
+  const isLastStep = stepIndex === STEPS.length - 1;
+  const currentAnswer = answers[step.key];
+  const canContinue = Boolean(currentAnswer);
+
+  function selectOption(key: StepKey, value: string) {
+    setAnswers((prev) => ({ ...prev, [key]: value }));
+  }
+
+  function goBack() {
+    if (stepIndex === 0) return;
+    setStepIndex((i) => i - 1);
+  }
+
+  function goNext() {
+    if (!canContinue) return;
+    if (!isLastStep) {
+      setStepIndex((i) => i + 1);
+      return;
+    }
+    persist(false);
+  }
 
   async function persist(skipped: boolean) {
     setSubmitting(true);
@@ -63,10 +120,10 @@ export function OnboardingQuestionnaire({ onDone }: Props) {
       if (!userId) { onDone(); return; }
       const { error } = await supabase.from("user_onboarding_responses").upsert({
         user_id: userId,
-        profile_type: skipped ? null : profileType,
-        main_goal: skipped ? null : mainGoal,
-        project_stage: skipped ? null : projectStage,
-        discovery_channel: skipped ? null : discoveryChannel,
+        profile_type: skipped ? null : answers.profile,
+        main_goal: skipped ? null : answers.goal,
+        project_stage: skipped ? null : answers.stage,
+        discovery_channel: skipped ? null : answers.discovery,
         discovery_channel_detail: skipped ? null : (discoveryDetail.trim() || null),
         skipped,
         updated_at: new Date().toISOString(),
@@ -83,91 +140,69 @@ export function OnboardingQuestionnaire({ onDone }: Props) {
     }
   }
 
-  function Choice({ value, selected, onSelect }: { value: string; selected: boolean; onSelect: () => void }) {
-    return (
-      <button
-        type="button"
-        className={"onboarding-choice" + (selected ? " onboarding-choice-selected" : "")}
-        onClick={onSelect}
-        disabled={submitting}
-      >
-        {value}
-      </button>
-    );
-  }
-
   return (
-    <div className="result-panel onboarding-questionnaire">
-      <div className="result-head">
-        <div>
-          <span className="eyebrow">Bienvenue</span>
-          <h2>Aidez Bricky à mieux vous accompagner</h2>
-        </div>
-      </div>
-      <p className="empty-note" style={{ marginTop: 4 }}>
-        4 questions rapides pour adapter Bricky à votre profil. Vous pouvez passer si vous préférez.
-      </p>
-
-      <div className="onboarding-question">
-        <b>Quel est votre profil ?</b>
-        <div className="onboarding-choice-group">
-          {PROFILE_OPTIONS.map((opt) => (
-            <Choice key={opt} value={opt} selected={profileType === opt} onSelect={() => setProfileType(opt)} />
-          ))}
-        </div>
+    <div className="onb-screen">
+      <div className="onb-topbar">
+        <div className="onb-brand"><img src="/mascot-avatar-round.png" alt="" /><span>Bricky</span></div>
+        <button type="button" className="onb-skip" onClick={() => persist(true)} disabled={submitting}>
+          Passer pour l'instant
+        </button>
       </div>
 
-      <div className="onboarding-question">
-        <b>Quel est votre objectif principal avec Bricky ?</b>
-        <div className="onboarding-choice-group">
-          {GOAL_OPTIONS.map((opt) => (
-            <Choice key={opt} value={opt} selected={mainGoal === opt} onSelect={() => setMainGoal(opt)} />
-          ))}
-        </div>
+      <div className="onb-progress">
+        {STEPS.map((s, i) => (
+          <span key={s.key} className={"onb-progress-seg" + (i <= stepIndex ? " onb-progress-seg-done" : "")} />
+        ))}
       </div>
 
-      <div className="onboarding-question">
-        <b>Où en êtes-vous dans votre projet ?</b>
-        <div className="onboarding-choice-group">
-          {STAGE_OPTIONS.map((opt) => (
-            <Choice key={opt} value={opt} selected={projectStage === opt} onSelect={() => setProjectStage(opt)} />
-          ))}
-        </div>
-      </div>
+      <div className="onb-main">
+        <span className="onb-step-label">Étape {stepIndex + 1} sur {STEPS.length}</span>
+        <h1 className="onb-title">{step.title}</h1>
+        <p className="onb-sub">{step.sub}</p>
 
-      <div className="onboarding-question">
-        <b>Comment avez-vous découvert Bricky ?</b>
-        <div className="onboarding-choice-group">
-          {DISCOVERY_OPTIONS.map((opt) => (
-            <Choice key={opt} value={opt} selected={discoveryChannel === opt} onSelect={() => setDiscoveryChannel(opt)} />
-          ))}
+        <div className="onb-options">
+          {step.options.map((opt) => {
+            const selected = currentAnswer === opt;
+            return (
+              <button
+                key={opt}
+                type="button"
+                className={"onb-option" + (selected ? " onb-option-selected" : "")}
+                onClick={() => selectOption(step.key, opt)}
+                disabled={submitting}
+              >
+                <span>{opt}</span>
+                <span className="onb-option-check" aria-hidden="true" />
+              </button>
+            );
+          })}
         </div>
-        {discoveryChannel && DISCOVERY_NEEDS_DETAIL.has(discoveryChannel) && (
+
+        {step.key === "discovery" && currentAnswer && DISCOVERY_NEEDS_DETAIL.has(currentAnswer) && (
           <input
-            className="onboarding-detail-input"
+            className="onb-detail-input"
             type="text"
-            placeholder={discoveryChannel === "Réseau social" ? "Lequel ? (Instagram, TikTok, LinkedIn...)" : "Précisez..."}
+            placeholder={currentAnswer === "Réseau social" ? "Lequel ? (Instagram, TikTok, LinkedIn...)" : "Précisez..."}
             value={discoveryDetail}
             onChange={(e) => setDiscoveryDetail(e.target.value)}
             disabled={submitting}
           />
         )}
+
+        {submitError && <p className="error-box" style={{ marginTop: 20 }}>{submitError}</p>}
       </div>
 
-      {submitError && <p className="error-box">{submitError}</p>}
-
-      <div className="onboarding-actions">
-        <button type="button" className="navlink-logout" onClick={() => persist(true)} disabled={submitting}>
-          Passer pour l'instant
+      <div className="onb-footer">
+        <button type="button" className="onb-back" onClick={goBack} style={{ visibility: stepIndex === 0 ? "hidden" : "visible" }}>
+          ← Retour
         </button>
         <button
           type="button"
-          className="primary-button"
-          style={{ width: "auto", padding: "0 28px" }}
-          disabled={!complete || submitting}
-          onClick={() => persist(false)}
+          className="primary-button onb-continue"
+          disabled={!canContinue || submitting}
+          onClick={goNext}
         >
-          {submitting ? "Enregistrement…" : "Valider"}
+          {submitting ? "Enregistrement…" : isLastStep ? "Terminer →" : "Continuer →"}
         </button>
       </div>
     </div>
