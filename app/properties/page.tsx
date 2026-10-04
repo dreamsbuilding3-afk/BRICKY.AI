@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase/client";
 import { AppNav } from "../../components/AppNav";
-import { OnboardingQuestionnaire } from "../../components/OnboardingQuestionnaire";
 
 type AnalysisRow = {
   id: string;
@@ -91,7 +90,6 @@ export default function PropertiesPage() {
   const [canCompare, setCanCompare] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
   const [showFirstAnalysisCongrats, setShowFirstAnalysisCongrats] = useState(false);
-  const [showOnboarding, setShowOnboarding] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -112,15 +110,6 @@ export default function PropertiesPage() {
       const { data: sub } = await supabase.rpc("get_my_subscription");
       if (!cancelled && sub && typeof sub === "object" && "can_compare_properties" in sub) {
         setCanCompare(Boolean((sub as { can_compare_properties: boolean }).can_compare_properties));
-      }
-
-      const { data: onboardingRow } = await supabase
-        .from("user_onboarding_responses")
-        .select("user_id")
-        .eq("user_id", sessionData.session.user.id)
-        .maybeSingle();
-      if (!cancelled && !onboardingRow) {
-        setShowOnboarding(true);
       }
     }
     load();
@@ -160,10 +149,6 @@ export default function PropertiesPage() {
     <CapabilityMarquee />
     <section className="analysis-shell">
       <div className="analysis-intro"><span className="eyebrow">Bricky · Historique</span><h1>Mes biens <span className="accent">analysés</span></h1><p className="sub">Retrouvez ici chaque bien que vous avez soumis à Bricky, avec son verdict et ses métriques clés.{canCompare ? " Sélectionnez jusqu'à 3 biens pour les comparer." : null}</p></div>
-
-      {!loading && !error && showOnboarding && (
-        <OnboardingQuestionnaire onDone={() => setShowOnboarding(false)} />
-      )}
 
       {loading && <div className="extract-note">Chargement de vos biens…</div>}
       {error && <div className="error-box">{error}</div>}
