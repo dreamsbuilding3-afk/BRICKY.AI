@@ -34,7 +34,17 @@ export default function LoginPage() {
     } else if (mode === "signup" && !result.data.session) {
       setMessage("Compte créé. Vérifie ton e-mail pour confirmer ton compte, puis connecte-toi.");
     } else {
-      router.replace("/properties");
+      const userId = result.data.session?.user.id;
+      let destination = "/properties";
+      if (userId) {
+        const { data: onboardingRow } = await supabase
+          .from("user_onboarding_responses")
+          .select("user_id")
+          .eq("user_id", userId)
+          .maybeSingle();
+        if (!onboardingRow) destination = "/onboarding";
+      }
+      router.replace(destination);
       router.refresh();
     }
     setLoading(false);
