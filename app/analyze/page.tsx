@@ -14,6 +14,97 @@ type BatimentResult = { batiment?: { hauteur_m: number | null; nature: string | 
 
 const DRAFT_KEY = "bricky_analyze_draft_v1";
 
+// Phase B (audit formulaire point 26) : champs complémentaires optionnels, saisis
+// dans des blocs repliables séparés plutôt que dans le formulaire principal (même
+// principe que le bloc "charges annuelles" de la Phase A — ne pas transformer le
+// formulaire en questionnaire interminable). Les clés correspondent exactement à
+// celles attendues par app/api/properties/analyze/route.ts (characteristicsFieldKeys
+// / financialFieldKeys) ; converties en nombre côté client pour les champs numériques.
+type ExtraFieldDef = { key: string; label: string; kind: "text" | "number" | "bool" | "select"; options?: string[]; placeholder?: string };
+
+const NUMERIC_EXTRA_KEYS = new Set(["bathrooms", "toilets", "parking_spaces", "renovation_year", "exterior_surface_m2", "energy_consumption_kwh", "energy_cost_annual_estimate", "immediate_works_budget", "agency_fees", "file_fees", "borrower_insurance_annual", "financing_fees", "deferral_months"]);
+
+const BOOL_FIELD: Pick<ExtraFieldDef, "kind" | "options"> = { kind: "bool", options: ["Oui", "Non"] };
+
+const CHARACTERISTICS_FIELDS: ExtraFieldDef[] = [
+  { key: "bathrooms", label: "Salles de bain", kind: "number", placeholder: "1" },
+  { key: "toilets", label: "WC", kind: "number", placeholder: "1" },
+  { key: "parking_spaces", label: "Places de parking", kind: "number", placeholder: "0" },
+  { key: "exterior_surface_m2", label: "Surface extérieure (m²)", kind: "number", placeholder: "0" },
+  { key: "has_elevator", label: "Ascenseur", ...BOOL_FIELD },
+  { key: "has_balcony", label: "Balcon", ...BOOL_FIELD },
+  { key: "has_terrace", label: "Terrasse", ...BOOL_FIELD },
+  { key: "has_garden", label: "Jardin", ...BOOL_FIELD },
+  { key: "has_pool", label: "Piscine", ...BOOL_FIELD },
+  { key: "has_garage", label: "Garage", ...BOOL_FIELD },
+  { key: "has_cellar", label: "Cave", ...BOOL_FIELD },
+  { key: "has_attic", label: "Grenier", ...BOOL_FIELD },
+  { key: "is_furnished", label: "Meublé", ...BOOL_FIELD },
+  { key: "exposure", label: "Exposition", kind: "select", options: ["Nord", "Sud", "Est", "Ouest", "Nord-Sud", "Est-Ouest", "Sud-Est", "Sud-Ouest"] },
+  { key: "overall_condition", label: "État général", kind: "select", options: ["Neuf", "Bon état", "À rafraîchir", "À rénover", "À restructurer"] },
+  { key: "view_type", label: "Vue", kind: "text", placeholder: "Mer, montagne, dégagée..." },
+  { key: "renovation_year", label: "Année de rénovation", kind: "number", placeholder: "2020" },
+  { key: "country", label: "Pays", kind: "text", placeholder: "France" },
+  { key: "neighborhood", label: "Quartier", kind: "text", placeholder: "Nom du quartier" },
+];
+
+const DIAGNOSTICS_FIELDS: ExtraFieldDef[] = [
+  { key: "energy_consumption_kwh", label: "Consommation énergétique (kWh/an)", kind: "number", placeholder: "0" },
+  { key: "energy_cost_annual_estimate", label: "Coût énergétique annuel estimé (€)", kind: "number", placeholder: "0" },
+  { key: "heating_type", label: "Type de chauffage", kind: "text", placeholder: "Électrique, gaz, PAC..." },
+  { key: "heating_mode", label: "Chauffage", kind: "select", options: ["Individuel", "Collectif"] },
+  { key: "hot_water_type", label: "Type d'eau chaude", kind: "text", placeholder: "Électrique, gaz, solaire..." },
+  { key: "insulation_quality", label: "Isolation", kind: "select", options: ["Bonne", "Moyenne", "Faible", "Inconnue"] },
+  { key: "roof_condition", label: "État de la toiture", kind: "select", options: ["Bon état", "À surveiller", "À refaire", "Non concerné"] },
+  { key: "electrical_compliance", label: "Électricité conforme", ...BOOL_FIELD },
+  { key: "gas_compliance", label: "Gaz conforme", ...BOOL_FIELD },
+  { key: "sanitation_type", label: "Assainissement", kind: "select", options: ["Tout-à-l'égout", "Individuel (fosse)", "Inconnu"] },
+  { key: "asbestos_status", label: "Amiante", kind: "select", options: ["Absence constatée", "Présence constatée", "Non renseigné"] },
+  { key: "lead_status", label: "Plomb", kind: "select", options: ["Absence constatée", "Présence constatée", "Non renseigné"] },
+  { key: "termite_status", label: "Termites", kind: "select", options: ["Absence constatée", "Présence constatée", "Non renseigné"] },
+];
+
+const FINANCING_EXTRA_FIELDS: ExtraFieldDef[] = [
+  { key: "agency_fees", label: "Frais d'agence (€)", kind: "number", placeholder: "0" },
+  { key: "file_fees", label: "Frais de dossier (€)", kind: "number", placeholder: "0" },
+  { key: "borrower_insurance_annual", label: "Assurance emprunteur (€/an)", kind: "number", placeholder: "0" },
+  { key: "financing_fees", label: "Autres frais de financement (€)", kind: "number", placeholder: "0" },
+  { key: "deferral_months", label: "Différé de remboursement (mois)", kind: "number", placeholder: "0" },
+  { key: "loan_type", label: "Type de prêt", kind: "text", placeholder: "Amortissable, in fine..." },
+  { key: "rate_type", label: "Taux", kind: "select", options: ["Fixe", "Variable"] },
+];
+
+const RENTAL_WORKS_FIELDS: ExtraFieldDef[] = [
+  { key: "rental_regime", label: "Régime locatif", kind: "select", options: ["Location nue", "Location meublée", "Location courte durée"] },
+  { key: "seasonality_notes", label: "Saisonnalité", kind: "text", placeholder: "Ex. forte demande en été" },
+  { key: "immediate_works_budget", label: "Travaux immédiats (€)", kind: "number", placeholder: "0" },
+  { key: "future_works_notes", label: "Travaux futurs identifiés", kind: "text", placeholder: "Ex. ravalement prévu en 2027" },
+  { key: "major_works_planned", label: "Gros travaux prévus (copropriété)", kind: "text", placeholder: "Ex. réfection toiture votée" },
+];
+
+function ExtraField({ def, value, onChange }: { def: ExtraFieldDef; value: string; onChange: (v: string) => void }) {
+  if (def.kind === "bool") {
+    return <label>{def.label}<select value={value} onChange={(e) => onChange(e.target.value)}>
+      <option value="">Non précisé</option>
+      <option value="true">Oui</option>
+      <option value="false">Non</option>
+    </select></label>;
+  }
+  if (def.kind === "select") {
+    return <label>{def.label}<select value={value} onChange={(e) => onChange(e.target.value)}>
+      <option value="">Non précisé</option>
+      {(def.options || []).map((opt) => <option key={opt} value={opt}>{opt}</option>)}
+    </select></label>;
+  }
+  return <label>{def.label}<input type={def.kind === "number" ? "number" : "text"} min={def.kind === "number" ? "0" : undefined} value={value} onChange={(e) => onChange(e.target.value)} placeholder={def.placeholder} /></label>;
+}
+
+function ExtraFieldsSection({ fields, extra, onChange }: { fields: ExtraFieldDef[]; extra: Record<string, string>; onChange: (key: string, value: string) => void }) {
+  return <div className="form-grid charges-grid">
+    {fields.map((def) => <ExtraField key={def.key} def={def} value={extra[def.key] ?? ""} onChange={(v) => onChange(def.key, v)} />)}
+  </div>;
+}
+
 export default function AnalyzePage() {
 return <Suspense fallback={null}><AnalyzePageInner /></Suspense>;
 }
@@ -24,6 +115,9 @@ const searchParams = useSearchParams();
 const propertyIdParam = searchParams.get("property_id");
 const [payload, setPayload] = useState<Payload>({ title: "", city: "", address: "", price: "", surface_m2: "", rooms: "", bedrooms: "", property_type: "", dpe_class: "", ges_class: "", monthly_rent: "", down_payment: "", loan_rate_pct: "", loan_duration_years: "", renovation_budget: "", source_url: "", annual_property_tax: "", annual_insurance: "", annual_maintenance: "", annual_management_fees: "", other_annual_charges: "", vacancy_rate: "" });
 const [showCharges, setShowCharges] = useState(false);
+const [extra, setExtra] = useState<Record<string, string>>({});
+const [openExtraSection, setOpenExtraSection] = useState<string | null>(null);
+const updateExtra = (key: string, value: string) => setExtra((cur) => ({ ...cur, [key]: value }));
 const [loading, setLoading] = useState(false);
 const [extracting, setExtracting] = useState(false);
 const [extractingFile, setExtractingFile] = useState(false);
@@ -188,7 +282,11 @@ event.preventDefault(); setLoading(true); setError(""); setResult(null);
 try {
 const { data: sessionData } = await supabase.auth.getSession(); const token = sessionData.session?.access_token;
 if (!token) { router.replace("/login"); return; }
-const body = Object.fromEntries(Object.entries(payload).map(([key, value]) => [key, ["price", "surface_m2", "rooms", "bedrooms", "monthly_rent", "down_payment", "loan_rate_pct", "loan_duration_years", "renovation_budget", "annual_property_tax", "annual_insurance", "annual_maintenance", "annual_management_fees", "other_annual_charges", "vacancy_rate"].includes(key) && value !== "" ? Number(value) : value]));
+const body: Record<string, unknown> = Object.fromEntries(Object.entries(payload).map(([key, value]) => [key, ["price", "surface_m2", "rooms", "bedrooms", "monthly_rent", "down_payment", "loan_rate_pct", "loan_duration_years", "renovation_budget", "annual_property_tax", "annual_insurance", "annual_maintenance", "annual_management_fees", "other_annual_charges", "vacancy_rate"].includes(key) && value !== "" ? Number(value) : value]));
+for (const [key, value] of Object.entries(extra)) {
+  if (value === "") continue;
+  body[key] = NUMERIC_EXTRA_KEYS.has(key) ? Number(value) : value;
+}
 const response = await fetch("/api/properties/analyze", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify(body) });
 const data = await response.json(); if (!response.ok) throw new Error(data?.details?.message || data?.error || "Analyse impossible."); setResult(data); try { window.localStorage.removeItem(DRAFT_KEY); } catch {}
 } catch (err) { setError(err instanceof Error ? err.message : "Une erreur est survenue."); }
@@ -223,6 +321,22 @@ return <main className="page">
 <label>Frais de gestion locative (€/an)<input type="number" min="0" value={payload.annual_management_fees} onChange={(e) => update("annual_management_fees", e.target.value)} placeholder="0" /></label>
 <label>Vacance locative estimée (%)<input type="number" min="0" max="100" step="0.5" value={payload.vacancy_rate} onChange={(e) => update("vacancy_rate", e.target.value)} placeholder="5" /></label>
 </div>}
+<div className="charges-toggle-row">
+{[
+  { key: "characteristics", label: "+ Caractéristiques complémentaires", fields: CHARACTERISTICS_FIELDS },
+  { key: "diagnostics", label: "+ Diagnostics techniques", fields: DIAGNOSTICS_FIELDS },
+  { key: "financing", label: "+ Financement avancé", fields: FINANCING_EXTRA_FIELDS },
+  { key: "rental_works", label: "+ Location & travaux par horizon", fields: RENTAL_WORKS_FIELDS },
+].map((section) => (
+  <button key={section.key} type="button" className="secondary-button" onClick={() => setOpenExtraSection((cur) => (cur === section.key ? null : section.key))}>
+    {openExtraSection === section.key ? `− ${section.label.slice(2)}` : section.label}
+  </button>
+))}
+</div>
+{openExtraSection === "characteristics" && <ExtraFieldsSection fields={CHARACTERISTICS_FIELDS} extra={extra} onChange={updateExtra} />}
+{openExtraSection === "diagnostics" && <ExtraFieldsSection fields={DIAGNOSTICS_FIELDS} extra={extra} onChange={updateExtra} />}
+{openExtraSection === "financing" && <ExtraFieldsSection fields={FINANCING_EXTRA_FIELDS} extra={extra} onChange={updateExtra} />}
+{openExtraSection === "rental_works" && <ExtraFieldsSection fields={RENTAL_WORKS_FIELDS} extra={extra} onChange={updateExtra} />}
 <button className="primary-button" disabled={loading}>{loading ? "Analyse en cours…" : "Lancer l’analyse Bricky →"}</button>{error && <div className="error-box">{error}</div>}</form>
 </>}
 {result && <AnalysisDashboard result={result} address={payload.address} onResultRefresh={refreshAnalysisFromDb} />}
