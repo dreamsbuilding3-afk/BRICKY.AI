@@ -148,7 +148,7 @@ export async function POST(request: Request) {
   try {
     const rawBody = payload as Record<string, unknown>;
     const payloadForIngest = { ...rawBody };
-    const financialFieldKeys = ["monthly_rent", "down_payment", "loan_rate_pct", "loan_duration_years", "renovation_budget"];
+    const financialFieldKeys = ["monthly_rent", "down_payment", "loan_rate_pct", "loan_duration_years", "renovation_budget", "annual_property_tax", "annual_insurance", "annual_maintenance", "annual_management_fees", "other_annual_charges", "vacancy_rate"];
     const existingFinancial = (rawBody.financial as Record<string, unknown> | undefined) || {};
     const financialUpdates: Record<string, unknown> = {};
     for (const key of financialFieldKeys) {
