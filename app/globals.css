@@ -779,22 +779,174 @@ animation: bricky-bounce 1.1s ease-in-out infinite;
 50% { transform: translateY(-3px) scale(1.08); }
 }
 
-/* ===== Questionnaire d'onboarding (profil/besoin/découverte, 4 questions) ===== */
+/* ===== Questionnaire d'onboarding plein écran (profil/besoin/découverte, 4 étapes) =====
+   Affiché une seule fois, juste après la création d'un compte (voir app/onboarding/page.tsx).
+   Fond blanc, grand espacement, une seule question à la fois — volontairement différent du
+   style neo-brutalist du reste de l'app pour une première impression épurée et "premium". */
 
-.onboarding-questionnaire { margin-bottom: 24px; }
-.onboarding-question { margin-top: 22px; }
-.onboarding-question b { display: block; font-size: 15px; margin-bottom: 10px; }
-.onboarding-choice-group { display: flex; flex-wrap: wrap; gap: 8px; }
-.onboarding-choice { border: 1.5px solid var(--line); background: #fff; color: var(--ink); border-radius: 999px; padding: 9px 16px; font-size: 13px; font-weight: 600; cursor: pointer; transition: border-color .15s, color .15s, background .15s; }
-.onboarding-choice:hover { border-color: var(--accent); }
-.onboarding-choice-selected, .onboarding-choice-selected:hover { border-color: var(--accent); background: var(--accent); color: #fff; }
-.onboarding-choice:disabled { opacity: .6; cursor: default; }
-.onboarding-detail-input { margin-top: 10px; width: 100%; border: 1px solid #ddd; border-radius: 12px; padding: 11px 14px; outline: none; background: #fafaf8; color: #111; font-size: 14px; }
-.onboarding-detail-input:focus { border-color: #999; background: #fff; }
-.onboarding-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 26px; gap: 16px; flex-wrap: wrap; }
+.onb-screen {
+  min-height: 100vh;
+  width: 100%;
+  background: #ffffff;
+  color: var(--ink);
+  display: flex;
+  flex-direction: column;
+}
+
+.onb-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 28px 40px 0;
+}
+
+.onb-brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 15px; }
+.onb-brand img { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; }
+
+.onb-skip {
+  background: none;
+  border: none;
+  color: #8a8a8a;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 8px 4px;
+}
+.onb-skip:hover { color: var(--ink); }
+.onb-skip:disabled { opacity: .5; cursor: default; }
+
+.onb-progress {
+  display: flex;
+  gap: 6px;
+  padding: 24px 40px 0;
+  max-width: 680px;
+  width: 100%;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+.onb-progress-seg { flex: 1; height: 4px; border-radius: 4px; background: #eee; transition: background .2s; }
+.onb-progress-seg-done { background: var(--accent); }
+
+.onb-main {
+  flex: 1;
+  width: 100%;
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 56px 40px 40px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
+
+.onb-step-label {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 14px;
+}
+
+.onb-title { font-size: 34px; line-height: 1.2; margin: 0 0 12px; }
+.onb-sub { font-size: 16px; color: #6b6b6b; margin: 0 0 36px; max-width: 520px; }
+
+.onb-options { display: flex; flex-direction: column; gap: 12px; }
+
+.onb-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  text-align: left;
+  border: 1.5px solid #e9e9e7;
+  background: #fff;
+  color: var(--ink);
+  border-radius: 14px;
+  padding: 20px 22px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color .15s, background .15s, transform .1s;
+}
+.onb-option:hover { border-color: #cfcfcb; }
+.onb-option:disabled { opacity: .6; cursor: default; }
+.onb-option-selected, .onb-option-selected:hover {
+  border-color: var(--accent);
+  background: #fff6f1;
+}
+
+.onb-option-check {
+  width: 22px;
+  height: 22px;
+  min-width: 22px;
+  border-radius: 50%;
+  border: 1.5px solid #ddd;
+  background: #fff;
+  position: relative;
+}
+.onb-option-selected .onb-option-check {
+  border-color: var(--accent);
+  background: var(--accent);
+}
+.onb-option-selected .onb-option-check::after {
+  content: "";
+  position: absolute;
+  left: 7px;
+  top: 3px;
+  width: 5px;
+  height: 10px;
+  border: solid #fff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.onb-detail-input {
+  margin-top: 14px;
+  width: 100%;
+  border: 1.5px solid #e9e9e7;
+  border-radius: 14px;
+  padding: 16px 18px;
+  outline: none;
+  background: #fafaf8;
+  color: #111;
+  font-size: 15px;
+  box-sizing: border-box;
+}
+.onb-detail-input:focus { border-color: var(--accent); background: #fff; }
+
+.onb-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 24px 40px 36px;
+  max-width: 680px;
+  width: 100%;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+.onb-back {
+  background: none;
+  border: none;
+  color: #6b6b6b;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 10px 4px;
+}
+.onb-back:hover { color: var(--ink); }
+
+.onb-continue { width: auto; padding: 0 30px; }
+
 @media (max-width: 720px) {
-  .onboarding-actions { flex-direction: column-reverse; align-items: stretch; }
-  .onboarding-actions .primary-button { width: 100%; }
+  .onb-topbar { padding: 20px 20px 0; }
+  .onb-progress { padding: 18px 20px 0; }
+  .onb-main { padding: 36px 20px 24px; }
+  .onb-footer { padding: 16px 20px 28px; }
+  .onb-title { font-size: 26px; }
+  .onb-sub { font-size: 15px; margin-bottom: 26px; }
+  .onb-option { padding: 16px 18px; font-size: 15px; }
 }
 
 /* ===== Onboarding (V1) — état vide "Mes biens" + félicitations 1ère analyse ===== */
