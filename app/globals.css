@@ -2212,3 +2212,120 @@ body::before {
   .lang-toggle-chevron { width: 9px; height: 9px; }
   .lang-toggle-menu { min-width: 132px; }
 }
+
+/* ===== Menu déroulant "Compte" (nav : regroupe Mon compte + Déconnexion) ===== */
+.navlink-account-wrap {
+  position: relative;
+  display: inline-flex;
+}
+.navlink-account-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+}
+.navlink-account-chevron {
+  width: 10px;
+  height: 10px;
+  flex-shrink: 0;
+  opacity: .55;
+  transition: transform .18s ease;
+}
+.navlink-account-trigger[aria-expanded="true"] .navlink-account-chevron {
+  transform: rotate(180deg);
+}
+.navlink-account-menu {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  min-width: 170px;
+  padding: 6px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: #fff;
+  box-shadow: 0 1px 1px rgba(0,0,0,.04), 0 18px 40px -16px rgba(17,17,17,.25);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  z-index: 20;
+}
+.navlink-account-menu-item {
+  display: flex;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 9px;
+  border: none;
+  background: transparent;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 500;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  width: 100%;
+}
+.navlink-account-menu-item:hover {
+  background: rgba(17,17,17,.06);
+}
+.navlink-account-menu-logout {
+  color: #666;
+}
+.navlink-account-menu-logout:hover {
+  color: var(--accent-dark);
+  background: rgba(255,90,31,.08);
+}
+
+@media (max-width: 900px) {
+  .nav-has-burger .nav-links .navlink-account-wrap {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+    border-bottom: 1px solid var(--line);
+  }
+  .nav-has-burger .nav-links .navlink-account-wrap:last-child {
+    border-bottom: 0;
+  }
+  .nav-has-burger .nav-links .navlink-account-trigger {
+    width: 100%;
+    padding: 18px 20px;
+    justify-content: space-between;
+  }
+  .navlink-account-wrap .navlink-account-menu {
+    position: static;
+    box-shadow: none;
+    border: 0;
+    border-top: 1px solid var(--line);
+    border-radius: 0;
+    background: #fafaf8;
+    padding: 4px 0;
+    margin: 0;
+  }
+  .navlink-account-wrap .navlink-account-menu-item {
+    padding: 14px 20px 14px 32px;
+  }
+}
+
+[data-theme="dark"] .navlink-account-menu {
+  background: linear-gradient(180deg, var(--glass-1), var(--glass-2));
+  border-color: rgba(255,255,255,.1);
+}
+[data-theme="dark"] .navlink-account-menu-item {
+  color: var(--text-muted, #ccc);
+}
+[data-theme="dark"] .navlink-account-menu-item:hover {
+  background: rgba(255,255,255,.08);
+  color: #fff;
+}
+[data-theme="dark"] .navlink-account-menu-logout:hover {
+  color: var(--accent);
+}
+
+@media (max-width: 900px) {
+  [data-theme="dark"] .navlink-account-menu {
+    background: var(--surface);
+  }
+}
