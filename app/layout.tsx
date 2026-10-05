@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import SplashScreen from "../components/SplashScreen";
+import { ThemeToggle } from "../components/ThemeToggle";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://bricky-ai-three.vercel.app"),
@@ -35,11 +36,17 @@ export const metadata: Metadata = {
   },
 };
 
+const THEME_BOOT_SCRIPT = `(function(){try{var t=localStorage.getItem('bricky_theme');if(t!=='light'&&t!=='dark'){t=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}document.documentElement.setAttribute('data-theme',t);}catch(e){}})();`;
+
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="fr">
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
+      </head>
       <body>
         <SplashScreen />
+        <ThemeToggle />
         {children}
       </body>
     </html>
