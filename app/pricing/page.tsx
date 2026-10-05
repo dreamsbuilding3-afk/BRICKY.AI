@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "../../lib/supabase/client";
+import { useLocale } from "../../components/LocaleProvider";
+import type { Locale } from "../../lib/i18n/translations";
 
 type Plan = {
   plan_code: string;
@@ -22,36 +24,42 @@ type Plan = {
   sort_order: number;
 };
 
-const PLAN_AUDIENCE: Record<string, string> = {
-  decouverte: "Particuliers : un premier avis avant d'acheter",
-  essentiel: "Investisseurs particuliers actifs",
-  pro: "Indépendants & auto-entrepreneurs de l'immobilier",
-  agence: "Agences & équipes",
+const PLAN_AUDIENCE_KEY: Record<string, string> = {
+  decouverte: "pricing.audience.decouverte",
+  essentiel: "pricing.audience.essentiel",
+  pro: "pricing.audience.pro",
+  agence: "pricing.audience.agence",
 };
 
-function formatPrice(cents: number) {
-  if (cents === 0) return "Gratuit";
-  return (cents / 100).toLocaleString("fr-FR", { maximumFractionDigits: 0 }) + " €/mois";
+function numberLocale(locale: Locale) {
+  if (locale === "en") return "en-US";
+  if (locale === "zh") return "zh-CN";
+  return "fr-FR";
 }
 
-function analysesLabel(plan: Plan) {
+function formatPrice(cents: number, locale: Locale, t: (key: string, vars?: Record<string, string | number>) => string) {
+  if (cents === 0) return t("pricing.free");
+  return (cents / 100).toLocaleString(numberLocale(locale), { maximumFractionDigits: 0 }) + " " + t("pricing.perMonth");
+}
+
+function analysesLabel(plan: Plan, t: (key: string, vars?: Record<string, string | number>) => string) {
   if (plan.lifetime_analysis_quota != null) {
-    return plan.lifetime_analysis_quota + " analyse gratuite à vie";
+    return t("pricing.feature.analysesLifetime", { n: plan.lifetime_analysis_quota });
   }
-  if (plan.monthly_analysis_quota == null) return "Analyses illimitées";
-  return "Jusqu'à " + plan.monthly_analysis_quota + " analyses / mois";
+  if (plan.monthly_analysis_quota == null) return t("pricing.feature.analysesUnlimited");
+  return t("pricing.feature.analysesMonthly", { n: plan.monthly_analysis_quota });
 }
 
-function featureList(plan: Plan): string[] {
-  const items: string[] = [analysesLabel(plan)];
-  items.push(plan.can_download_pdf ? "Dossier PDF téléchargeable, prêt à partager" : "Dossier PDF non téléchargeable");
-  items.push(plan.can_use_financing_simulator ? "Simulateur de financement pour chiffrer vos dossiers" : "Pas de simulateur de financement");
-  if (plan.can_share_link) items.push("Partage de lien en lecture seule avec clients ou associés");
-  if (plan.can_compare_properties) items.push("Comparaison multi-biens pour arbitrer entre plusieurs opportunités");
-  if (plan.can_set_alerts) items.push("Alertes sur les nouvelles annonces correspondant à vos critères");
-  if (plan.white_label) items.push("Dossier en marque blanche, aux couleurs de votre agence");
-  if (plan.multi_user) items.push("Comptes multi-utilisateurs pour toute l'équipe");
-  if (plan.api_export) items.push("Export API / CSV pour connecter vos outils internes");
+function featureList(plan: Plan, t: (key: string, vars?: Record<string, string | number>) => string): string[] {
+  const items: string[] = [analysesLabel(plan, t)];
+  items.push(plan.can_download_pdf ? t("pricing.feature.pdfYes") : t("pricing.feature.pdfNo"));
+  items.push(plan.can_use_financing_simulator ? t("pricing.feature.financingYes") : t("pricing.feature.financingNo"));
+  if (plan.can_share_link) items.push(t("pricing.feature.shareLink"));
+  if (plan.can_compare_properties) items.push(t("pricing.feature.compare"));
+  if (plan.can_set_alerts) items.push(t("pricing.feature.alerts"));
+  if (plan.white_label) items.push(t("pricing.feature.whiteLabel"));
+  if (plan.multi_user) items.push(t("pricing.feature.multiUser"));
+  if (plan.api_export) items.push(t("pricing.feature.apiExport"));
   return items;
 }
 
@@ -59,10 +67,10 @@ function Check({ ok }: { ok: boolean }) {
   return ok ? <span className="pricing-compare-check">✓</span> : <span className="pricing-compare-dash">—</span>;
 }
 
-function ctaLabel(plan: Plan) {
-  if (plan.plan_code === "decouverte") return "Commencer";
-  if (plan.plan_code === "agence") return "Nous contacter";
-  return "Choisir";
+function ctaLabel(plan: Plan, t: (key: string, vars?: Record<string, string | number>) => string) {
+  if (plan.plan_code === "decouverte") return t("pricing.cta.ctaShortStart");
+  if (plan.plan_code === "agence") return t("pricing.cta.ctaShortContact");
+  return t("pricing.cta.ctaShortChoose");
 }
 
 function ctaHref(plan: Plan) {
@@ -72,6 +80,7 @@ function ctaHref(plan: Plan) {
 }
 
 export default function PricingPage() {
+  const { locale, t } = useLocale();
   const [plans, setPlans] = useState<Plan[]>([]);
   const [currentPlan, setCurrentPlan] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -85,7 +94,7 @@ export default function PricingPage() {
         .select("*")
         .order("sort_order", { ascending: true });
       if (plansError || !planRows || planRows.length === 0) {
-        setLoadError("Impossible de charger les tarifs pour le moment. Merci de rafraichir la page ou de reessayer dans un instant.");
+        setLoadError("load_error");
         setLoading(false);
         return;
       }
@@ -109,25 +118,22 @@ export default function PricingPage() {
           <span className="mark">B</span>Bricky
         </Link>
         <div className="nav-links">
-          <Link className="navlink" href="/login">Se connecter</Link>
-          <Link className="nav-cta" href="/analyze">Essai gratuit de 7 jours →</Link>
+          <Link className="navlink" href="/login">{t("nav.login")}</Link>
+          <Link className="nav-cta" href="/analyze">{t("nav.cta")}</Link>
         </div>
       </nav>
 
       <section className="pricing-intro">
-        <span className="eyebrow">Tarifs</span>
-        <h1>Un abonnement pour chaque niveau d'investisseur.</h1>
+        <span className="eyebrow">{t("pricing.intro.eyebrow")}</span>
+        <h1>{t("pricing.intro.title")}</h1>
         <p className="sub">
-          Du particulier qui vérifie un premier achat à l'agence qui traite des dizaines de dossiers par mois :
-          chaque palier est pensé pour un usage précis — particulier, auto-entrepreneur, indépendant, investisseur
-          ou agence. Commencez avec une analyse gratuite, puis profitez de 7 jours d'essai gratuit sur les paliers
-          payants, sans carte bancaire.
+          {t("pricing.intro.sub")}
         </p>
-        <p className="trial-note" style={{ textAlign: "center", margin: "14px auto 0" }}>Sans engagement, résiliable à tout moment sur tous les paliers payants.</p>
+        <p className="trial-note" style={{ textAlign: "center", margin: "14px auto 0" }}>{t("pricing.intro.note")}</p>
       </section>
 
       {loading ? null : loadError ? (
-        <section className="pricing-intro"><div className="error-box" style={{ maxWidth: 520, margin: "0 auto" }}>{loadError}</div></section>
+        <section className="pricing-intro"><div className="error-box" style={{ maxWidth: 520, margin: "0 auto" }}>{t("pricing.loadError")}</div></section>
       ) : (
         <section className="pricing-grid">
           {plans.map((plan) => (
@@ -135,43 +141,43 @@ export default function PricingPage() {
               key={plan.plan_code}
               className={"pricing-card" + (currentPlan === plan.plan_code ? " pricing-card-current" : "")}
             >
-              {currentPlan === plan.plan_code ? <span className="pricing-current-badge">Votre palier actuel</span> : null}
+              {currentPlan === plan.plan_code ? <span className="pricing-current-badge">{t("pricing.currentBadge")}</span> : null}
               <h2>{plan.name}</h2>
-              {PLAN_AUDIENCE[plan.plan_code] ? (
-                <div className="pricing-audience">{PLAN_AUDIENCE[plan.plan_code]}</div>
+              {PLAN_AUDIENCE_KEY[plan.plan_code] ? (
+                <div className="pricing-audience">{t(PLAN_AUDIENCE_KEY[plan.plan_code])}</div>
               ) : null}
-              <div className="pricing-price">{formatPrice(plan.price_monthly_cents)}</div>
+              <div className="pricing-price">{formatPrice(plan.price_monthly_cents, locale, t)}</div>
               {plan.price_yearly_cents ? (
                 <div className="pricing-yearly">
-                  ou {(plan.price_yearly_cents / 100).toLocaleString("fr-FR")} €/an
+                  {t("pricing.or")} {(plan.price_yearly_cents / 100).toLocaleString(numberLocale(locale))} {t("pricing.perYear")}
                 </div>
               ) : null}
               <ul className="pricing-features">
-                {featureList(plan).map((item) => (
+                {featureList(plan, t).map((item) => (
                   <li key={item}>{item}</li>
                 ))}
               </ul>
               {plan.plan_code === "agence" ? (
                 <div className="pricing-network">
-                  <span className="pricing-network-badge">🤝 Réseau Privé Bricky</span>
-                  <p className="pricing-network-text">Accédez à notre réseau de 50+ agents immobiliers partenaires et augmentez vos chances de trouver rapidement votre prochain bien.</p>
-                  <a className="secondary-button pricing-compare-cta pricing-network-cta" href="#">→ Accéder au Réseau Privé</a>
+                  <span className="pricing-network-badge">{t("pricing.network.badge")}</span>
+                  <p className="pricing-network-text">{t("pricing.network.text")}</p>
+                  <a className="secondary-button pricing-compare-cta pricing-network-cta" href="#">{t("pricing.network.cta")}</a>
                 </div>
               ) : null}
               {plan.plan_code === "decouverte" ? (
                 <Link className="secondary-button pricing-cta" href="/analyze">
-                  Commencer gratuitement
+                  {t("pricing.cta.start")}
                 </Link>
               ) : plan.plan_code === "agence" ? (
                 <Link className="secondary-button pricing-cta" href="/account">
-                  Nous contacter
+                  {t("pricing.cta.contact")}
                 </Link>
               ) : (
                 <div className="pricing-cta-wrap">
                 <Link className="primary-button pricing-cta" href="/account">
-                  Essai gratuit
+                  {t("pricing.cta.trial")}
                 </Link>
-                <span className="pricing-cta-note">7 jours offerts, sans carte</span>
+                <span className="pricing-cta-note">{t("pricing.cta.trialNote")}</span>
                 </div>
               )}
             </div>
@@ -182,9 +188,9 @@ export default function PricingPage() {
       {!loading && plans.length > 0 && (
         <section className="pricing-compare">
           <div className="pricing-compare-intro">
-            <span className="eyebrow">Comparatif</span>
-            <h2>Comparer tous les paliers en détail</h2>
-            <p>Chaque ligne compte : repérez en un coup d'œil ce qui change d'un palier à l'autre — du particulier à l'agence — et choisissez le vôtre directement depuis le tableau.</p>
+            <span className="eyebrow">{t("pricing.compare.eyebrow")}</span>
+            <h2>{t("pricing.compare.title")}</h2>
+            <p>{t("pricing.compare.sub")}</p>
           </div>
           <div className="pricing-compare-scroll">
             <table className="pricing-compare-table">
@@ -194,9 +200,9 @@ export default function PricingPage() {
                   {plans.map((plan) => (
                     <th key={plan.plan_code} className={plan.plan_code === "pro" ? "pricing-compare-highlight" : ""}>
                       {plan.name}
-                      {plan.plan_code === "pro" ? <span className="pricing-compare-popular">Populaire</span> : null}
-                      {PLAN_AUDIENCE[plan.plan_code] ? (
-                        <span className="pricing-compare-audience">{PLAN_AUDIENCE[plan.plan_code]}</span>
+                      {plan.plan_code === "pro" ? <span className="pricing-compare-popular">{t("pricing.popular")}</span> : null}
+                      {PLAN_AUDIENCE_KEY[plan.plan_code] ? (
+                        <span className="pricing-compare-audience">{t(PLAN_AUDIENCE_KEY[plan.plan_code])}</span>
                       ) : null}
                     </th>
                   ))}
@@ -204,18 +210,18 @@ export default function PricingPage() {
               </thead>
               <tbody>
                 <tr className="pricing-compare-section">
-                  <td colSpan={plans.length + 1}>Analyses &amp; rapports</td>
+                  <td colSpan={plans.length + 1}>{t("pricing.compare.section.analyses")}</td>
                 </tr>
                 <tr>
-                  <td>Analyses incluses</td>
+                  <td>{t("pricing.compare.row.analyses")}</td>
                   {plans.map((plan) => (
                     <td key={plan.plan_code} className={plan.plan_code === "pro" ? "pricing-compare-highlight" : ""}>
-                      {analysesLabel(plan)}
+                      {analysesLabel(plan, t)}
                     </td>
                   ))}
                 </tr>
                 <tr>
-                  <td>Dossier PDF téléchargeable</td>
+                  <td>{t("pricing.compare.row.pdf")}</td>
                   {plans.map((plan) => (
                     <td key={plan.plan_code} className={plan.plan_code === "pro" ? "pricing-compare-highlight" : ""}>
                       <Check ok={plan.can_download_pdf} />
@@ -223,7 +229,7 @@ export default function PricingPage() {
                   ))}
                 </tr>
                 <tr>
-                  <td>Simulateur de financement</td>
+                  <td>{t("pricing.compare.row.financing")}</td>
                   {plans.map((plan) => (
                     <td key={plan.plan_code} className={plan.plan_code === "pro" ? "pricing-compare-highlight" : ""}>
                       <Check ok={plan.can_use_financing_simulator} />
@@ -231,10 +237,10 @@ export default function PricingPage() {
                   ))}
                 </tr>
                 <tr className="pricing-compare-section">
-                  <td colSpan={plans.length + 1}>Partage &amp; comparaison</td>
+                  <td colSpan={plans.length + 1}>{t("pricing.compare.section.sharing")}</td>
                 </tr>
                 <tr>
-                  <td>Partage de lien (clients, associés)</td>
+                  <td>{t("pricing.compare.row.share")}</td>
                   {plans.map((plan) => (
                     <td key={plan.plan_code} className={plan.plan_code === "pro" ? "pricing-compare-highlight" : ""}>
                       <Check ok={plan.can_share_link} />
@@ -242,7 +248,7 @@ export default function PricingPage() {
                   ))}
                 </tr>
                 <tr>
-                  <td>Comparaison multi-biens (investisseurs)</td>
+                  <td>{t("pricing.compare.row.compare")}</td>
                   {plans.map((plan) => (
                     <td key={plan.plan_code} className={plan.plan_code === "pro" ? "pricing-compare-highlight" : ""}>
                       <Check ok={plan.can_compare_properties} />
@@ -250,7 +256,7 @@ export default function PricingPage() {
                   ))}
                 </tr>
                 <tr>
-                  <td>Alertes sur nouvelles annonces</td>
+                  <td>{t("pricing.compare.row.alerts")}</td>
                   {plans.map((plan) => (
                     <td key={plan.plan_code} className={plan.plan_code === "pro" ? "pricing-compare-highlight" : ""}>
                       <Check ok={plan.can_set_alerts} />
@@ -258,10 +264,10 @@ export default function PricingPage() {
                   ))}
                 </tr>
                 <tr className="pricing-compare-section">
-                  <td colSpan={plans.length + 1}>Agence &amp; équipe</td>
+                  <td colSpan={plans.length + 1}>{t("pricing.compare.section.agency")}</td>
                 </tr>
                 <tr>
-                  <td>Dossier en marque blanche (agences)</td>
+                  <td>{t("pricing.compare.row.whiteLabel")}</td>
                   {plans.map((plan) => (
                     <td key={plan.plan_code} className={plan.plan_code === "pro" ? "pricing-compare-highlight" : ""}>
                       <Check ok={plan.white_label} />
@@ -269,7 +275,7 @@ export default function PricingPage() {
                   ))}
                 </tr>
                 <tr>
-                  <td>Comptes multi-utilisateurs (équipes)</td>
+                  <td>{t("pricing.compare.row.multiUser")}</td>
                   {plans.map((plan) => (
                     <td key={plan.plan_code} className={plan.plan_code === "pro" ? "pricing-compare-highlight" : ""}>
                       <Check ok={plan.multi_user} />
@@ -277,7 +283,7 @@ export default function PricingPage() {
                   ))}
                 </tr>
                 <tr>
-                  <td>Export API / CSV (outils internes)</td>
+                  <td>{t("pricing.compare.row.apiExport")}</td>
                   {plans.map((plan) => (
                     <td key={plan.plan_code} className={plan.plan_code === "pro" ? "pricing-compare-highlight" : ""}>
                       <Check ok={plan.api_export} />
@@ -292,7 +298,7 @@ export default function PricingPage() {
                         className={(plan.plan_code === "decouverte" || plan.plan_code === "agence" ? "secondary-button" : "primary-button") + " pricing-compare-cta"}
                         href={ctaHref(plan)}
                       >
-                        {ctaLabel(plan)}
+                        {ctaLabel(plan, t)}
                       </Link>
                     </td>
                   ))}
@@ -305,17 +311,16 @@ export default function PricingPage() {
 
       <section className="pricing-note">
         <p>
-          Le paiement en ligne arrive bientôt. En attendant, contactez-nous depuis votre page compte pour activer un
-          abonnement payant manuellement.
+          {t("pricing.note")}
         </p>
       </section>
 
       <footer className="footer">
-        <span>Bricky · Property intelligence, built for decisions.</span>
+        <span>{t("footer.tagline")}</span>
         <span className="footer-links">
-          <a href="/legal/mentions-legales">Mentions légales</a>
-          <a href="/legal/cgu">CGU</a>
-          <a href="/legal/confidentialite">Confidentialité</a>
+          <a href="/legal/mentions-legales">{t("footer.mentions")}</a>
+          <a href="/legal/cgu">{t("footer.cgu")}</a>
+          <a href="/legal/confidentialite">{t("footer.confidentialite")}</a>
         </span>
       </footer>
     </main>
