@@ -19,6 +19,13 @@ export default function LoginPage() {
     });
   }, [router]);
 
+  function switchMode(next: "login" | "signup") {
+    if (mode === next) return;
+    setMode(next);
+    setError("");
+    setMessage("");
+  }
+
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     setLoading(true);
@@ -72,28 +79,47 @@ export default function LoginPage() {
   return (
     <main className="page">
       <nav className="nav"><div className="brand"><img src="/mascot-avatar-round.png" alt="" className="brand-avatar" /><span>Bricky</span></div><span className="navlink">Decision intelligence</span></nav>
-      <section className="analysis-shell login-shell">
-        <img src="/mascot-avatar-square.png" alt="" className="login-mascot" />
-        <div className="analysis-intro">
-          <span className="eyebrow">Bricky · V1</span>
-          <h1>Décidez avec les données du bien.</h1>
-          <p className="sub">Connectez-vous pour lancer vos premières analyses immobilières.</p>
+      <section className="login-split">
+        <div className="login-visual">
+          <div className="login-visual-bricks" aria-hidden="true" />
+          <div className="login-visual-content">
+            <span className="eyebrow eyebrow-light">Bricky · V1</span>
+            <img src="/mascot-avatar-square.png" alt="" className="login-mascot-big" />
+            <h1 className="login-visual-title">Décidez avec les données du bien.</h1>
+            <p className="sub login-visual-sub">Connectez-vous pour lancer vos premières analyses immobilières.</p>
+          </div>
         </div>
-        <form className="property-form auth-form" onSubmit={handleSubmit}>
-          <label>E-mail<input required type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="vous@exemple.com" /></label>
-          <label>Mot de passe<input required type="password" minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" /></label>
-          {mode === "login" && (
-            <button type="button" className="auth-switch auth-forgot" onClick={handleForgotPassword} disabled={loading}>
-              Mot de passe oublié ?
-            </button>
-          )}
-          <button className="primary-button" disabled={loading}>{loading ? "Connexion…" : mode === "login" ? "Se connecter →" : "Créer mon compte →"}</button>
-          {error && <div className="error-box">{error}</div>}
-          {message && <div className="result-panel"><p>{message}</p></div>}
-          <button type="button" className="auth-switch" onClick={() => { setMode(mode === "login" ? "signup" : "login"); setError(""); setMessage(""); }}>
-            {mode === "login" ? "Pas encore de compte ? Créer un compte" : "Déjà un compte ? Se connecter"}
-          </button>
-        </form>
+        <div className="login-form-panel">
+          <div className="login-form-inner">
+            <div className="login-tabs">
+              <button type="button" className={mode === "login" ? "login-tab login-tab-active" : "login-tab"} onClick={() => switchMode("login")}>
+                Se connecter
+              </button>
+              <button type="button" className={mode === "signup" ? "login-tab login-tab-active" : "login-tab"} onClick={() => switchMode("signup")}>
+                Créer un compte
+              </button>
+            </div>
+            <form className="property-form auth-form" onSubmit={handleSubmit}>
+              <label>E-mail<input required type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="vous@exemple.com" /></label>
+              <label>Mot de passe<input required type="password" minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" /></label>
+              {mode === "login" && (
+                <button type="button" className="auth-switch auth-forgot" onClick={handleForgotPassword} disabled={loading}>
+                  Mot de passe oublié ?
+                </button>
+              )}
+              <button className="primary-button" disabled={loading}>{loading ? "Connexion…" : mode === "login" ? "Se connecter →" : "Créer mon compte →"}</button>
+              {error && <div className="error-box">{error}</div>}
+              {message && <div className="result-panel"><p>{message}</p></div>}
+            </form>
+            <p className="login-form-footnote">
+              {mode === "login" ? (
+                <>Pas encore de compte ? <button type="button" className="login-inline-link" onClick={() => switchMode("signup")}>Créer un compte</button></>
+              ) : (
+                <>Déjà un compte ? <button type="button" className="login-inline-link" onClick={() => switchMode("login")}>Se connecter</button></>
+              )}
+            </p>
+          </div>
+        </div>
       </section>
     </main>
   );
