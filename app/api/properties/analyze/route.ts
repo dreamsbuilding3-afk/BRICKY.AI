@@ -78,6 +78,78 @@ async function fetchComparables(latitude: number, longitude: number): Promise<Co
   }).filter((row) => row.surface_m2 !== null && row.price !== null && row.price_m2 !== null);
 }
 
+const OVERPASS_URLS = [
+  "https://overpass.kumi.systems/api/interpreter",
+  "https://overpass-api.de/api/interpreter",
+  "https://overpass.openstreetmap.ru/api/interpreter",
+];
+
+function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371;
+  const toRad = (v: number) => (v * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+// Phase D (audit formulaire point 26, section 2) : distance au centre-ville. Décision
+// produit (Claude, mandat "tout construire d'un coup") : le "centre-ville" de référence
+// est le centroïde administratif de la commune, obtenu via le même géocodage IGN/BAN que
+// le reste de l'app (geocodeAddress), en géocodant le nom de la commune seule plutôt que
+// l'adresse complète du bien. Best-effort : null si le géocodage échoue, ne bloque jamais
+// l'analyse.
+async function findCityCenterDistanceKm(city: string, latitude: number, longitude: number): Promise<number | null> {
+  try {
+    const geo = await geocodeAddress(`${city}, France`);
+    if (!geo) return null;
+    return Math.round(haversineKm(latitude, longitude, geo.latitude, geo.longitude) * 100) / 100;
+  } catch {
+    return null;
+  }
+}
+
+// Phase D (audit formulaire point 26, section 2) : distance à la plage la plus proche.
+// Réutilise la même API Overpass/OpenStreetMap que les POI de proximité (voir
+// app/api/location/lookup/route.ts), avec un rayon large (20 km) car une plage pertinente
+// pour un investissement peut être à plusieurs kilomètres même pour un bien "côtier".
+// Best-effort : renvoie null (pas une erreur) si aucune plage n'est trouvée dans le rayon
+// ou si Overpass est indisponible — la majorité des biens ne sont pas en zone côtière.
+async function findNearestBeachKm(latitude: number, longitude: number): Promise<number | null> {
+  const RADIUS_M = 20000;
+  const query = `[out:json][timeout:20];(node(around:${RADIUS_M},${latitude},${longitude})[natural=beach];way(around:${RADIUS_M},${latitude},${longitude})[natural=beach];);out center 20;`;
+  for (const overpassUrl of OVERPASS_URLS) {
+    try {
+      const response = await fetch(overpassUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          "User-Agent": "BrickyAI-App/1.0 (immo analysis; contact via app)",
+          Accept: "application/json",
+        },
+        body: "data=" + encodeURIComponent(query),
+        signal: AbortSignal.timeout(13000),
+        cache: "no-store",
+      });
+      if (!response.ok) continue;
+      const data = (await response.json()) as { elements?: Array<Record<string, unknown>> };
+      const elements = Array.isArray(data.elements) ? data.elements : [];
+      let best: number | null = null;
+      for (const el of elements) {
+        const lat = typeof el.lat === "number" ? el.lat : (el.center as { lat?: number } | undefined)?.lat;
+        const lon = typeof el.lon === "number" ? el.lon : (el.center as { lon?: number } | undefined)?.lon;
+        if (lat == null || lon == null) continue;
+        const d = haversineKm(latitude, longitude, lat, lon);
+        if (best === null || d < best) best = d;
+      }
+      return best !== null ? Math.round(best * 100) / 100 : null;
+    } catch {
+      continue;
+    }
+  }
+  return null;
+}
+
 async function estimateMonthlyRent(
   inseeCode: string,
   surfaceM2: number,
@@ -148,7 +220,7 @@ export async function POST(request: Request) {
   try {
     const rawBody = payload as Record<string, unknown>;
     const payloadForIngest = { ...rawBody };
-    const financialFieldKeys = ["monthly_rent", "down_payment", "loan_rate_pct", "loan_duration_years", "renovation_budget", "annual_property_tax", "annual_insurance", "annual_maintenance", "annual_management_fees", "other_annual_charges", "vacancy_rate", "agency_fees", "file_fees", "borrower_insurance_annual", "financing_fees", "deferral_months", "loan_type", "rate_type"];
+    const financialFieldKeys = ["monthly_rent", "down_payment", "loan_rate_pct", "loan_duration_years", "renovation_budget", "annual_property_tax", "annual_insurance", "annual_maintenance", "annual_management_fees", "other_annual_charges", "vacancy_rate", "agency_fees", "file_fees", "borrower_insurance_annual", "financing_fees", "deferral_months", "loan_type", "rate_type", "tax_bracket_pct"];
     const existingFinancial = (rawBody.financial as Record<string, unknown> | undefined) || {};
     const financialUpdates: Record<string, unknown> = {};
     for (const key of financialFieldKeys) {
@@ -204,7 +276,7 @@ export async function POST(request: Request) {
       }
     }
 
-    let result = await rpc("ingest_property", { p_payload: payloadForIngest }, authorization) as { analysis_id?: string; analysis?: unknown };
+    let result = await rpc("ingest_property", { p_payload: payloadForIngest }, authorization) as { property_id?: string; analysis_id?: string; analysis?: unknown };
     const analysisId = result?.analysis_id;
     const body = payloadForIngest as Record<string, unknown>;
     const financial = (body.financial as Record<string, unknown> | undefined) || {};
@@ -273,7 +345,32 @@ export async function POST(request: Request) {
       }
     }
 
-    return NextResponse.json({ ...result, market, rent_estimate: rentEstimate }, { status: 200 });
+    // Step 3: distance centre-ville / plage (Phase D, audit point 26, section 2).
+    // Best-effort, ne modifie pas result.analysis (ces distances n'entrent pas dans le
+    // scoring risque/marché/décision, contrairement au loyer ANIL) : simple
+    // enrichissement persisté sur `properties`, exposé séparément dans la réponse.
+    let locationDistances: unknown = null;
+    if (analysisId && result?.property_id && latitude !== null && longitude !== null) {
+      try {
+        const city = typeof body.city === "string" ? body.city : null;
+        const [cityCenterKm, beachKm] = await Promise.all([
+          city ? findCityCenterDistanceKm(city, latitude, longitude) : Promise.resolve(null),
+          findNearestBeachKm(latitude, longitude),
+        ]);
+        if (cityCenterKm !== null || beachKm !== null) {
+          await rpc("save_location_distances_v1", {
+            p_property_id: result.property_id,
+            p_distance_city_center_km: cityCenterKm,
+            p_distance_beach_km: beachKm,
+          }, authorization);
+        }
+        locationDistances = { distance_city_center_km: cityCenterKm, distance_beach_km: beachKm };
+      } catch (distanceError) {
+        locationDistances = { status: "unavailable", note: distanceError instanceof Error ? distanceError.message : "Location distances unavailable" };
+      }
+    }
+
+    return NextResponse.json({ ...result, market, rent_estimate: rentEstimate, location_distances: locationDistances }, { status: 200 });
   } catch (error) {
     await logError("properties.analyze", error);
     return NextResponse.json({ error: "Property analysis failed.", details: error instanceof Error ? error.message : error }, { status: 422 });
