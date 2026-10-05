@@ -22,7 +22,7 @@ const DRAFT_KEY = "bricky_analyze_draft_v1";
 // / financialFieldKeys) ; converties en nombre côté client pour les champs numériques.
 type ExtraFieldDef = { key: string; label: string; kind: "text" | "number" | "bool" | "select"; options?: string[]; placeholder?: string };
 
-const NUMERIC_EXTRA_KEYS = new Set(["bathrooms", "toilets", "parking_spaces", "renovation_year", "exterior_surface_m2", "energy_consumption_kwh", "energy_cost_annual_estimate", "immediate_works_budget", "agency_fees", "file_fees", "borrower_insurance_annual", "financing_fees", "deferral_months"]);
+const NUMERIC_EXTRA_KEYS = new Set(["bathrooms", "toilets", "parking_spaces", "renovation_year", "exterior_surface_m2", "energy_consumption_kwh", "energy_cost_annual_estimate", "immediate_works_budget", "agency_fees", "file_fees", "borrower_insurance_annual", "financing_fees", "deferral_months", "tax_bracket_pct"]);
 
 const BOOL_FIELD: Pick<ExtraFieldDef, "kind" | "options"> = { kind: "bool", options: ["Oui", "Non"] };
 
@@ -72,6 +72,12 @@ const FINANCING_EXTRA_FIELDS: ExtraFieldDef[] = [
   { key: "deferral_months", label: "Différé de remboursement (mois)", kind: "number", placeholder: "0" },
   { key: "loan_type", label: "Type de prêt", kind: "text", placeholder: "Amortissable, in fine..." },
   { key: "rate_type", label: "Taux", kind: "select", options: ["Fixe", "Variable"] },
+  // Phase D (audit formulaire point 26, section 11 - rendement net-net) : tranche
+  // marginale d'imposition, utilisée pour estimer l'impôt sur le revenu locatif (en plus
+  // des prélèvements sociaux à 17.2%, fixes). Par défaut 30% (tranche médiane française)
+  // si non renseignée - l'estimation de rendement net-net reste affichée dans ce cas, avec
+  // la mention que la TMI est une hypothèse.
+  { key: "tax_bracket_pct", label: "Tranche marginale d'imposition - TMI (%)", kind: "select", options: ["0", "11", "30", "41", "45"] },
 ];
 
 const RENTAL_WORKS_FIELDS: ExtraFieldDef[] = [
