@@ -227,12 +227,17 @@ export async function POST(request: Request) {
       }
     }
 
-    // Step 2: automatic rent estimate (ANIL "Carte des loyers"), only if the
-    // user did not provide a monthly rent themselves. Runs last so its
+    // Step 2: ANIL "Carte des loyers" rent reference. Runs last so its
     // final re-analysis (and its "estimated rent" note) is not wiped out
     // by a later market refresh.
+    // - If the user did not provide a rent, the ANIL estimate is applied
+    //   as the working monthly_rent (apply_rent_estimate_v1).
+    // - If the user did provide their own rent, the ANIL figure is instead
+    //   kept only as a reference (save_rent_reference_v1) so the risk engine
+    //   can flag an optimistic/pessimistic rent vs. the local sector reference,
+    //   without overwriting the user's own input.
     let rentEstimate: unknown = null;
-    if (analysisId && !userProvidedRent && inseeCode) {
+    if (analysisId && inseeCode) {
       const surface = num(body.surface_m2);
       if (surface && surface > 0) {
         try {
@@ -243,13 +248,24 @@ export async function POST(request: Request) {
             authorization,
           );
           if (estimate) {
-            const applied = await rpc("apply_rent_estimate_v1", {
-              p_analysis_id: analysisId,
-              p_monthly_rent: estimate.monthly_rent,
-              p_source: "anil_carte_des_loyers_2025",
-            }, authorization);
-            rentEstimate = { ...estimate, applied };
-            result = { ...result, analysis: (applied as { analysis?: unknown })?.analysis ?? result.analysis };
+            if (!userProvidedRent) {
+              const applied = await rpc("apply_rent_estimate_v1", {
+                p_analysis_id: analysisId,
+                p_monthly_rent: estimate.monthly_rent,
+                p_source: "anil_carte_des_loyers_2025",
+              }, authorization);
+              rentEstimate = { ...estimate, applied };
+              result = { ...result, analysis: (applied as { analysis?: unknown })?.analysis ?? result.analysis };
+            } else {
+              const saved = await rpc("save_rent_reference_v1", {
+                p_analysis_id: analysisId,
+                p_rent_m2_reference: estimate.rent_m2,
+                p_monthly_reference: estimate.monthly_rent,
+                p_source: "anil_carte_des_loyers_2025",
+              }, authorization);
+              rentEstimate = { ...estimate, reference_only: true, saved };
+              result = { ...result, analysis: (saved as { analysis?: unknown })?.analysis ?? result.analysis };
+            }
           }
         } catch (rentError) {
           rentEstimate = { status: "unavailable", note: rentError instanceof Error ? rentError.message : "Rent estimate unavailable" };
