@@ -2,47 +2,33 @@
 
 import { useState, useEffect } from "react";
 import { PROPERTY_TYPE_LABELS } from "../lib/data/propertyTypeClassifier";
+import { useLocale } from "../components/LocaleProvider";
 
 const CAPABILITY_ROW_1 = [
-  { label: "Rendement net & cash-flow réel", color: "accent" },
-  { label: "Données cadastrales & urbanisme", color: "blue" },
-  { label: "300+ points de risques environnementaux", color: "green" },
-  { label: "Comparables du marché local", color: "accent" },
-  { label: "Analyse via URL ou PDF d'annonce", color: "blue" },
+  { key: "cap.rendement", color: "accent" },
+  { key: "cap.cadastre", color: "blue" },
+  { key: "cap.risques", color: "green" },
+  { key: "cap.comparables", color: "accent" },
+  { key: "cap.analyse", color: "blue" },
 ];
 
 const CAPABILITY_ROW_2 = [
-  { label: "Dossier PDF complet", color: "green" },
-  { label: "Estimation de loyer fiable", color: "accent" },
-  { label: "Scénarios conservateur / optimiste", color: "blue" },
-  { label: "Checklist avant achat", color: "amber" },
-  { label: "Comparateur de biens", color: "green" },
+  { key: "cap.dossier", color: "green" },
+  { key: "cap.loyer", color: "accent" },
+  { key: "cap.scenarios", color: "blue" },
+  { key: "cap.checklist", color: "amber" },
+  { key: "cap.comparateur", color: "green" },
 ];
 
 const TESTIMONIALS = [
-  {
-    quote: "Avant Bricky, je passais des heures à chercher les infos d'un bien et à faire mes calculs sur plusieurs fichiers. Maintenant, j'ai une vision claire du potentiel du bien en quelques minutes. Je vois immédiatement ce qui est intéressant… et ce qui ne l'est pas.",
-    name: "Thomas",
-    role: "Investisseur immobilier",
-  },
-  {
-    quote: "Je pensais que l'investissement immobilier était réservé aux personnes qui maîtrisent déjà tout. Bricky m'a vraiment simplifié les choses. Les données sont regroupées au même endroit et surtout, je comprends enfin ce que je regarde avant de prendre une décision.",
-    name: "Sarah",
-    role: "Première acquisition",
-  },
-  {
-    quote: "Le plus gros changement pour moi, c'est la vitesse d'analyse. Au lieu de passer énormément de temps sur chaque opportunité, je peux rapidement identifier les biens qui méritent une vraie analyse. Bricky est devenu un réflexe avant même de commencer mes recherches.",
-    name: "Julien",
-    role: "Marchand de biens",
-  },
-  {
-    quote: "Ce que j'aime avec Bricky, ce n'est pas seulement d'avoir des chiffres. C'est de comprendre ce qu'ils veulent dire. En quelques instants, je sais quelles informations sont disponibles, lesquelles manquent et quels éléments doivent être vérifiés avant d'aller plus loin.",
-    name: "Nicolas",
-    role: "Investisseur immobilier",
-  },
+  { quoteKey: "testimonials.1.quote", roleKey: "testimonials.1.role", name: "Thomas" },
+  { quoteKey: "testimonials.2.quote", roleKey: "testimonials.2.role", name: "Sarah" },
+  { quoteKey: "testimonials.3.quote", roleKey: "testimonials.3.role", name: "Julien" },
+  { quoteKey: "testimonials.4.quote", roleKey: "testimonials.4.role", name: "Nicolas" },
 ];
 
 function CapabilityMarquee() {
+  const { t } = useLocale();
   return (
     <section className="capability-marquee" aria-hidden="true">
       <div className="capability-marquee-rows">
@@ -50,7 +36,7 @@ function CapabilityMarquee() {
           {[...CAPABILITY_ROW_1, ...CAPABILITY_ROW_1].map((c, i) => (
             <span className="capability-pill" key={"r1-" + i}>
               <span className={"capability-dot capability-dot-" + c.color} />
-              {c.label}
+              {t(c.key)}
             </span>
           ))}
         </div>
@@ -58,7 +44,7 @@ function CapabilityMarquee() {
           {[...CAPABILITY_ROW_2, ...CAPABILITY_ROW_2].map((c, i) => (
             <span className="capability-pill" key={"r2-" + i}>
               <span className={"capability-dot capability-dot-" + c.color} />
-              {c.label}
+              {t(c.key)}
             </span>
           ))}
         </div>
@@ -76,20 +62,21 @@ function Stars() {
 }
 
 function Testimonials() {
+  const { t } = useLocale();
   return (
     <section className="testimonials">
       <div className="testimonials-intro">
-        <span className="eyebrow">Ils utilisent Bricky</span>
-        <h2>Ce que ça change, au quotidien.</h2>
+        <span className="eyebrow">{t("testimonials.eyebrow")}</span>
+        <h2>{t("testimonials.title")}</h2>
       </div>
       <div className="testimonials-track">
-        {TESTIMONIALS.map((t) => (
-          <figure className="testimonial-card" key={t.name}>
+        {TESTIMONIALS.map((item) => (
+          <figure className="testimonial-card" key={item.name}>
             <Stars />
-            <blockquote>“{t.quote}”</blockquote>
+            <blockquote>“{t(item.quoteKey)}”</blockquote>
             <figcaption>
-              <span className="testimonial-name">{t.name}</span>
-              <span className="testimonial-role">{t.role}</span>
+              <span className="testimonial-name">{item.name}</span>
+              <span className="testimonial-role">{t(item.roleKey)}</span>
             </figcaption>
           </figure>
         ))}
@@ -99,46 +86,19 @@ function Testimonials() {
 }
 
 const MOBILE_REVIEWS = [
-  {
-    number: "01",
-    quote: "J'analyse mes opportunités beaucoup plus rapidement. Bricky me fait gagner un temps énorme.",
-    name: "Thomas",
-    role: "Investisseur",
-    tint: "peach",
-    pin: "accent",
-  },
-  {
-    number: "02",
-    quote: "Enfin un outil qui centralise les données dont j'ai vraiment besoin avant d'investir.",
-    name: "Sarah",
-    role: "Investisseuse",
-    tint: "lavender",
-    pin: "blue",
-  },
-  {
-    number: "03",
-    quote: "Simple, rapide et surtout beaucoup plus clair que mes anciens tableaux Excel.",
-    name: "Julien",
-    role: "Marchand de biens",
-    tint: "peach",
-    pin: "accent",
-  },
-  {
-    number: "04",
-    quote: "Je vois immédiatement les points forts, les risques et les infos qui me manquent.",
-    name: "Nicolas",
-    role: "Investisseur",
-    tint: "lavender",
-    pin: "blue",
-  },
+  { number: "01", quoteKey: "mreview.1.quote", roleKey: "mreview.1.role", name: "Thomas", tint: "peach", pin: "accent" },
+  { number: "02", quoteKey: "mreview.2.quote", roleKey: "mreview.2.role", name: "Sarah", tint: "lavender", pin: "blue" },
+  { number: "03", quoteKey: "mreview.3.quote", roleKey: "mreview.3.role", name: "Julien", tint: "peach", pin: "accent" },
+  { number: "04", quoteKey: "mreview.4.quote", roleKey: "mreview.4.role", name: "Nicolas", tint: "lavender", pin: "blue" },
 ];
 
 function MobileReviewsShowcase() {
+  const { t } = useLocale();
   return (
     <section className="mobile-reviews">
       <div className="mobile-reviews-intro">
-        <span className="eyebrow">Ils utilisent Bricky</span>
-        <h2>Ce que ça change, au quotidien.</h2>
+        <span className="eyebrow">{t("testimonials.eyebrow")}</span>
+        <h2>{t("testimonials.title")}</h2>
       </div>
       <div className="mobile-reviews-track">
         {MOBILE_REVIEWS.map((r, i) => (
@@ -149,8 +109,8 @@ function MobileReviewsShowcase() {
             <span className={`mreview-pin mreview-pin-${r.pin}`} />
             <span className="mreview-number">{r.number}</span>
             <Stars />
-            <blockquote>“{r.quote}”</blockquote>
-            <div className="mreview-name">— {r.name}, {r.role}</div>
+            <blockquote>“{t(r.quoteKey)}”</blockquote>
+            <div className="mreview-name">— {r.name}, {t(r.roleKey)}</div>
           </div>
         ))}
       </div>
@@ -161,15 +121,16 @@ function MobileReviewsShowcase() {
 const PROPERTY_CATEGORY_ICONS: Record<string, string> = { hotel: "🏨", chateau: "🏰", immeuble: "🏢", penthouse: "🏙️", loft: "🧱", duplex: "🏘️", chalet: "🏔️", local_commercial: "🏬", terrain: "🌳", parking: "🅿️", studio: "🚪", maison: "🏡", appartement: "🏠" };
 
 function PropertyCategoriesShowcase() {
+const { t } = useLocale();
 const categories = Object.entries(PROPERTY_TYPE_LABELS);
 const [active, setActive] = useState(categories[0][0]);
 const activeIndex = categories.findIndex(([code]) => code === active);
 return (
 <section className="categories-band">
 <div className="categories-intro">
-<span className="eyebrow">Un seul outil, tous les biens</span>
-<h2>Maison, immeuble, hôtel, local commercial…<br />Bricky s’adapte au type de bien.</h2>
-<p className="sub">Chaque catégorie a ses propres repères de rentabilité, de risques et de marché. Bricky les prend en compte dans le calcul, quel que soit le bien analysé.</p>
+<span className="eyebrow">{t("categories.eyebrow")}</span>
+<h2>{t("categories.title1")}<br />{t("categories.title2")}</h2>
+<p className="sub">{t("categories.sub")}</p>
 </div>
 <div className="categories-picker">
 <div className="categories-picker-track">
@@ -198,24 +159,25 @@ return (
 }
 
 const HERO_FLOAT_ITEMS = [
-{ label: "Rendement", top: "6%", left: "13vw", n: 1, color: "accent" },
-{ label: "Marché", top: "56%", left: "8vw", n: 2, color: "green" },
-{ label: "Risques", top: "4%", right: "12vw", n: 3, color: "amber" },
-{ label: "Dossier", top: "58%", right: "9vw", n: 4, color: "blue" },
+{ key: "floaters.rendement", top: "6%", left: "13vw", n: 1, color: "accent" },
+{ key: "floaters.marche", top: "56%", left: "8vw", n: 2, color: "green" },
+{ key: "floaters.risques", top: "4%", right: "12vw", n: 3, color: "amber" },
+{ key: "floaters.dossier", top: "58%", right: "9vw", n: 4, color: "blue" },
 ];
 
 function HeroFloaters() {
+const { t } = useLocale();
 return (
 <div className="hero-floaters" aria-hidden="true">
 {HERO_FLOAT_ITEMS.map((item) => (
 <div
-key={item.label}
+key={item.key}
 className={`hero-float hero-float-${item.n} hero-float-${item.color}`}
 style={{ top: item.top, left: item.left, right: item.right }}
 >
 <span className="hero-float-shine" />
 <span className="hero-float-dot" />
-{item.label}
+{t(item.key)}
 </div>
 ))}
 </div>
@@ -223,6 +185,7 @@ style={{ top: item.top, left: item.left, right: item.right }}
 }
 
 export default function Home() {
+  const { t } = useLocale();
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
@@ -240,7 +203,7 @@ export default function Home() {
         <button
           type="button"
           className={"nav-burger" + (menuOpen ? " nav-burger-open" : "")}
-          aria-label={menuOpen ? "Fermer le menu" : "Ouvrir le menu"}
+          aria-label={menuOpen ? t("nav.menuClose") : t("nav.menuOpen")}
           aria-expanded={menuOpen}
           onClick={() => setMenuOpen((open) => !open)}
         >
@@ -249,51 +212,51 @@ export default function Home() {
           <span></span>
         </button>
         <div className={"nav-links" + (menuOpen ? " nav-links-open" : "")}>
-          <a className="navlink" href="/pricing" onClick={() => setMenuOpen(false)}>Tarifs</a>
-          <a className="navlink" href="/login" onClick={() => setMenuOpen(false)}>Se connecter</a>
-          <a className="nav-cta" href="/analyze" onClick={() => setMenuOpen(false)}>Essai gratuit de 7 jours →</a>
+          <a className="navlink" href="/pricing" onClick={() => setMenuOpen(false)}>{t("nav.pricing")}</a>
+          <a className="navlink" href="/login" onClick={() => setMenuOpen(false)}>{t("nav.login")}</a>
+          <a className="nav-cta" href="/analyze" onClick={() => setMenuOpen(false)}>{t("nav.cta")}</a>
         </div>
       </nav>
 
       <section className="hero">
         <HeroFloaters />
-        <span className="eyebrow">Built for smarter property decisions</span>
+        <span className="eyebrow">{t("hero.eyebrow")}</span>
         <h1>Know the <span className="stroke">deal</span> before you <span className="accent">make it</span>.</h1>
         <p className="sub">
-          Collez une annonce ou déposez un PDF. Bricky croise les données du bien, le marché, les risques, le cadastre et l’environnement pour vous aider à décider quoi vérifier avant de vous engager.
+          {t("hero.sub")}
         </p>
 
         <form className="analyzer" action="/analyze">
-          <input name="url" placeholder="Collez l’URL d’une annonce immobilière…" aria-label="URL de l'annonce" />
-          <button type="submit">Analyser le bien</button>
+          <input name="url" placeholder={t("hero.inputPlaceholder")} aria-label={t("hero.inputAriaLabel")} />
+          <button type="submit">{t("hero.submit")}</button>
         </form>
-        <div className="proof">Prix · comparables · rendement · risques · données manquantes · actions</div>
-        <div className="trial-note">7 jours d’essai gratuit sur les paliers payants · sans carte bancaire</div>
-        <a className="trial-note" href="/demo" style={{ display: "block", textDecoration: "underline" }}>Voir un exemple d’analyse avant de vous inscrire →</a>
+        <div className="proof">{t("hero.proof")}</div>
+        <div className="trial-note">{t("hero.trialNote")}</div>
+        <a className="trial-note" href="/demo" style={{ display: "block", textDecoration: "underline" }}>{t("hero.demoLink")}</a>
       </section>
 
       <CapabilityMarquee />
 
       <section className="steps">
         <div className="steps-intro">
-          <span className="eyebrow">Comment ça marche</span>
-          <h2>Trois étapes, zéro devinette.</h2>
+          <span className="eyebrow">{t("steps.eyebrow")}</span>
+          <h2>{t("steps.title")}</h2>
         </div>
         <div className="steps-grid">
           <article className="card step-card">
             <span className="step-number">1</span>
-            <h2>Collez ou déposez</h2>
-            <p>Un lien d’annonce ou un PDF (annonce, dossier). Bricky en extrait automatiquement prix, surface, pièces, DPE, GES et adresse.</p>
+            <h2>{t("steps.1.title")}</h2>
+            <p>{t("steps.1.desc")}</p>
           </article>
           <article className="card step-card">
             <span className="step-number">2</span>
-            <h2>Bricky analyse</h2>
-            <p>Comparables de marché, rendement locatif, risques, données cadastrales et urbanisme, environnement (transports, commerces, écoles…).</p>
+            <h2>{t("steps.2.title")}</h2>
+            <p>{t("steps.2.desc")}</p>
           </article>
           <article className="card step-card">
             <span className="step-number">3</span>
-            <h2>Vous décidez</h2>
-            <p>Un verdict clair, les points de vigilance, ce qu’il reste à vérifier, et un dossier PDF complet à télécharger.</p>
+            <h2>{t("steps.3.title")}</h2>
+            <p>{t("steps.3.desc")}</p>
           </article>
         </div>
       </section>
@@ -302,29 +265,29 @@ export default function Home() {
         <details className="card info-card">
           <summary>
             <span className="info-number">1</span>
-            <h2>Ce qu’on sait</h2>
-            <p>Données de l’annonce et sources publiques structurées, avec leur niveau de confiance.</p>
-            <span className="info-more-btn">Voir plus <span className="chevron">▾</span></span>
+            <h2>{t("features.1.title")}</h2>
+            <p>{t("features.1.desc")}</p>
+            <span className="info-more-btn">{t("features.more")} <span className="chevron">▾</span></span>
           </summary>
-          <div className="info-more">Prix affiché, surface Carrez, nombre de pièces, étage, DPE/GES, année de construction, taxe foncière estimée, prix au m² comparé au marché local — chaque donnée est tracée avec sa source et son niveau de confiance.</div>
+          <div className="info-more">{t("features.1.more")}</div>
         </details>
         <details className="card info-card">
           <summary>
             <span className="info-number">2</span>
-            <h2>Ce qu’on ne sait pas</h2>
-            <p>Les informations critiques absentes sont identifiées au lieu d’être remplacées par des suppositions.</p>
-            <span className="info-more-btn">Voir plus <span className="chevron">▾</span></span>
+            <h2>{t("features.2.title")}</h2>
+            <p>{t("features.2.desc")}</p>
+            <span className="info-more-btn">{t("features.more")} <span className="chevron">▾</span></span>
           </summary>
-          <div className="info-more">Travaux réalisés, charges de copropriété exactes, procédures en cours, nuisances de voisinage, historique des sinistres : Bricky les signale comme lacunes plutôt que de deviner à votre place.</div>
+          <div className="info-more">{t("features.2.more")}</div>
         </details>
         <details className="card info-card">
           <summary>
             <span className="info-number">3</span>
-            <h2>Ce qu’il faut faire</h2>
-            <p>Risques, questions à poser, documents à demander et prochaines vérifications avant une offre.</p>
-            <span className="info-more-btn">Voir plus <span className="chevron">▾</span></span>
+            <h2>{t("features.3.title")}</h2>
+            <p>{t("features.3.desc")}</p>
+            <span className="info-more-btn">{t("features.more")} <span className="chevron">▾</span></span>
           </summary>
-          <div className="info-more">Diagnostics à réclamer, PV d’AG et règlement de copropriété, questions précises à poser au vendeur, points de négociation et vérifications à faire sur place avant de vous engager.</div>
+          <div className="info-more">{t("features.3.more")}</div>
         </details>
       </section>
 
@@ -336,77 +299,77 @@ export default function Home() {
 
       <section className="highlight-band">
         <div className="highlight-intro">
-          <span className="eyebrow">Dans chaque analyse</span>
-          <h2>Tout ce qu’il faut pour décider, au même endroit.</h2>
+          <span className="eyebrow">{t("highlight1.eyebrow")}</span>
+          <h2>{t("highlight1.title")}</h2>
         </div>
         <div className="highlight-grid">
           <div className="highlight-item">
-            <div className="highlight-item-top"><span className="highlight-icon">01</span><span className="highlight-tag">Localisation</span></div>
-            <h3>Localisation détaillée</h3>
-            <p>Carte précise du bien avec transports, commerces, écoles et services à proximité, distance par distance.</p>
-            <div className="highlight-stat">300+ points d’intérêt croisés</div>
+            <div className="highlight-item-top"><span className="highlight-icon">01</span><span className="highlight-tag">{t("highlight1.1.tag")}</span></div>
+            <h3>{t("highlight1.1.title")}</h3>
+            <p>{t("highlight1.1.desc")}</p>
+            <div className="highlight-stat">{t("highlight1.1.stat")}</div>
           </div>
           <div className="highlight-item">
-            <div className="highlight-item-top"><span className="highlight-icon">02</span><span className="highlight-tag">Officiel</span></div>
-            <h3>Cadastre &amp; urbanisme</h3>
-            <p>Parcelle, zonage PLU, bâti recensé — les données officielles croisées automatiquement.</p>
-            <div className="highlight-stat">Cadastre.gouv.fr · Géorisques</div>
+            <div className="highlight-item-top"><span className="highlight-icon">02</span><span className="highlight-tag">{t("highlight1.2.tag")}</span></div>
+            <h3>{t("highlight1.2.title")}</h3>
+            <p>{t("highlight1.2.desc")}</p>
+            <div className="highlight-stat">{t("highlight1.2.stat")}</div>
           </div>
           <div className="highlight-item">
-            <div className="highlight-item-top"><span className="highlight-icon">03</span><span className="highlight-tag">Livrable</span></div>
-            <h3>Dossier PDF complet</h3>
-            <p>Synthèse, finances, risques, cadastre et environnement réunis dans un document téléchargeable en un clic.</p>
-            <div className="highlight-stat">Prêt en quelques secondes</div>
+            <div className="highlight-item-top"><span className="highlight-icon">03</span><span className="highlight-tag">{t("highlight1.3.tag")}</span></div>
+            <h3>{t("highlight1.3.title")}</h3>
+            <p>{t("highlight1.3.desc")}</p>
+            <div className="highlight-stat">{t("highlight1.3.stat")}</div>
           </div>
           <div className="highlight-item">
-            <div className="highlight-item-top"><span className="highlight-icon">04</span><span className="highlight-tag">Flexible</span></div>
-            <h3>Fichiers acceptés</h3>
-            <p>Lien d’annonce ou PDF déposé directement — Bricky s’adapte à ce que vous avez sous la main.</p>
-            <div className="highlight-stat">URL ou PDF, au choix</div>
+            <div className="highlight-item-top"><span className="highlight-icon">04</span><span className="highlight-tag">{t("highlight1.4.tag")}</span></div>
+            <h3>{t("highlight1.4.title")}</h3>
+            <p>{t("highlight1.4.desc")}</p>
+            <div className="highlight-stat">{t("highlight1.4.stat")}</div>
           </div>
         </div>
       </section>
 
       <section className="highlight-band">
         <div className="highlight-intro">
-          <span className="eyebrow">Confiance</span>
-          <h2>Vos données, protégées à chaque étape.</h2>
+          <span className="eyebrow">{t("highlight2.eyebrow")}</span>
+          <h2>{t("highlight2.title")}</h2>
         </div>
         <div className="highlight-grid">
           <div className="highlight-item">
-            <div className="highlight-item-top"><span className="highlight-icon">01</span><span className="highlight-tag">Sécurité</span></div>
-            <h3>Isolation stricte</h3>
-            <p>Chaque compte ne voit et n’accède qu’à ses propres biens et analyses, protégé au niveau de la base de données.</p>
-            <div className="highlight-stat">Règles de sécurité par utilisateur</div>
+            <div className="highlight-item-top"><span className="highlight-icon">01</span><span className="highlight-tag">{t("highlight2.1.tag")}</span></div>
+            <h3>{t("highlight2.1.title")}</h3>
+            <p>{t("highlight2.1.desc")}</p>
+            <div className="highlight-stat">{t("highlight2.1.stat")}</div>
           </div>
           <div className="highlight-item">
-            <div className="highlight-item-top"><span className="highlight-icon">02</span><span className="highlight-tag">Infrastructure</span></div>
-            <h3>Hébergement professionnel</h3>
-            <p>Application et base de données hébergées par Vercel et Supabase, avec authentification chiffrée.</p>
-            <div className="highlight-stat">Vercel · Supabase</div>
+            <div className="highlight-item-top"><span className="highlight-icon">02</span><span className="highlight-tag">{t("highlight2.2.tag")}</span></div>
+            <h3>{t("highlight2.2.title")}</h3>
+            <p>{t("highlight2.2.desc")}</p>
+            <div className="highlight-stat">{t("highlight2.2.stat")}</div>
           </div>
           <div className="highlight-item">
-            <div className="highlight-item-top"><span className="highlight-icon">03</span><span className="highlight-tag">Transparence</span></div>
-            <h3>Jamais revendues</h3>
-            <p>Vos données servent uniquement à générer vos analyses. Elles ne sont ni vendues, ni louées, ni utilisées à des fins publicitaires.</p>
-            <div className="highlight-stat"><a href="/legal/confidentialite" style={{ color: "inherit" }}>Voir notre politique de confidentialité →</a></div>
+            <div className="highlight-item-top"><span className="highlight-icon">03</span><span className="highlight-tag">{t("highlight2.3.tag")}</span></div>
+            <h3>{t("highlight2.3.title")}</h3>
+            <p>{t("highlight2.3.desc")}</p>
+            <div className="highlight-stat"><a href="/legal/confidentialite" style={{ color: "inherit" }}>{t("highlight2.3.stat")}</a></div>
           </div>
           <div className="highlight-item">
-            <div className="highlight-item-top"><span className="highlight-icon">04</span><span className="highlight-tag">Engagement</span></div>
-            <h3>Sans engagement</h3>
-            <p>Résiliable à tout moment sur les paliers payants, sans durée minimale imposée.</p>
-            <div className="highlight-stat">Aucune durée d’engagement</div>
+            <div className="highlight-item-top"><span className="highlight-icon">04</span><span className="highlight-tag">{t("highlight2.4.tag")}</span></div>
+            <h3>{t("highlight2.4.title")}</h3>
+            <p>{t("highlight2.4.desc")}</p>
+            <div className="highlight-stat">{t("highlight2.4.stat")}</div>
           </div>
         </div>
       </section>
 
       <section className="cta-band">
-        <h2>Prêt à savoir si ce bien mérite votre attention ?</h2>
-        <a className="nav-cta" href="/analyze">Essai gratuit de 7 jours →</a>
-        <div className="trial-note trial-note-light">Sans carte bancaire · résiliable à tout moment</div>
+        <h2>{t("ctaBand.title")}</h2>
+        <a className="nav-cta" href="/analyze">{t("nav.cta")}</a>
+        <div className="trial-note trial-note-light">{t("ctaBand.note")}</div>
       </section>
 
-      <footer className="footer"><span>Bricky · Property intelligence, built for decisions.</span><span className="footer-links"><a href="/legal/mentions-legales">Mentions légales</a><a href="/legal/cgu">CGU</a><a href="/legal/confidentialite">Confidentialité</a></span></footer>
+      <footer className="footer"><span>{t("footer.tagline")}</span><span className="footer-links"><a href="/legal/mentions-legales">{t("footer.mentions")}</a><a href="/legal/cgu">{t("footer.cgu")}</a><a href="/legal/confidentialite">{t("footer.confidentialite")}</a></span></footer>
     </main>
   );
 }
