@@ -227,7 +227,10 @@ class FlowDoc {
   }
 
   checklistItem(title: string, priorityLabel: string, completed: boolean) {
-    this.ensure(15);
+    const size = 8.8;
+    const w = PAGE_WIDTH - 2 * MARGIN - 14;
+    const lines = wrapText(this.fonts.regular, size, w, `${title} (${priorityLabel})`);
+    this.ensure(lines.length * (size + 3.5) + 4);
     const boxS = 8.5;
     const boxY = this.y - 1;
     if (completed) {
@@ -237,8 +240,10 @@ class FlowDoc {
     } else {
       this.page.drawRectangle({ x: MARGIN, y: boxY, width: boxS, height: boxS, borderColor: INK_SOFT, borderWidth: 1 });
     }
-    this.page.drawText(`${title} (${priorityLabel})`, { x: MARGIN + 14, y: this.y, size: 8.8, font: this.fonts.regular, color: INK_SOFT });
-    this.y -= 14;
+    for (const line of lines) {
+      this.page.drawText(line, { x: MARGIN + 14, y: this.y, size, font: this.fonts.regular, color: INK_SOFT });
+      this.y -= size + 3.5;
+    }
   }
 
   riskBox(title: string, severity: string, explanation: string, bg: ReturnType<typeof rgb>) {
@@ -567,7 +572,7 @@ export async function POST(request: NextRequest) {
   flow.y = Math.min(ly, ry) - 22;
 
   flow.section("Ce qu'il faut faire");
-  if (actions.length > 0) actions.forEach((a) => flow.bullet(a));
+  if (actions.length > 0) actions.forEach((a) => flow.bullet(sanitizeText(a)));
   else flow.emptyNote("Aucune action spécifique identifiée.");
   flow.y -= 10;
 
