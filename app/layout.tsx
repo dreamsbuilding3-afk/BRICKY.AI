@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 import SplashScreen from "../components/SplashScreen";
 import { ThemeToggle } from "../components/ThemeToggle";
+import { LocaleProvider } from "../components/LocaleProvider";
+import { LanguageToggle } from "../components/LanguageToggle";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://bricky-ai-three.vercel.app"),
@@ -45,9 +47,12 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
       </head>
       <body>
-        <SplashScreen />
-        <ThemeToggle />
-        {children}
+        <LocaleProvider>
+          <SplashScreen />
+          <ThemeToggle />
+          <LanguageToggle />
+          {children}
+        </LocaleProvider>
       </body>
     </html>
   );
