@@ -37,11 +37,14 @@ export function LanguageToggle() {
         aria-label={t("lang.selectAria")}
         title={t("lang.selectAria")}
       >
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <svg className="lang-toggle-globe" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <circle cx="12" cy="12" r="9" />
           <path d="M3 12h18M12 3c2.4 2.6 3.6 5.7 3.6 9s-1.2 6.4-3.6 9c-2.4-2.6-3.6-5.7-3.6-9s1.2-6.4 3.6-9z" />
         </svg>
         <span className="lang-toggle-code">{locale.toUpperCase()}</span>
+        <svg className="lang-toggle-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M6 9l6 6 6-6" />
+        </svg>
       </button>
       {open ? (
         <div className="lang-toggle-menu" role="listbox">
