@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "../lib/supabase/client";
@@ -13,6 +13,8 @@ type AppNavProps = {
 export function AppNav({ email, active }: AppNavProps) {
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false);
+  const accountMenuRef = useRef<HTMLDivElement>(null);
 
   async function handleLogout() {
     await supabase.auth.signOut();
@@ -21,7 +23,25 @@ export function AppNav({ email, active }: AppNavProps) {
 
   function closeMenu() {
     setMenuOpen(false);
+    setAccountMenuOpen(false);
   }
+
+  useEffect(() => {
+    function onClickOutside(e: MouseEvent) {
+      if (accountMenuRef.current && !accountMenuRef.current.contains(e.target as Node)) {
+        setAccountMenuOpen(false);
+      }
+    }
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") setAccountMenuOpen(false);
+    }
+    document.addEventListener("mousedown", onClickOutside);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", onClickOutside);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, []);
 
   return (
     <nav className="nav nav-has-burger">
@@ -56,13 +76,6 @@ export function AppNav({ email, active }: AppNavProps) {
           Nouvelle analyse
         </Link>
         <Link
-          className={"navlink" + (active === "account" ? " navlink-active" : "")}
-          href="/account"
-          onClick={closeMenu}
-        >
-          {email || "Mon compte"}
-        </Link>
-        <Link
           className={"navlink" + (active === "alerts" ? " navlink-active" : "")}
           href="/alerts"
           onClick={closeMenu}
@@ -86,9 +99,48 @@ export function AppNav({ email, active }: AppNavProps) {
         <Link className="navlink" href="/pricing" onClick={closeMenu}>
           Tarifs
         </Link>
-        <button type="button" className="navlink navlink-logout" onClick={handleLogout}>
-          Déconnexion
-        </button>
+        <div className="navlink-account-wrap" ref={accountMenuRef}>
+          <button
+            type="button"
+            className={"navlink navlink-account-trigger" + (active === "account" ? " navlink-active" : "")}
+            onClick={() => setAccountMenuOpen((open) => !open)}
+            aria-haspopup="menu"
+            aria-expanded={accountMenuOpen}
+          >
+            <span className="navlink-account-label">{email || "Compte"}</span>
+            <svg
+              className="navlink-account-chevron"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M6 9l6 6 6-6" />
+            </svg>
+          </button>
+          {accountMenuOpen ? (
+            <div className="navlink-account-menu" role="menu">
+              <Link
+                className="navlink-account-menu-item"
+                href="/account"
+                role="menuitem"
+                onClick={closeMenu}
+              >
+                Mon compte
+              </Link>
+              <button
+                type="button"
+                className="navlink-account-menu-item navlink-account-menu-logout"
+                role="menuitem"
+                onClick={handleLogout}
+              >
+                Déconnexion
+              </button>
+            </div>
+          ) : null}
+        </div>
       </div>
     </nav>
   );
