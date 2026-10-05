@@ -1933,3 +1933,214 @@ body::before {
   .login-visual-sub { max-width: none; }
   .login-form-panel { padding: 36px 28px; }
 }
+
+/* ===== Mode sombre / clair — bouton bascule + thème complet =====
+   Palette pilotée par l'attribut [data-theme] sur <html> (voir components/ThemeToggle.tsx
+   et le script anti-flash dans app/layout.tsx). Respecte prefers-color-scheme par défaut,
+   le choix explicite de l'utilisateur (localStorage) a toujours la priorité. */
+:root {
+  --surface: #fff;
+  --surface-soft: #fafaf8;
+  --text-muted: #666;
+  --text-faint: #888;
+  --line-soft: #e5e5e1;
+  --glass-1: rgba(255,255,255,.95);
+  --glass-2: rgba(255,255,255,.8);
+  --nav-glass: rgba(255,255,255,.82);
+  color-scheme: light;
+}
+:root[data-theme="dark"] {
+  --accent: #ff6a35; --accent-dark: #ff5a1f; --accent-light: #ff8a4d;
+  --ink: #f1efe8; --bg: #15140f; --line: #38362c;
+  --surface: #1d1c16; --surface-soft: #26241c; --line-soft: #35332a;
+  --text-muted: #b6b2a4; --text-faint: #8d8a7c;
+  --glass-1: rgba(29,28,22,.94); --glass-2: rgba(29,28,22,.8);
+  --nav-glass: rgba(21,20,15,.82);
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --accent: #ff6a35; --accent-dark: #ff5a1f; --accent-light: #ff8a4d;
+    --ink: #f1efe8; --bg: #15140f; --line: #38362c;
+    --surface: #1d1c16; --surface-soft: #26241c; --line-soft: #35332a;
+    --text-muted: #b6b2a4; --text-faint: #8d8a7c;
+    --glass-1: rgba(29,28,22,.94); --glass-2: rgba(29,28,22,.8);
+    --nav-glass: rgba(21,20,15,.82);
+    color-scheme: dark;
+  }
+}
+
+/* Surfaces "verre" (cartes translucides) */
+[data-theme="dark"] .analyzer, [data-theme="dark"] .url-import, [data-theme="dark"] .property-form,
+[data-theme="dark"] .result-panel, [data-theme="dark"] .market-card, [data-theme="dark"] .property-row,
+[data-theme="dark"] .highlight-item, [data-theme="dark"] .share-button, [data-theme="dark"] .blog-cta {
+  background: linear-gradient(180deg, var(--glass-1), var(--glass-2));
+  border-color: rgba(255,255,255,.1);
+}
+[data-theme="dark"] .cadastral-card {
+  background: linear-gradient(180deg, var(--glass-1), rgba(29,28,22,.74));
+  border-color: rgba(255,255,255,.1);
+}
+[data-theme="dark"] .capability-pill {
+  background: linear-gradient(180deg, rgba(29,28,22,.9), rgba(29,28,22,.64));
+  border-color: rgba(255,255,255,.1);
+  color: var(--text-muted);
+}
+[data-theme="dark"] .pricing-compare-scroll {
+  background: linear-gradient(180deg, rgba(29,28,22,.98), rgba(29,28,22,.9));
+}
+[data-theme="dark"] .testimonial-card {
+  background: linear-gradient(160deg, rgba(40,38,30,.75), rgba(40,38,30,.4));
+  border-color: rgba(255,255,255,.1);
+}
+[data-theme="dark"] .nav { background: var(--nav-glass); }
+[data-theme="dark"] .nav-floating { background: rgba(21,20,15,.68); border-color: rgba(255,255,255,.1); }
+[data-theme="dark"] .nav-floating-scrolled { background: rgba(21,20,15,.88); }
+[data-theme="dark"] .nav-has-burger .nav-links { background: var(--surface); }
+
+/* Surfaces pleines (cartes, panneaux, inputs) */
+[data-theme="dark"] .card, [data-theme="dark"] .metric, [data-theme="dark"] .eyebrow,
+[data-theme="dark"] .cadastral-form input, [data-theme="dark"] .cadastral-result, [data-theme="dark"] .parcel-schema,
+[data-theme="dark"] .account-card, [data-theme="dark"] .highlight-band, [data-theme="dark"] .stat-card,
+[data-theme="dark"] .funnel-card, [data-theme="dark"] .scenario-chart-card, [data-theme="dark"] .ring-card,
+[data-theme="dark"] .login-form-panel, [data-theme="dark"] .legal-card, [data-theme="dark"] .property-row-check,
+[data-theme="dark"] .type-scroller-item-active, [data-theme="dark"] .categories-picker-item-active,
+[data-theme="dark"] .onb-option, [data-theme="dark"] .onb-option-check, [data-theme="dark"] .danger-button,
+[data-theme="dark"] .danger-button:disabled:hover, [data-theme="dark"] .login-tab-active,
+[data-theme="dark"] .secondary-button, [data-theme="dark"] .account-card .form-grid input:focus,
+[data-theme="dark"] .property-form input:focus, [data-theme="dark"] .property-form select:focus,
+[data-theme="dark"] .url-import input:focus, [data-theme="dark"] .onb-detail-input:focus,
+[data-theme="dark"] .eyebrow-light::before, [data-theme="dark"] .splash-logo-plate {
+  background: var(--surface);
+}
+[data-theme="dark"] .brand-avatar { background: var(--surface); }
+[data-theme="dark"] .onb-screen { background: var(--bg); }
+[data-theme="dark"] .account-card .form-grid input, [data-theme="dark"] .cadastral-form input,
+[data-theme="dark"] .onb-option-check, [data-theme="dark"] .property-form input,
+[data-theme="dark"] .property-form select, [data-theme="dark"] .url-import input {
+  border-color: var(--line);
+}
+[data-theme="dark"] .decision-hero > div, [data-theme="dark"] .env-risk-card,
+[data-theme="dark"] .onb-detail-input, [data-theme="dark"] .onboarding-checklist,
+[data-theme="dark"] .pricing-compare-cta-row td, [data-theme="dark"] .pricing-compare-section td,
+[data-theme="dark"] .property-form input, [data-theme="dark"] .property-form select,
+[data-theme="dark"] .url-import input, [data-theme="dark"] .account-card .form-grid input {
+  background: var(--surface-soft);
+  color: var(--ink);
+}
+
+/* Textes secondaires / estompés */
+[data-theme="dark"] .account-danger-note, [data-theme="dark"] .account-label, [data-theme="dark"] .auth-switch,
+[data-theme="dark"] .blog-cta p, [data-theme="dark"] .categories-intro .sub, [data-theme="dark"] .checklist-item p,
+[data-theme="dark"] .empty-note, [data-theme="dark"] .eyebrow, [data-theme="dark"] .navlink,
+[data-theme="dark"] .navlink-logout, [data-theme="dark"] .parcel-schema-legend, [data-theme="dark"] .poi-group-title span,
+[data-theme="dark"] .pricing-network-text, [data-theme="dark"] .risk-item p, [data-theme="dark"] .missing-list p,
+[data-theme="dark"] .share-banner, [data-theme="dark"] .sub, [data-theme="dark"] .pricing-compare-intro p,
+[data-theme="dark"] .blog-article table th, [data-theme="dark"] .cadastral-result span, [data-theme="dark"] .checklist-priority,
+[data-theme="dark"] .compare-table td:first-child, [data-theme="dark"] .compare-table th,
+[data-theme="dark"] .decision-label, [data-theme="dark"] .score-block span, [data-theme="dark"] .metric span,
+[data-theme="dark"] .login-form-footnote, [data-theme="dark"] .login-tab, [data-theme="dark"] .property-row > div:first-child span,
+[data-theme="dark"] .risk-item span, [data-theme="dark"] .scenario span, [data-theme="dark"] .scenario small,
+[data-theme="dark"] .scenario-bar-col span, [data-theme="dark"] .score-block small, [data-theme="dark"] .stat-label,
+[data-theme="dark"] .cadastral-result small, [data-theme="dark"] .cta-band .trial-note-light, [data-theme="dark"] .footer,
+[data-theme="dark"] .footer-links a, [data-theme="dark"] .legal-updated, [data-theme="dark"] .parcel-schema small,
+[data-theme="dark"] .poi-group li span, [data-theme="dark"] .pricing-card h2, [data-theme="dark"] .pricing-compare-section td,
+[data-theme="dark"] .pricing-note, [data-theme="dark"] .pricing-yearly, [data-theme="dark"] .proof,
+[data-theme="dark"] .section-heading small, [data-theme="dark"] .stat-value small, [data-theme="dark"] .testimonial-role,
+[data-theme="dark"] .trial-note, [data-theme="dark"] .pricing-audience, [data-theme="dark"] .blog-back,
+[data-theme="dark"] .cadastral-form label, [data-theme="dark"] .extract-note, [data-theme="dark"] .funnel-card h4,
+[data-theme="dark"] .scenario-chart-card h4, [data-theme="dark"] .info-more, [data-theme="dark"] .legal-back,
+[data-theme="dark"] .mreview-name, [data-theme="dark"] .property-form label, [data-theme="dark"] .property-row-metrics,
+[data-theme="dark"] .ring-card-chip-neutral, [data-theme="dark"] .status-dot, [data-theme="dark"] .url-import label,
+[data-theme="dark"] .verdict-pill, [data-theme="dark"] .account-card .form-grid label, [data-theme="dark"] .pricing-compare-audience,
+[data-theme="dark"] .confidence-tag, [data-theme="dark"] .funnel-step > span, [data-theme="dark"] .pricing-compare-table th:first-child,
+[data-theme="dark"] .pricing-compare-table td:first-child, [data-theme="dark"] .pricing-features li,
+[data-theme="dark"] .share-link input, [data-theme="dark"] .sim-grid label, [data-theme="dark"] .blog-article p,
+[data-theme="dark"] .blog-article ul, [data-theme="dark"] .blog-article ol, [data-theme="dark"] .dashboard-section ul,
+[data-theme="dark"] .info-more-btn, [data-theme="dark"] .legal-card p, [data-theme="dark"] .poi-group li,
+[data-theme="dark"] .pricing-compare-table th, [data-theme="dark"] .pricing-compare-table td,
+[data-theme="dark"] .testimonial-card blockquote, [data-theme="dark"] .blog-list-item p, [data-theme="dark"] .card p,
+[data-theme="dark"] .highlight-item p, [data-theme="dark"] .onb-back, [data-theme="dark"] .onb-sub,
+[data-theme="dark"] .pricing-cta-note, [data-theme="dark"] .ring-card-caption, [data-theme="dark"] .onb-skip,
+[data-theme="dark"] .compare-bar-cancel, [data-theme="dark"] .account-card .form-grid input::placeholder {
+  color: var(--text-muted);
+}
+
+/* Bordures (hors var(--line), déjà pris en compte automatiquement) */
+[data-theme="dark"] .account-card .form-grid input, [data-theme="dark"] .cadastral-form input,
+[data-theme="dark"] .onb-option-check, [data-theme="dark"] .property-form input,
+[data-theme="dark"] .property-form select, [data-theme="dark"] .url-import input,
+[data-theme="dark"] .checklist-item, [data-theme="dark"] .decision-hero > div, [data-theme="dark"] .metric,
+[data-theme="dark"] .risk-item, [data-theme="dark"] .missing-list > div, [data-theme="dark"] .scenario,
+[data-theme="dark"] .cadastral-result, [data-theme="dark"] .parcel-schema, [data-theme="dark"] .eyebrow,
+[data-theme="dark"] .share-banner, [data-theme="dark"] .legal-card, [data-theme="dark"] .categories-picker-item,
+[data-theme="dark"] .ring-card, [data-theme="dark"] .type-scroller-item, [data-theme="dark"] .onb-detail-input,
+[data-theme="dark"] .onb-option {
+  border-color: var(--line-soft);
+}
+
+/* Boutons secondaires / icônes qui inversent ink <-> blanc */
+[data-theme="dark"] .secondary-button { color: var(--ink); border-color: var(--ink); }
+[data-theme="dark"] .secondary-button:hover { background: var(--ink); color: var(--bg); }
+[data-theme="dark"] .mark, [data-theme="dark"] .step-number, [data-theme="dark"] .highlight-icon,
+[data-theme="dark"] .info-number, [data-theme="dark"] .compare-bar { color: var(--bg); }
+[data-theme="dark"] ::selection { background: var(--ink); color: var(--bg); }
+
+/* Pastilles / bandeaux de statut (succès, alerte, danger, info) */
+[data-theme="dark"] .error-box { background: rgba(220,38,38,.16); color: #ff9c92; }
+[data-theme="dark"] .market-badge, [data-theme="dark"] .verdict-pill.verdict-interesting,
+[data-theme="dark"] .pricing-compare-check, [data-theme="dark"] .risk-badge-low,
+[data-theme="dark"] .ring-card-chip-good, [data-theme="dark"] .funnel-bar-fill.funnel-bar-final,
+[data-theme="dark"] .stat-card-green::before, [data-theme="dark"] .capability-dot-green {
+  color: #6fe09a;
+}
+[data-theme="dark"] .market-badge, [data-theme="dark"] .verdict-pill.verdict-interesting { background: rgba(34,139,34,.18); border-color: #4fae71; }
+[data-theme="dark"] .risk-badge-low, [data-theme="dark"] .ring-card-chip-good { background: rgba(34,139,34,.2); }
+[data-theme="dark"] .verdict-pill.verdict-unattractive, [data-theme="dark"] .checklist-critical .checklist-priority { color: #ff9c92; background: rgba(220,38,38,.18); border-color: #d9665a; }
+[data-theme="dark"] .risk-badge-high, [data-theme="dark"] .ring-card-chip-bad { background: rgba(220,38,38,.2); color: #ff9c92; }
+[data-theme="dark"] .verdict-pill.verdict-pending, [data-theme="dark"] .checklist-high .checklist-priority { color: #ffc98a; background: rgba(217,119,6,.2); border-color: #d99a4e; }
+[data-theme="dark"] .risk-badge-medium, [data-theme="dark"] .ring-card-chip-warn { background: rgba(217,119,6,.2); color: #ffc98a; }
+[data-theme="dark"] .checklist-medium .checklist-priority, [data-theme="dark"] .draft-banner { color: #9ec4ff; background: rgba(37,99,235,.18); }
+[data-theme="dark"] .draft-banner { border-color: rgba(37,99,235,.35); }
+[data-theme="dark"] .legal-notice { background: rgba(217,119,6,.16); border-color: rgba(217,119,6,.4); color: #ffc98a; }
+[data-theme="dark"] .highlight-tag { background: rgba(255,90,31,.16); border-color: rgba(255,90,31,.4); }
+[data-theme="dark"] .verdict-pill { background: var(--surface-soft); }
+[data-theme="dark"] .checklist-priority { background: var(--surface-soft); }
+[data-theme="dark"] .onb-progress-seg, [data-theme="dark"] .funnel-bar, [data-theme="dark"] .scenario-bar-track,
+[data-theme="dark"] .type-scroller-item, [data-theme="dark"] .categories-picker-item, [data-theme="dark"] .login-tabs {
+  background: var(--surface-soft);
+}
+[data-theme="dark"] .onb-option-selected, [data-theme="dark"] .onb-option-selected:hover { background: rgba(255,90,31,.14); }
+[data-theme="dark"] .legal-card a { color: #7db6ff; }
+
+/* Le panneau de marque du login reste orange plein (élément de marque assumé, inchangé) */
+
+/* ===== Bouton de bascule clair / sombre ===== */
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: border-color .15s ease, background .15s ease, transform .15s ease;
+}
+.theme-toggle:hover { border-color: var(--accent); transform: translateY(-1px); }
+.theme-toggle svg { width: 18px; height: 18px; display: block; }
+.theme-toggle-floating {
+  position: fixed;
+  top: 16px;
+  right: 24px;
+  z-index: 40;
+  box-shadow: 0 1px 1px rgba(17,17,17,.04), 0 10px 22px -10px rgba(17,17,17,.3);
+}
+[data-theme="dark"] .theme-toggle-floating { box-shadow: 0 1px 1px rgba(0,0,0,.3), 0 10px 22px -10px rgba(0,0,0,.6); }
+@media (max-width: 640px) {
+  .theme-toggle-floating { top: 12px; right: 14px; width: 36px; height: 36px; }
+  .theme-toggle-floating svg { width: 16px; height: 16px; }
+}
