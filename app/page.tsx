@@ -221,7 +221,7 @@ export default function Home() {
       <section className="hero">
         <HeroFloaters />
         <span className="eyebrow">{t("hero.eyebrow")}</span>
-        <h1>Know the <span className="stroke">deal</span> before you <span className="accent">make it</span>.</h1>
+        <h1>{t("hero.headlinePre")}<span className="stroke">{t("hero.headlineStroke")}</span>{t("hero.headlineMid")}<span className="accent">{t("hero.headlineAccent")}</span>{t("hero.headlinePost")}</h1>
         <p className="sub">
           {t("hero.sub")}
         </p>
