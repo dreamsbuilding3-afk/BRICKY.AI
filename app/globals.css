@@ -2329,3 +2329,51 @@ body::before {
     background: var(--surface);
   }
 }
+
+/* ===== Investor Progress / Investor Rank ===== */
+.level-pill { display: inline-flex; align-items: center; gap: 10px; padding: 10px 18px; border-radius: 999px; background: #fafaf8; border: 1.5px solid var(--line); font-weight: 700; font-size: 15px; }
+.level-pill-index-0 { border-color: #9ca3af; }
+.level-pill-index-1 { border-color: #60a5fa; }
+.level-pill-index-2 { border-color: #34d399; }
+.level-pill-index-3 { border-color: #fbbf24; }
+.level-pill-index-4 { border-color: #fb923c; }
+.level-pill-index-5 { border-color: var(--accent); color: var(--accent-dark); }
+.level-progress-row { margin-top: 16px; }
+.level-progress-row span { font-size: 12px; color: #777; }
+.profile-pill { display: inline-flex; align-items: center; padding: 8px 16px; border-radius: 999px; background: rgba(99,102,241,.1); color: #4338ca; font-weight: 700; font-size: 14px; }
+.challenge-list { display: grid; gap: 14px; margin-top: 16px; }
+.challenge-item { border: 1px solid #e5e5e1; border-radius: 14px; padding: 16px; }
+.challenge-item-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.challenge-item-head b { font-size: 14px; }
+.challenge-item-head span { font-size: 12px; color: #888; font-weight: 700; white-space: nowrap; }
+.challenge-item p { margin: 4px 0 10px; font-size: 13px; color: #666; }
+.challenge-item.challenge-done { border-color: rgba(34,139,34,.35); background: rgba(34,139,34,.04); }
+.leaderboard-list { display: grid; gap: 8px; margin-top: 14px; }
+.leaderboard-row { display: grid; grid-template-columns: 40px 1fr 70px; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 12px; background: #fafaf8; border: 1px solid #e5e5e1; }
+.leaderboard-row-me { border-color: var(--accent); background: rgba(255,90,31,.06); }
+.leaderboard-row b { font-size: 13px; }
+.leaderboard-rank { font-weight: 700; color: #888; }
+.leaderboard-optin-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 14px; }
+.leaderboard-optin-row input[type="text"] { border: 1px solid #ddd; border-radius: 10px; padding: 10px 12px; font-size: 13px; background: #fafaf8; }
+.radar-placeholder { text-align: center; padding: 30px 10px; border: 1.5px dashed var(--line); border-radius: 16px; color: #888; }
+.radar-placeholder b { display: block; color: #555; margin-bottom: 6px; font-size: 15px; }
+.negotiation-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 14px; }
+.negotiation-card { padding: 16px; border-radius: 14px; border: 1px solid #e5e5e1; background: #fafaf8; text-align: center; }
+.negotiation-card span { display: block; font-size: 12px; color: #777; font-weight: 700; text-transform: uppercase; margin-bottom: 6px; }
+.negotiation-card b { font-size: 18px; }
+
+@media (max-width: 720px) {
+  .leaderboard-row { grid-template-columns: 32px 1fr 56px; font-size: 12px; }
+  .negotiation-grid { grid-template-columns: 1fr; }
+}
+
+[data-theme="dark"] .level-pill, [data-theme="dark"] .challenge-item, [data-theme="dark"] .leaderboard-row, [data-theme="dark"] .negotiation-card {
+  background: linear-gradient(180deg, var(--glass-1), var(--glass-2));
+  border-color: rgba(255,255,255,.12);
+  color: var(--ink);
+}
+[data-theme="dark"] .profile-pill { background: rgba(129,140,248,.18); color: #c7d2fe; }
+[data-theme="dark"] .challenge-item p, [data-theme="dark"] .challenge-item-head span, [data-theme="dark"] .leaderboard-rank, [data-theme="dark"] .negotiation-card span { color: #aaa; }
+[data-theme="dark"] .radar-placeholder { color: #999; border-color: rgba(255,255,255,.18); }
+[data-theme="dark"] .radar-placeholder b { color: #ddd; }
+[data-theme="dark"] .leaderboard-optin-row input[type="text"] { background: var(--surface); border-color: rgba(255,255,255,.18); color: var(--ink); }
