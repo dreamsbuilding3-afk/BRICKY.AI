@@ -111,7 +111,7 @@ h1 .stroke { color: transparent; -webkit-text-stroke: 2px var(--ink); text-strok
 .account-value { font-weight: 600; }
 .account-actions { display: flex; gap: 12px; margin-top: 24px; flex-wrap: wrap; }
 .secondary-button { border: 1px solid var(--line); background: #fff; color: var(--ink); border-radius: 999px; padding: 0 18px; height: 42px; font-weight: 700; font-size: 14px; cursor: pointer; }
-.secondary-button:hover { border-color: var(--accent); color: var(--accent-dark); }
+.secondary-button:hover { border-color: var(--ink); color: #fff; }
 .account-logout { color: #c73f10; }
 .account-message { margin-top: 16px; font-size: 14px; color: var(--accent-dark); }
 
