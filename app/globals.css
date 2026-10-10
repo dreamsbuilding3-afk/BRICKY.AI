@@ -2398,3 +2398,24 @@ body::before {
 [data-theme="dark"] .radar-placeholder { color: #999; border-color: rgba(255,255,255,.18); }
 [data-theme="dark"] .radar-placeholder b { color: #ddd; }
 [data-theme="dark"] .leaderboard-optin-row input[type="text"] { background: var(--surface); border-color: rgba(255,255,255,.18); color: var(--ink); }
+
+/* ===== Compteur d'analyses (odomètre 3D animé) ===== */
+.odo-card { display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap; margin: 0 0 22px; padding: 22px 26px; background: #fff; border: 1px solid var(--line); border-radius: 28px; box-shadow: 0 18px 40px -22px rgba(17,17,17,.28), 0 1px 0 rgba(255,255,255,.9) inset; animation: panelRise .6s cubic-bezier(.2,.8,.2,1) both; }
+.odo-copy { display: flex; flex-direction: column; gap: 4px; min-width: 180px; text-align: left; }
+.odo-label { font-size: 13px; font-weight: 600; color: #6b6b66; letter-spacing: .01em; }
+.odo-title { font-size: clamp(24px, 3.4vw, 34px); line-height: 1.08; letter-spacing: -.03em; color: var(--ink); font-weight: 800; }
+.odo-sub { font-size: 13px; color: #6b6b66; }
+.odo-screen { --row: 1.1em; position: relative; display: flex; gap: 3px; padding: 8px 18px; font-size: clamp(40px, 6vw, 58px); border-radius: 20px; background: linear-gradient(180deg, #26262a 0%, #0d0d0f 55%, #050506 100%); box-shadow: 0 22px 34px -16px rgba(0,0,0,.55), 0 1px 0 rgba(255,255,255,.08) inset, 0 -10px 20px rgba(0,0,0,.6) inset; overflow: hidden; }
+.odo-screen::after { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,0) 38%); }
+.odo-cell { position: relative; width: .84em; height: calc(var(--row) * 1.9); overflow: hidden; font-family: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace; font-weight: 600; color: #f4f4f2; border-radius: 8px; background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,0) 40%, rgba(0,0,0,.35)); -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 24%, #000 76%, transparent 100%); mask-image: linear-gradient(180deg, transparent 0, #000 24%, #000 76%, transparent 100%); }
+.odo-cell + .odo-cell { box-shadow: -1px 0 0 rgba(255,255,255,.07); }
+.odo-reel { display: flex; flex-direction: column; transform: translateY(calc(var(--row) * (-19.55 - var(--d)))); animation: odoRoll var(--dur, 1.6s) cubic-bezier(.16,.84,.24,1) both; animation-delay: var(--delay, 0ms); will-change: transform; }
+.odo-reel span { display: block; height: var(--row); line-height: var(--row); text-align: center; }
+.odo-cell-dim { opacity: .28; }
+.odo-cell-dim .odo-reel { animation: none; transform: translateY(calc(var(--row) * -9.55)); }
+@keyframes odoRoll { from { transform: translateY(calc(var(--row) * -9.55)); } }
+[data-theme="dark"] .odo-card { background: linear-gradient(180deg, var(--glass-1), var(--glass-2)); border-color: var(--line-soft); box-shadow: 0 18px 40px -22px rgba(0,0,0,.7); }
+[data-theme="dark"] .odo-title { color: #f4f4f2; }
+[data-theme="dark"] .odo-label, [data-theme="dark"] .odo-sub { color: var(--text-muted); }
+@media (max-width: 640px) { .odo-card { padding: 18px; justify-content: center; text-align: center; } .odo-copy { align-items: center; } }
+@media (prefers-reduced-motion: reduce) { .odo-card { animation: none; } .odo-reel { animation: none; } }
