@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase/client";
 import { AppNav } from "../../components/AppNav";
+import { AnalysesCounter } from "../../components/AnalysesCounter";
 
 type AnalysisRow = {
   id: string;
@@ -90,6 +91,7 @@ export default function PropertiesPage() {
   const [canCompare, setCanCompare] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
   const [showFirstAnalysisCongrats, setShowFirstAnalysisCongrats] = useState(false);
+  const [totalAnalyses, setTotalAnalyses] = useState<number | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -111,6 +113,9 @@ export default function PropertiesPage() {
       if (!cancelled && sub && typeof sub === "object" && "can_compare_properties" in sub) {
         setCanCompare(Boolean((sub as { can_compare_properties: boolean }).can_compare_properties));
       }
+
+      const { data: totalData } = await supabase.rpc("get_total_analyses_count_v1");
+      if (!cancelled && typeof totalData === "number") setTotalAnalyses(totalData);
     }
     load();
     return () => { cancelled = true; };
@@ -149,6 +154,8 @@ export default function PropertiesPage() {
     <CapabilityMarquee />
     <section className="analysis-shell">
       <div className="analysis-intro"><span className="eyebrow">Bricky · Historique</span><h1>Mes biens <span className="accent">analysés</span></h1><p className="sub">Retrouvez ici chaque bien que vous avez soumis à Bricky, avec son verdict et ses métriques clés.{canCompare ? " Sélectionnez jusqu'à 3 biens pour les comparer." : null}</p></div>
+
+      {totalAnalyses !== null && <AnalysesCounter value={totalAnalyses} />}
 
       {loading && <div className="extract-note">Chargement de vos biens…</div>}
       {error && <div className="error-box">{error}</div>}
