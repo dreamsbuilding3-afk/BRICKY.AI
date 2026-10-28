@@ -18,7 +18,7 @@ export default function ConfidentialitePage() {
 
           <h2>Données collectées</h2>
           <p>
-            Compte : adresse email, mot de passe (stocké de façon chiffrée par notre prestataire d'authentification, jamais en clair).<br />
+            Compte : adresse email, mot de passe (stocké de façon chiffrée par notre prestataire d'authentification, jamais en clair), date de naissance (uniquement pour vérifier que vous avez 18 ans ou plus).<br />
             Biens analysés : adresse, prix, surface, loyer et autres caractéristiques que vous saisissez ou que Bricky extrait d'une annonce que vous fournissez.<br />
             Données dérivées : coordonnées géographiques et code INSEE de la commune, calculés automatiquement à partir de l'adresse pour produire l'analyse (cadastre, marché, environnement).
           </p>

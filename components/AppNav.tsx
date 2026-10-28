@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "../lib/supabase/client";
+import { AgeGate } from "./AgeGate";
 
 type AppNavProps = {
   email?: string | null;
@@ -44,6 +45,8 @@ export function AppNav({ email, active }: AppNavProps) {
   }, []);
 
   return (
+    <>
+    <AgeGate />
     <nav className="nav nav-has-burger">
       <Link href="/properties" className="brand" onClick={closeMenu}>
         <img src="/mascot-avatar-round.png" alt="" className="brand-avatar" />
@@ -150,5 +153,6 @@ export function AppNav({ email, active }: AppNavProps) {
         </div>
       </div>
     </nav>
+    </>
   );
 }
