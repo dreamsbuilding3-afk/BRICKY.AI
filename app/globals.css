@@ -2419,3 +2419,16 @@ body::before {
 [data-theme="dark"] .odo-label, [data-theme="dark"] .odo-sub { color: var(--text-muted); }
 @media (max-width: 640px) { .odo-card { padding: 10px 14px; margin-left: auto; margin-right: auto; justify-content: center; text-align: center; } .odo-copy { align-items: center; } }
 @media (prefers-reduced-motion: reduce) { .odo-card { animation: none; } .odo-reel { animation: none; } }
+
+/* ---- Extraction automatique (IA) : texte collé + badges "Auto" ---- */
+.url-import textarea { width: 100%; border: 1px solid #ddd; border-radius: 12px; padding: 13px 14px; outline: none; background: #fafaf8; color: #111; font: inherit; font-weight: 400; resize: vertical; min-height: 96px; }
+.url-import textarea:focus { border-color: #999; background: #fff; }
+.text-import, .file-import { margin-top: 12px; }
+.primary-extract-button { background: #111; color: #fff; border-color: #111; }
+label.auto-filled { position: relative; }
+label.auto-filled::after { content: "Auto"; position: absolute; top: 0; right: 0; font-size: 10px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; color: #15803d; background: rgba(22,163,74,.12); border-radius: 999px; padding: 2px 7px; }
+label.auto-filled input, label.auto-filled select { border-color: rgba(22,163,74,.55); background: rgba(22,163,74,.05); }
+[data-theme="dark"] .url-import textarea { background: #1a1a1a; border-color: #333; color: #f3f3f3; }
+[data-theme="dark"] .primary-extract-button { background: #f3f3f3; color: #111; border-color: #f3f3f3; }
+[data-theme="dark"] label.auto-filled::after { color: #4ade80; background: rgba(74,222,128,.14); }
+[data-theme="dark"] label.auto-filled input, [data-theme="dark"] label.auto-filled select { border-color: rgba(74,222,128,.45); background: rgba(74,222,128,.06); }
