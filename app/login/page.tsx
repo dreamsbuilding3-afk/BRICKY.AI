@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase/client";
+import { hasPendingImport } from "@/lib/brickyImport";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -15,7 +16,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session) router.replace("/properties");
+      if (data.session) router.replace(hasPendingImport() ? "/analyze" : "/properties");
     });
   }, [router]);
 
@@ -51,6 +52,8 @@ export default function LoginPage() {
           .maybeSingle();
         if (!onboardingRow) destination = "/onboarding";
       }
+      // Annonce envoyée par le bouton « Envoyer à Bricky » avant la connexion : on y retourne.
+      if (destination === "/properties" && hasPendingImport()) destination = "/analyze";
       router.replace(destination);
       router.refresh();
     }

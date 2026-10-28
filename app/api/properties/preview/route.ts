@@ -4,7 +4,7 @@ import { enforceRateLimit } from "@/lib/rateLimit";
 import { requireUser } from "@/lib/auth/requireUser";
 import dns from "node:dns/promises";
 import net from "node:net";
-import { extractListingWithAi, htmlToListingText, isAiExtractionEnabled, WebFetchFailed } from "@/lib/ai/listingExtractor";
+import { AI_UNAVAILABLE_MESSAGE, AiServiceError, extractListingWithAi, htmlToListingText, isAiExtractionEnabled, WebFetchFailed } from "@/lib/ai/listingExtractor";
 
 export const maxDuration = 60;
 
@@ -157,8 +157,13 @@ export async function POST(request: NextRequest) {
       if (text.trim().length < 30) {
         return NextResponse.json({ error: "Le texte est trop court pour être une annonce." }, { status: 400 });
       }
-      const result = await extractListingWithAi({ kind: "text", text: text.trim() }, "none");
-      return aiResponse(result, typeof url === "string" ? url.trim() : "", "texte collé");
+      try {
+        const result = await extractListingWithAi({ kind: "text", text: text.trim() }, "none");
+        return aiResponse(result, typeof url === "string" ? url.trim() : "", "texte collé");
+      } catch (error) {
+        console.error("[preview] AI text extraction failed", error);
+        return NextResponse.json({ error: AI_UNAVAILABLE_MESSAGE, code: "ai_unavailable" }, { status: 503 });
+      }
     }
 
     if (typeof url !== "string" || !url.trim()) {
@@ -209,20 +214,39 @@ export async function POST(request: NextRequest) {
     const pageText = html ? htmlToListingText(html) : "";
     const looksBlocked = !html || pageText.length < 800 || BLOCKED_PAGE_RE.test(pageText.slice(0, 3000));
 
+    let aiServiceDown = false;
+
     if (!looksBlocked) {
-      const result = await extractListingWithAi({ kind: "text", text: pageText, sourceUrl: parsedUrl.toString() }, "server");
-      if (result.fields_found.length >= 3) return aiResponse(result, parsedUrl.toString(), parsedUrl.hostname);
+      try {
+        const result = await extractListingWithAi({ kind: "text", text: pageText, sourceUrl: parsedUrl.toString() }, "server");
+        if (result.fields_found.length >= 3) return aiResponse(result, parsedUrl.toString(), parsedUrl.hostname);
+      } catch (error) {
+        console.error("[preview] AI extraction failed", error);
+        if (error instanceof AiServiceError) aiServiceDown = true;
+      }
     }
 
-    // Plan B : Claude lit la page lui-même avec l'outil web_fetch.
-    try {
-      const result = await extractListingWithAi({ kind: "url", url: parsedUrl.toString() });
-      if (result.fields_found.length >= 3) return aiResponse(result, parsedUrl.toString(), parsedUrl.hostname);
-    } catch (error) {
-      // Lien illisible (site bloqué, page en JavaScript…) : on propose le plan B.
-      if (!(error instanceof WebFetchFailed)) console.error("[preview] web_fetch error", error);
+    // Plan B : Claude lit la page lui-même avec l'outil web_fetch (inutile si le service IA est en panne).
+    if (!aiServiceDown) {
+      try {
+        const result = await extractListingWithAi({ kind: "url", url: parsedUrl.toString() });
+        if (result.fields_found.length >= 3) return aiResponse(result, parsedUrl.toString(), parsedUrl.hostname);
+      } catch (error) {
+        // Lien illisible (site bloqué, page en JavaScript…) : on propose le plan B.
+        if (!(error instanceof WebFetchFailed)) console.error("[preview] web_fetch error", error);
+        if (error instanceof AiServiceError) aiServiceDown = true;
+      }
     }
 
+    // Plan C : extraction classique (sans IA) si la page a pu être lue.
+    if (html && !looksBlocked) {
+      const fallback = regexExtract(html, parsedUrl);
+      if (fallback.extraction.fields_found > 0) return NextResponse.json(fallback);
+    }
+
+    if (aiServiceDown) {
+      return NextResponse.json({ error: AI_UNAVAILABLE_MESSAGE, code: "ai_unavailable" }, { status: 503 });
+    }
     return NextResponse.json({ error: UNREADABLE_LINK, code: "link_unreadable" }, { status: 422 });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Impossible de lire cette annonce.";

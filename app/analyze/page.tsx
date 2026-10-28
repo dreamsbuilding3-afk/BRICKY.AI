@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabase/client";
 import { AppNav } from "../../components/AppNav";
 import { PROPERTY_TYPE_LABELS } from "../../lib/data/propertyTypeClassifier";
+import { clearPendingImport, takePendingImportFromLocation, type PendingImport } from "../../lib/brickyImport";
 
 type AnalysisResult = { property_id?: string; analysis_id?: string; [key: string]: unknown };
 type Payload = { title: string; city: string; address: string; price: string; surface_m2: string; rooms: string; bedrooms: string; property_type: string; dpe_class: string; ges_class: string; monthly_rent: string; down_payment: string; loan_rate_pct: string; loan_duration_years: string; renovation_budget: string; source_url: string; annual_property_tax: string; annual_insurance: string; annual_maintenance: string; annual_management_fees: string; other_annual_charges: string; vacancy_rate: string };
@@ -127,6 +128,8 @@ const [openExtraSection, setOpenExtraSection] = useState<string | null>(null);
 const [autoFields, setAutoFields] = useState<Set<string>>(new Set());
 const [pastedText, setPastedText] = useState("");
 const [extractingText, setExtractingText] = useState(false);
+const [sessionReady, setSessionReady] = useState(false);
+const [pendingImport, setPendingImport] = useState<PendingImport | null>(null);
 const clearAuto = (key: string) => setAutoFields((cur) => { if (!cur.has(key)) return cur; const next = new Set(cur); next.delete(key); return next; });
 const updateExtra = (key: string, value: string) => { setExtra((cur) => ({ ...cur, [key]: value })); clearAuto(key); };
 // Classe CSS d'un champ pré-rempli par l'IA (badge "Auto").
@@ -142,7 +145,7 @@ const [loadingExisting, setLoadingExisting] = useState(false);
 const [loadError, setLoadError] = useState("");
 const [draftRestored, setDraftRestored] = useState(false);
 
-useEffect(() => { supabase.auth.getSession().then(({ data }) => { if (!data.session) router.replace("/login"); else setUserEmail(data.session.user.email ?? ""); }); }, [router]);
+useEffect(() => { supabase.auth.getSession().then(({ data }) => { if (!data.session) router.replace("/login"); else { setUserEmail(data.session.user.email ?? ""); setSessionReady(true); } }); }, [router]);
 
 useEffect(() => {
 if (!propertyIdParam) return;
@@ -213,6 +216,29 @@ setDraftRestored(true);
 }
 // eslint-disable-next-line react-hooks/exhaustive-deps
 }, []);
+
+// Annonce envoyée par le bouton « Envoyer à Bricky » (favori) : on repart d'un
+// formulaire vierge (on garde seulement le financement), puis on lance
+// l'extraction dès que la session est prête.
+useEffect(() => {
+if (propertyIdParam) return;
+const imported = takePendingImportFromLocation();
+if (!imported) return;
+setDraftRestored(false);
+setPayload((current) => ({ title: "", city: "", address: "", price: "", surface_m2: "", rooms: "", bedrooms: "", property_type: "", dpe_class: "", ges_class: "", monthly_rent: "", down_payment: current.down_payment, loan_rate_pct: current.loan_rate_pct, loan_duration_years: current.loan_duration_years, renovation_budget: "", source_url: imported.url, annual_property_tax: "", annual_insurance: "", annual_maintenance: "", annual_management_fees: "", other_annual_charges: "", vacancy_rate: "" }));
+setExtra({});
+setPastedText(imported.text);
+setPendingImport(imported);
+// eslint-disable-next-line react-hooks/exhaustive-deps
+}, []);
+
+useEffect(() => {
+if (!pendingImport || !sessionReady) return;
+setPendingImport(null);
+clearPendingImport();
+extractFromText(pendingImport.text, pendingImport.url, "l'annonce envoyée par le bouton Bricky");
+// eslint-disable-next-line react-hooks/exhaustive-deps
+}, [pendingImport, sessionReady]);
 
 useEffect(() => {
 if (propertyIdParam || result) return;
@@ -302,17 +328,19 @@ parts.push("Les champs marqués Auto viennent de l'annonce : vérifie-les d'un c
 setExtractNote(parts.join(" "));
 }
 
-async function extractFromText() {
-if (pastedText.trim().length < 30) { setError("Colle le texte complet de l'annonce (au moins quelques lignes)."); return; }
+async function extractFromText(textOverride?: string, urlOverride?: string, sourceLabel = "le texte collé") {
+const text = textOverride ?? pastedText;
+const sourceUrl = urlOverride ?? payload.source_url.trim();
+if (text.trim().length < 30) { setError("Colle le texte complet de l'annonce (au moins quelques lignes)."); return; }
 setExtractingText(true); setError(""); setExtractNote("");
 try {
 const { data: sessionData } = await supabase.auth.getSession();
 const token = sessionData.session?.access_token;
 if (!token) throw new Error("Session expirée, reconnecte-toi.");
-const response = await fetch("/api/properties/preview", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ text: pastedText, url: payload.source_url.trim() || undefined }) });
+const response = await fetch("/api/properties/preview", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ text, url: sourceUrl || undefined }) });
 const data = await response.json();
 if (!response.ok) throw new Error(data?.error || "Impossible de lire ce texte.");
-applyExtraction(data, "le texte collé");
+applyExtraction(data, sourceLabel);
 } catch (err) { setError(err instanceof Error ? err.message : "Extraction impossible."); }
 finally { setExtractingText(false); }
 }
@@ -375,8 +403,10 @@ return <main className="page">
 {draftRestored && !propertyIdParam && <div className="draft-banner"><span>Brouillon restaure automatiquement, votre saisie precedente a ete recuperee.</span><button type="button" className="secondary-button" onClick={clearDraft}>Effacer</button></div>}
 {!propertyIdParam && <>
 <div className="url-import"><label>Lien de l'annonce<input value={payload.source_url} onChange={(e) => update("source_url", e.target.value)} placeholder="Colle le lien : Bricky remplit tout" /></label><button type="button" className="primary-extract-button secondary-button" onClick={extractListing} disabled={extracting || !payload.source_url.trim()}>{extracting ? "Bricky lit l'annonce…" : "Remplir automatiquement"}</button></div>
-<div className="url-import text-import"><label>Lien illisible ? Colle le texte de l'annonce<textarea value={pastedText} onChange={(e) => setPastedText(e.target.value)} rows={4} placeholder="Sélectionne tout le texte de l'annonce (Ctrl+A / Cmd+A), copie-le et colle-le ici." /></label><button type="button" className="secondary-button" onClick={extractFromText} disabled={extractingText || pastedText.trim().length < 30}>{extractingText ? "Lecture…" : "Analyser le texte"}</button></div>
+<p className="bookmarklet-tip">Leboncoin, PAP ou SeLoger refusent les liens ? <a href="/bouton">Installe le bouton « Envoyer à Bricky »</a> : un clic depuis l'annonce suffit.</p>
+<div className="url-import text-import"><label>Lien illisible ? Colle le texte de l'annonce<textarea value={pastedText} onChange={(e) => setPastedText(e.target.value)} rows={4} placeholder="Sélectionne tout le texte de l'annonce (Ctrl+A / Cmd+A), copie-le et colle-le ici." /></label><button type="button" className="secondary-button" onClick={() => extractFromText()} disabled={extractingText || pastedText.trim().length < 30}>{extractingText ? "Lecture…" : "Analyser le texte"}</button></div>
 <div className="url-import file-import"><label>Ou envoie des captures d'écran (jusqu'à 5) ou le PDF de l'annonce<input type="file" accept="application/pdf,image/jpeg,image/png,image/webp" multiple onChange={(e) => { const list = Array.from(e.target.files ?? []); if (list.length) extractFromFile(list); e.target.value = ""; }} disabled={extractingFile} /></label>{extractingFile && <span className="extract-note">Bricky lit le fichier…</span>}</div>
+{extractingText && <div className="extract-note">Bricky lit l'annonce…</div>}
 {extractNote && <div className="extract-note">✓ {extractNote}</div>}
 <form className="property-form" onSubmit={handleSubmit}><div className="form-grid">
 <label className={af("title")}>Titre<input value={payload.title} onChange={(e) => update("title", e.target.value)} /></label><label className={af("city")}>Ville<input value={payload.city} onChange={(e) => update("city", e.target.value)} placeholder="Fort-de-France" /></label><label className={af("address")}>Adresse<input value={payload.address} onChange={(e) => update("address", e.target.value)} placeholder="Adresse du bien" /></label><label className={af("property_type", "type-field")}>Type de bien<PropertyTypeScroller value={payload.property_type} onChange={(v) => update("property_type", v)} /></label><label className={af("price")}>Prix (€)<input required type="number" min="1" value={payload.price} onChange={(e) => update("price", e.target.value)} placeholder="250000" /></label><label className={af("surface_m2")}>Surface (m²)<input required type="number" min="1" value={payload.surface_m2} onChange={(e) => update("surface_m2", e.target.value)} placeholder="65" /></label><label className={af("monthly_rent")}>Loyer mensuel (€)<input type="number" min="0" value={payload.monthly_rent} onChange={(e) => update("monthly_rent", e.target.value)} placeholder="1200" /></label><label className={af("down_payment")}>Apport (€)<input type="number" min="0" value={payload.down_payment} onChange={(e) => update("down_payment", e.target.value)} placeholder="40000" /></label><label className={af("loan_rate_pct")}>Taux du prêt (%)<input type="number" min="0" step="0.1" value={payload.loan_rate_pct} onChange={(e) => update("loan_rate_pct", e.target.value)} placeholder="3.9" /></label><label className={af("loan_duration_years")}>Durée du prêt (années)<input type="number" min="1" value={payload.loan_duration_years} onChange={(e) => update("loan_duration_years", e.target.value)} placeholder="20" /></label><label className={af("renovation_budget")}>Budget travaux (€)<input type="number" min="0" value={payload.renovation_budget} onChange={(e) => update("renovation_budget", e.target.value)} placeholder="0" /></label><label className={af("rooms")}>Pièces<input type="number" min="0" value={payload.rooms} onChange={(e) => update("rooms", e.target.value)} placeholder="3" /></label><label className={af("bedrooms")}>Chambres<input type="number" min="0" value={payload.bedrooms} onChange={(e) => update("bedrooms", e.target.value)} placeholder="2" /></label><label className={af("dpe_class")}>DPE<input value={payload.dpe_class} onChange={(e) => update("dpe_class", e.target.value.toUpperCase())} placeholder="D" maxLength={1} /></label><label className={af("ges_class")}>GES<input value={payload.ges_class} onChange={(e) => update("ges_class", e.target.value.toUpperCase())} placeholder="D" maxLength={1} /></label>
