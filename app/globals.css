@@ -2627,12 +2627,13 @@ label.auto-filled input, label.auto-filled select { border-color: rgba(22,163,74
   .espace-card h2 { margin-top: 4px; font-size: 18px; }
 }
 
-/* ---- Tarifs : prix ramené à la journée ---- */
-.pricing-daily { margin: 14px 0 4px; padding: 12px 14px; border-radius: 14px; background: linear-gradient(135deg, #fff4ec, #ffe8da); border: 1px solid #ffd2bb; }
-.pricing-daily-main { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; color: #111; font-size: 15px; font-weight: 800; letter-spacing: -.01em; }
-.pricing-daily-tag { padding: 3px 9px; border-radius: 999px; background: var(--accent); color: #fff; font-style: normal; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; }
-.pricing-daily-detail { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 3px; color: #7a5a48; font-size: 12px; line-height: 1.45; }
-.pricing-daily-detail li::before { content: "· "; color: var(--accent); font-weight: 800; }
-[data-theme="dark"] .pricing-daily { background: linear-gradient(135deg, #2a1d15, #1f1712); border-color: #4a2d1d; }
-[data-theme="dark"] .pricing-daily-main { color: #fff; }
-[data-theme="dark"] .pricing-daily-detail { color: #d6b8a5; }
+/* ---- Tarifs : prix ramené à la journée (sobre) ---- */
+.pricing-daily { margin: 14px 0 2px; padding-top: 12px; border-top: 1px solid rgba(17,17,17,.08); }
+.pricing-daily-row { display: flex; align-items: baseline; gap: 6px; }
+.pricing-daily-value { color: var(--accent); font-size: 17px; font-weight: 800; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.pricing-daily-unit { color: #777; font-size: 13px; font-weight: 600; }
+.pricing-daily-note { margin: 4px 0 0; color: #8a8a86; font-size: 12px; line-height: 1.5; }
+.pricing-daily-item { white-space: nowrap; }
+.pricing-daily-footnote { max-width: 1100px; margin: 14px auto 0; padding: 0 24px; text-align: center; color: #999; font-size: 12px; }
+[data-theme="dark"] .pricing-daily { border-top-color: rgba(255,255,255,.08); }
+[data-theme="dark"] .pricing-daily-unit, [data-theme="dark"] .pricing-daily-note, [data-theme="dark"] .pricing-daily-footnote { color: #9a9a96; }
