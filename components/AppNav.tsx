@@ -8,7 +8,7 @@ import { AgeGate } from "./AgeGate";
 
 type AppNavProps = {
   email?: string | null;
-  active?: "analyze" | "properties" | "account" | "alerts" | "team" | "export" | "progress";
+  active?: "analyze" | "properties" | "account" | "alerts" | "team" | "export" | "progress" | "space";
 };
 
 export function AppNav({ email, active }: AppNavProps) {
@@ -79,8 +79,8 @@ export function AppNav({ email, active }: AppNavProps) {
           Nouvelle analyse
         </Link>
         <Link
-          className={"navlink" + (active === "progress" || active === "alerts" || active === "team" || active === "export" ? " navlink-active" : "")}
-          href="/progress"
+          className={"navlink" + (active === "space" || active === "progress" || active === "alerts" || active === "team" || active === "export" ? " navlink-active" : "")}
+          href="/espace"
           onClick={closeMenu}
         >
           Mon espace

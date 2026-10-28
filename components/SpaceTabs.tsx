@@ -1,8 +1,9 @@
 import Link from "next/link";
 
-export type SpaceTab = "progress" | "alerts" | "team" | "export";
+export type SpaceTab = "overview" | "progress" | "alerts" | "team" | "export";
 
 const TABS: { key: SpaceTab; href: string; label: string }[] = [
+  { key: "overview", href: "/espace", label: "Vue d'ensemble" },
   { key: "progress", href: "/progress", label: "Progression" },
   { key: "alerts", href: "/alerts", label: "Alertes" },
   { key: "team", href: "/team", label: "Équipe" },
