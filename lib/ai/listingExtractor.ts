@@ -194,12 +194,28 @@ async function callClaude(body: Record<string, unknown>): Promise<ClaudeResponse
   const data = await response.json().catch(() => null);
   if (!response.ok) {
     const message = data?.error?.message || `Erreur API Claude (${response.status})`;
-    throw new Error(message);
+    throw new AiServiceError(message, response.status);
   }
   return data as ClaudeResponse;
 }
 
 class WebFetchFailed extends Error {}
+
+/**
+ * Erreur côté service IA (crédit épuisé, clé invalide, surcharge…) : ce n'est
+ * pas la faute de l'annonce. Les routes repassent alors sur l'extraction
+ * classique au lieu de bloquer l'utilisateur.
+ */
+export class AiServiceError extends Error {
+  status: number;
+  constructor(message: string, status: number) {
+    super(message);
+    this.status = status;
+  }
+}
+
+export const AI_UNAVAILABLE_MESSAGE =
+  "Le remplissage automatique est momentanément indisponible. Complète les champs à la main, ou réessaie dans quelques minutes.";
 
 async function runExtraction(model: string, input: AiInput) {
   const isUrl = input.kind === "url";
