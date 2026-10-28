@@ -44,7 +44,14 @@ const MAIN_PROPERTIES = {
   bedrooms: { type: "integer" },
   dpe_class: GRADE,
   ges_class: GRADE,
-  monthly_rent: { type: "number", description: "Loyer mensuel actuel ou annoncé, uniquement s'il est écrit (bien loué, loyer HC)" },
+  transaction_type: { type: "string", enum: ["vente", "location"], description: "vente si le bien est à acheter, location si c'est une annonce de logement à louer" },
+  monthly_rent: { type: "number", description: "Loyer mensuel HORS charges : loyer demandé (annonce de location) ou loyer actuel (bien vendu loué), uniquement s'il est écrit" },
+  rent_cc: { type: "number", description: "Loyer mensuel charges comprises, s'il est écrit" },
+  monthly_charges: { type: "number", description: "Provision pour charges locatives mensuelles (annonce de location)" },
+  deposit: { type: "number", description: "Dépôt de garantie en euros (annonce de location)" },
+  tenant_agency_fees: { type: "number", description: "Honoraires d'agence à la charge du locataire, état des lieux inclus (annonce de location)" },
+  reference_rent_m2_majore: { type: "number", description: "Loyer de référence majoré en €/m² (zones d'encadrement des loyers)" },
+  rent_supplement: { type: "number", description: "Complément de loyer mensuel en euros (zones d'encadrement des loyers)" },
   annual_property_tax: { type: "number", description: "Taxe foncière annuelle en euros" },
   annual_condo_charges: { type: "number", description: "Charges de copropriété ANNUELLES en euros (convertir si mensuelles ou trimestrielles)" },
   condo_procedure: { type: "boolean", description: "true si l'annonce mentionne une procédure en cours dans la copropriété" },
@@ -90,7 +97,14 @@ export type ExtractedMain = {
   bedrooms: number | null;
   dpe_class: string | null;
   ges_class: string | null;
+  transaction_type: "vente" | "location" | null;
   monthly_rent: number | null;
+  rent_cc: number | null;
+  monthly_charges: number | null;
+  deposit: number | null;
+  tenant_agency_fees: number | null;
+  reference_rent_m2_majore: number | null;
+  rent_supplement: number | null;
   annual_property_tax: number | null;
   annual_condo_charges: number | null;
   condo_procedure: boolean | null;
@@ -302,7 +316,14 @@ function normalize(raw: Record<string, unknown>) {
     bedrooms: num(raw.bedrooms),
     dpe_class: grade(raw.dpe_class),
     ges_class: grade(raw.ges_class),
+    transaction_type: raw.transaction_type === "vente" || raw.transaction_type === "location" ? raw.transaction_type : null,
     monthly_rent: num(raw.monthly_rent),
+    rent_cc: num(raw.rent_cc),
+    monthly_charges: num(raw.monthly_charges),
+    deposit: num(raw.deposit),
+    tenant_agency_fees: num(raw.tenant_agency_fees),
+    reference_rent_m2_majore: num(raw.reference_rent_m2_majore),
+    rent_supplement: num(raw.rent_supplement),
     annual_property_tax: num(raw.annual_property_tax),
     annual_condo_charges: num(raw.annual_condo_charges),
     condo_procedure: typeof raw.condo_procedure === "boolean" ? raw.condo_procedure : null,
@@ -324,10 +345,12 @@ function normalize(raw: Record<string, unknown>) {
   }
 
   const fields_found = [
-    ...Object.entries(extracted).filter(([k, v]) => k !== "property_type_label" && v !== null).map(([k]) => k),
+    ...Object.entries(extracted).filter(([k, v]) => k !== "property_type_label" && k !== "transaction_type" && v !== null).map(([k]) => k),
     ...Object.keys(extra),
   ];
-  const missing_critical = (["price", "surface_m2", "city"] as const).filter((k) => extracted[k] === null);
+  const criticalKeys = extracted.transaction_type === "location" ? (["surface_m2", "city"] as const) : (["price", "surface_m2", "city"] as const);
+  const missing_critical: string[] = criticalKeys.filter((k) => extracted[k] === null);
+  if (extracted.transaction_type === "location" && extracted.monthly_rent === null && extracted.rent_cc === null) missing_critical.push("monthly_rent");
   return { extracted, extra, fields_found, missing_critical };
 }
 
@@ -343,7 +366,9 @@ export async function extractListingWithAi(input: AiInput, fetchedBy: AiExtracti
   let outputTokens = first.outputTokens;
   let cost = costUsd(PRIMARY_MODEL, first.inputTokens, first.outputTokens);
 
-  const needsFallback = best.extracted.price === null || best.extracted.surface_m2 === null;
+  const isRental = best.extracted.transaction_type === "location";
+  const hasPrice = isRental ? best.extracted.monthly_rent !== null || best.extracted.rent_cc !== null : best.extracted.price !== null;
+  const needsFallback = !hasPrice || best.extracted.surface_m2 === null;
   if (needsFallback && FALLBACK_ENABLED && FALLBACK_MODEL !== PRIMARY_MODEL) {
     try {
       const second = await runExtraction(FALLBACK_MODEL, input);
