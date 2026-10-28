@@ -2626,3 +2626,14 @@ label.auto-filled input, label.auto-filled select { border-color: rgba(22,163,74
   .espace-bars { height: 96px; gap: 6px; }
   .espace-card h2 { margin-top: 4px; font-size: 18px; }
 }
+
+/* ---- Tarifs : prix ramené à la journée (sobre) ---- */
+.pricing-daily { margin: 14px 0 2px; padding-top: 12px; border-top: 1px solid rgba(17,17,17,.08); }
+.pricing-daily-row { display: flex; align-items: baseline; gap: 6px; }
+.pricing-daily-value { color: var(--accent); font-size: 17px; font-weight: 800; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.pricing-daily-unit { color: #777; font-size: 13px; font-weight: 600; }
+.pricing-daily-note { margin: 4px 0 0; color: #8a8a86; font-size: 12px; line-height: 1.5; }
+.pricing-daily-item { white-space: nowrap; }
+.pricing-daily-footnote { max-width: 1100px; margin: 14px auto 0; padding: 0 24px; text-align: center; color: #999; font-size: 12px; }
+[data-theme="dark"] .pricing-daily { border-top-color: rgba(255,255,255,.08); }
+[data-theme="dark"] .pricing-daily-unit, [data-theme="dark"] .pricing-daily-note, [data-theme="dark"] .pricing-daily-footnote { color: #9a9a96; }

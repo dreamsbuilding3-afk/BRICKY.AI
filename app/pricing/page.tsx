@@ -42,6 +42,33 @@ function formatPrice(cents: number, locale: Locale, t: (key: string, vars?: Reco
   return (cents / 100).toLocaleString(numberLocale(locale), { maximumFractionDigits: 0 }) + " " + t("pricing.perMonth");
 }
 
+function euros(value: number, locale: Locale, decimals = 2) {
+  return value.toLocaleString(numberLocale(locale), { style: "currency", currency: "EUR", minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+}
+
+// Argument marketing : le prix ramené à la journée (mois moyen = 365 / 12 jours),
+// présenté sobrement sous le prix, avec le coût par analyse et le tarif annuel.
+function DailyPrice({ plan, locale, t }: { plan: Plan; locale: Locale; t: (key: string, vars?: Record<string, string | number>) => string }) {
+  if (!plan.price_monthly_cents) return null;
+  const monthly = plan.price_monthly_cents / 100;
+  const perDay = (monthly * 12) / 365;
+  const perDayYearly = plan.price_yearly_cents ? plan.price_yearly_cents / 100 / 365 : null;
+  const details = [
+    plan.multi_user ? t("pricing.daily.team") : perDay <= 1.5 ? t("pricing.daily.coffee") : null,
+    plan.monthly_analysis_quota ? t("pricing.daily.perAnalysis", { amount: euros(monthly / plan.monthly_analysis_quota, locale) }) : null,
+    perDayYearly ? t("pricing.daily.yearly", { amount: euros(perDayYearly, locale) }) : null,
+  ].filter(Boolean);
+  return (
+    <div className="pricing-daily" title={t("pricing.daily.calc", { monthly: euros(monthly, locale, 0) })}>
+      <div className="pricing-daily-row">
+        <span className="pricing-daily-value">{euros(perDay, locale)}</span>
+        <span className="pricing-daily-unit">{t("pricing.daily.unit")}</span>
+      </div>
+      {details.length ? <p className="pricing-daily-note">{details.map((d, i) => <span key={i}>{i ? " · " : ""}<span className="pricing-daily-item">{d}</span></span>)}</p> : null}
+    </div>
+  );
+}
+
 function analysesLabel(plan: Plan, t: (key: string, vars?: Record<string, string | number>) => string) {
   if (plan.lifetime_analysis_quota != null) {
     return t("pricing.feature.analysesLifetime", { n: plan.lifetime_analysis_quota });
@@ -135,6 +162,7 @@ export default function PricingPage() {
       {loading ? null : loadError ? (
         <section className="pricing-intro"><div className="error-box" style={{ maxWidth: 520, margin: "0 auto" }}>{t("pricing.loadError")}</div></section>
       ) : (
+        <>
         <section className="pricing-grid">
           {plans.map((plan) => (
             <div
@@ -152,6 +180,7 @@ export default function PricingPage() {
                   {t("pricing.or")} {(plan.price_yearly_cents / 100).toLocaleString(numberLocale(locale))} {t("pricing.perYear")}
                 </div>
               ) : null}
+              <DailyPrice plan={plan} locale={locale} t={t} />
               <ul className="pricing-features">
                 {featureList(plan, t).map((item) => (
                   <li key={item}>{item}</li>
@@ -183,6 +212,8 @@ export default function PricingPage() {
             </div>
           ))}
         </section>
+        <p className="pricing-daily-footnote">{t("pricing.daily.footnote")}</p>
+        </>
       )}
 
       {!loading && plans.length > 0 && (
