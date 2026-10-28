@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase/client";
 import { AppNav } from "../../components/AppNav";
+import { SpaceTabs } from "../../components/SpaceTabs";
 
 type AlertCriteria = {
   id: string;
@@ -117,6 +118,7 @@ export default function AlertsPage() {
     <main className="page">
       <AppNav email={userEmail} active="alerts" />
       <section className="analysis-shell">
+        <SpaceTabs active="alerts" />
         <div className="analysis-intro">
           <span className="eyebrow">Bricky · Alertes</span>
           <h1>Nouvelles annonces à surveiller</h1>
