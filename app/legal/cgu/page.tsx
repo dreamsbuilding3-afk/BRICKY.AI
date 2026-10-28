@@ -43,6 +43,9 @@ export default function CGUPage() {
 
           <h2>6. Usage autorisé</h2>
           <p>
+            Le service est réservé aux personnes âgées de 18 ans ou plus. Votre date de naissance est demandée à la création du compte pour le vérifier.
+          </p>
+          <p>
             Vous vous engagez à ne pas utiliser le service à des fins illégales, à ne pas tenter d'en perturber le fonctionnement (surcharge automatisée, extraction massive de données, contournement des limites d'usage) et à ne pas revendre l'accès au service sans autorisation.
           </p>
 
