@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase/client";
 import { AppNav } from "../../components/AppNav";
+import { SpaceTabs } from "../../components/SpaceTabs";
 
 type Member = {
   id: string;
@@ -116,6 +117,7 @@ export default function TeamPage() {
     <main className="page">
       <AppNav email={userEmail} active="team" />
       <section className="analysis-shell">
+        <SpaceTabs active="team" />
         <div className="analysis-intro">
           <span className="eyebrow">Bricky · Équipe</span>
           <h1>Comptes multi-utilisateurs</h1>
