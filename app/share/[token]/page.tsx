@@ -106,8 +106,8 @@ export default function SharedAnalysisPage() {
               <h3>Rentabilite</h3>
               <div className="metric-grid">
                 <Metric label="Loyer mensuel" value={metrics.monthly_rent} suffix=" €" />
-                <Metric label="Rendement brut" value={metrics.gross_yield_pct} suffix=" %" />
-                <Metric label="Rendement net" value={metrics.net_yield_pct} suffix=" %" />
+                <Metric label={acquisition.net_yield_on_total_cost_pct != null ? "Rendement brut (sur coût total)" : "Rendement brut (sur prix)"} value={acquisition.net_yield_on_total_cost_pct != null ? acquisition.gross_yield_on_total_cost_pct : metrics.gross_yield_pct} suffix=" %" />
+                <Metric label={acquisition.net_yield_on_total_cost_pct != null ? "Rendement net (sur coût total)" : "Rendement net (sur prix)"} value={acquisition.net_yield_on_total_cost_pct ?? metrics.net_yield_pct} suffix=" %" />
                 <Metric label="Cashflow mensuel" value={metrics.monthly_cashflow ?? financing.monthly_cashflow} suffix=" €" />
               </div>
             </div>
