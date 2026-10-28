@@ -42,6 +42,37 @@ function formatPrice(cents: number, locale: Locale, t: (key: string, vars?: Reco
   return (cents / 100).toLocaleString(numberLocale(locale), { maximumFractionDigits: 0 }) + " " + t("pricing.perMonth");
 }
 
+function euros(value: number, locale: Locale, decimals = 2) {
+  return value.toLocaleString(numberLocale(locale), { style: "currency", currency: "EUR", minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+}
+
+// Argument marketing : le prix ramené à la journée (mois moyen = 365 / 12 jours),
+// avec le détail du calcul, le coût par analyse et le tarif annuel.
+function DailyPrice({ plan, locale, t }: { plan: Plan; locale: Locale; t: (key: string, vars?: Record<string, string | number>) => string }) {
+  if (!plan.price_monthly_cents) return null;
+  const monthly = plan.price_monthly_cents / 100;
+  const perDay = (monthly * 12) / 365;
+  const perDayYearly = plan.price_yearly_cents ? plan.price_yearly_cents / 100 / 365 : null;
+  const tag = plan.multi_user ? t("pricing.daily.team") : perDay <= 1.5 ? t("pricing.daily.coffee") : null;
+  return (
+    <div className="pricing-daily">
+      <div className="pricing-daily-main">
+        <span>{t("pricing.daily.main", { amount: euros(perDay, locale) })}</span>
+        {tag ? <em className="pricing-daily-tag">{tag}</em> : null}
+      </div>
+      <ul className="pricing-daily-detail">
+        <li>{t("pricing.daily.calc", { monthly: euros(monthly, locale, 0) })}</li>
+        {plan.monthly_analysis_quota ? (
+          <li>{t("pricing.daily.perAnalysis", { amount: euros(monthly / plan.monthly_analysis_quota, locale), n: plan.monthly_analysis_quota })}</li>
+        ) : plan.lifetime_analysis_quota == null ? (
+          <li>{t("pricing.daily.unlimited")}</li>
+        ) : null}
+        {perDayYearly ? <li>{t("pricing.daily.yearly", { amount: euros(perDayYearly, locale) })}</li> : null}
+      </ul>
+    </div>
+  );
+}
+
 function analysesLabel(plan: Plan, t: (key: string, vars?: Record<string, string | number>) => string) {
   if (plan.lifetime_analysis_quota != null) {
     return t("pricing.feature.analysesLifetime", { n: plan.lifetime_analysis_quota });
@@ -152,6 +183,7 @@ export default function PricingPage() {
                   {t("pricing.or")} {(plan.price_yearly_cents / 100).toLocaleString(numberLocale(locale))} {t("pricing.perYear")}
                 </div>
               ) : null}
+              <DailyPrice plan={plan} locale={locale} t={t} />
               <ul className="pricing-features">
                 {featureList(plan, t).map((item) => (
                   <li key={item}>{item}</li>
