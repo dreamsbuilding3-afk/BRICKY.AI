@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { classifyPropertyType } from "@/lib/data/propertyTypeClassifier";
 import { enforceRateLimit } from "@/lib/rateLimit";
+import { requireUser } from "@/lib/auth/requireUser";
 import dns from "node:dns/promises";
 import net from "node:net";
+import { extractListingWithAi, htmlToListingText, isAiExtractionEnabled, WebFetchFailed } from "@/lib/ai/listingExtractor";
+
+export const maxDuration = 60;
 
 function isPrivateOrLoopbackIp(ip: string): boolean {
   if (net.isIPv6(ip)) {
@@ -58,50 +62,7 @@ function jsonLdValues(html: string) {
   return values;
 }
 
-export async function POST(request: NextRequest) {
-  const rateLimitResponse = await enforceRateLimit(request, { endpoint: "properties.preview", maxRequests: 15, windowSeconds: 60 });
-  if (rateLimitResponse) return rateLimitResponse;
-
-  const authorization = request.headers.get("authorization");
-  if (!authorization?.startsWith("Bearer ")) {
-    return NextResponse.json({ error: "Authentication required." }, { status: 401 });
-  }
-
-  try {
-    const { url } = await request.json();
-    if (typeof url !== "string" || !url.trim()) {
-      return NextResponse.json({ error: "URL requise." }, { status: 400 });
-    }
-
-    const parsedUrl = new URL(url.trim());
-    if (!["http:", "https:"].includes(parsedUrl.protocol)) {
-      return NextResponse.json({ error: "URL HTTP/HTTPS invalide." }, { status: 400 });
-    }
-
-    const hostname = parsedUrl.hostname.toLowerCase();
-    if (hostname === "localhost" || hostname === "0.0.0.0" || hostname.endsWith(".local")) {
-      return NextResponse.json({ error: "Cette URL est refusee." }, { status: 400 });
-    }
-    try {
-      const resolved = await dns.lookup(hostname);
-      if (isPrivateOrLoopbackIp(resolved.address)) {
-        return NextResponse.json({ error: "Cette URL est refusee." }, { status: 400 });
-      }
-    } catch {
-      return NextResponse.json({ error: "Impossible de resoudre cette adresse." }, { status: 400 });
-    }
-
-    const response = await fetch(parsedUrl.toString(), {
-      headers: { "User-Agent": "Mozilla/5.0 (compatible; BrickyBot/1.0; +https://bricky.ai)" },
-      redirect: "follow",
-      signal: AbortSignal.timeout(10000),
-    });
-
-    if (!response.ok) {
-      return NextResponse.json({ error: `La page n'est pas accessible (${response.status}).` }, { status: 422 });
-    }
-
-    const html = (await response.text()).slice(0, 3_000_000);
+function regexExtract(html: string, parsedUrl: URL) {
     const title = cleanText(html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1] ?? "");
     const description = cleanText(html.match(/<meta[^>]+(?:name|property)=["'](?:description|og:description)["'][^>]+content=["']([^"']*)["']/i)?.[1] ?? "");
     const bodyText = cleanText(html.replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>|<[^>]+>/gi, " "));
@@ -123,7 +84,7 @@ export async function POST(request: NextRequest) {
     const resolvedTitle = String(product.name ?? title).trim();
     const propertyType = classifyPropertyType(resolvedTitle, description, bodyText.slice(0, 4000));
 
-    return NextResponse.json({
+    return {
       source_url: parsedUrl.toString(),
       source_domain: parsedUrl.hostname,
       extracted: {
@@ -146,9 +107,123 @@ export async function POST(request: NextRequest) {
         fields_found: [price, surface, rooms, bedrooms, city, monthlyRent, dpe, ges, propertyType?.type].filter(
           (v) => v !== null && v !== "" && v !== undefined,
         ).length,
+        method: "regex",
         note: "Les données extraites doivent être vérifiées avant analyse. Bricky n'invente aucune valeur.",
       },
-    });
+    };
+}
+
+// Signes qu'un site a renvoyé une page anti-robot au lieu de l'annonce.
+const BLOCKED_PAGE_RE = /captcha|access denied|acc[eè]s refus[ée]|are you a robot|just a moment|enable javascript|datadome|cf-chl|perimeterx/i;
+
+function aiResponse(result: Awaited<ReturnType<typeof extractListingWithAi>>, sourceUrl: string, sourceDomain: string) {
+  return NextResponse.json({
+    source_url: sourceUrl,
+    source_domain: sourceDomain,
+    extracted: result.extracted,
+    extra: result.extra,
+    extraction: {
+      status: result.missing_critical.length ? "partial" : "complete",
+      method: "ai",
+      model: result.model,
+      fetched_by: result.fetched_by,
+      fields_found: result.fields_found.length,
+      fields: result.fields_found,
+      missing_critical: result.missing_critical,
+      cost_usd: result.usage.cost_usd,
+      note: "Données lues par l'IA dans l'annonce. Un champ absent de l'annonce reste vide : Bricky n'invente aucune valeur.",
+    },
+  });
+}
+
+const UNREADABLE_LINK =
+  "Ce site bloque la lecture automatique. Colle le texte de l'annonce ou envoie une capture d'écran : Bricky fera le même travail.";
+
+export async function POST(request: NextRequest) {
+  const rateLimitResponse = await enforceRateLimit(request, { endpoint: "properties.preview", maxRequests: 15, windowSeconds: 60 });
+  if (rateLimitResponse) return rateLimitResponse;
+
+  const authResponse = await requireUser(request);
+  if (authResponse) return authResponse;
+
+  try {
+    const { url, text } = await request.json();
+
+    // Cas 1 : texte de l'annonce collé par l'utilisateur.
+    if (typeof text === "string" && text.trim()) {
+      if (!isAiExtractionEnabled()) {
+        return NextResponse.json({ error: "L'extraction automatique n'est pas encore activée sur ce serveur." }, { status: 503 });
+      }
+      if (text.trim().length < 30) {
+        return NextResponse.json({ error: "Le texte est trop court pour être une annonce." }, { status: 400 });
+      }
+      const result = await extractListingWithAi({ kind: "text", text: text.trim() }, "none");
+      return aiResponse(result, typeof url === "string" ? url.trim() : "", "texte collé");
+    }
+
+    if (typeof url !== "string" || !url.trim()) {
+      return NextResponse.json({ error: "URL ou texte requis." }, { status: 400 });
+    }
+
+    const parsedUrl = new URL(url.trim());
+    if (!["http:", "https:"].includes(parsedUrl.protocol)) {
+      return NextResponse.json({ error: "URL HTTP/HTTPS invalide." }, { status: 400 });
+    }
+
+    const hostname = parsedUrl.hostname.toLowerCase();
+    if (hostname === "localhost" || hostname === "0.0.0.0" || hostname.endsWith(".local")) {
+      return NextResponse.json({ error: "Cette URL est refusee." }, { status: 400 });
+    }
+    try {
+      const resolved = await dns.lookup(hostname);
+      if (isPrivateOrLoopbackIp(resolved.address)) {
+        return NextResponse.json({ error: "Cette URL est refusee." }, { status: 400 });
+      }
+    } catch {
+      return NextResponse.json({ error: "Impossible de resoudre cette adresse." }, { status: 400 });
+    }
+
+    // Cas 2 : lien. On lit d'abord la page depuis notre serveur (gratuit et rapide).
+    let html: string | null = null;
+    let serverStatus = 0;
+    try {
+      const response = await fetch(parsedUrl.toString(), {
+        headers: {
+          "User-Agent": "Mozilla/5.0 (compatible; BrickyBot/1.0; +https://bricky.ai)",
+          "Accept-Language": "fr-FR,fr;q=0.9",
+        },
+        redirect: "follow",
+        signal: AbortSignal.timeout(10000),
+      });
+      serverStatus = response.status;
+      if (response.ok) html = (await response.text()).slice(0, 3_000_000);
+    } catch {
+      html = null;
+    }
+
+    if (!isAiExtractionEnabled()) {
+      if (!html) return NextResponse.json({ error: `La page n'est pas accessible (${serverStatus || "délai dépassé"}).` }, { status: 422 });
+      return NextResponse.json(regexExtract(html, parsedUrl));
+    }
+
+    const pageText = html ? htmlToListingText(html) : "";
+    const looksBlocked = !html || pageText.length < 800 || BLOCKED_PAGE_RE.test(pageText.slice(0, 3000));
+
+    if (!looksBlocked) {
+      const result = await extractListingWithAi({ kind: "text", text: pageText, sourceUrl: parsedUrl.toString() }, "server");
+      if (result.fields_found.length >= 3) return aiResponse(result, parsedUrl.toString(), parsedUrl.hostname);
+    }
+
+    // Plan B : Claude lit la page lui-même avec l'outil web_fetch.
+    try {
+      const result = await extractListingWithAi({ kind: "url", url: parsedUrl.toString() });
+      if (result.fields_found.length >= 3) return aiResponse(result, parsedUrl.toString(), parsedUrl.hostname);
+    } catch (error) {
+      // Lien illisible (site bloqué, page en JavaScript…) : on propose le plan B.
+      if (!(error instanceof WebFetchFailed)) console.error("[preview] web_fetch error", error);
+    }
+
+    return NextResponse.json({ error: UNREADABLE_LINK, code: "link_unreadable" }, { status: 422 });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Impossible de lire cette annonce.";
     return NextResponse.json({ error: message }, { status: 422 });
