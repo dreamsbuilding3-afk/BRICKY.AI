@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { extractText, getDocumentProxy } from "unpdf";
 import { classifyPropertyType } from "@/lib/data/propertyTypeClassifier";
-import { extractListingWithAi, isAiExtractionEnabled } from "@/lib/ai/listingExtractor";
+import { AI_UNAVAILABLE_MESSAGE, extractListingWithAi, isAiExtractionEnabled } from "@/lib/ai/listingExtractor";
 import { enforceRateLimit } from "@/lib/rateLimit";
 import { requireUser } from "@/lib/auth/requireUser";
 
@@ -87,8 +87,13 @@ export async function POST(request: NextRequest) {
       const encoded = await Promise.all(
         images.map(async (img) => ({ mediaType: img.type, base64: Buffer.from(await img.arrayBuffer()).toString("base64") })),
       );
-      const result = await extractListingWithAi({ kind: "images", images: encoded }, "none");
-      return aiJson(result, images.map((i) => i.name).join(", "), images.length > 1 ? `${images.length} captures d'écran` : "capture d'écran");
+      try {
+        const result = await extractListingWithAi({ kind: "images", images: encoded }, "none");
+        return aiJson(result, images.map((i) => i.name).join(", "), images.length > 1 ? `${images.length} captures d'écran` : "capture d'écran");
+      } catch (error) {
+        console.error("[extract-file] AI image extraction failed", error);
+        return NextResponse.json({ error: AI_UNAVAILABLE_MESSAGE, code: "ai_unavailable" }, { status: 503 });
+      }
     }
 
     const isPdf = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
@@ -120,11 +125,19 @@ export async function POST(request: NextRequest) {
     if (isAiExtractionEnabled()) {
       // PDF avec du texte : on envoie le texte (moins cher). PDF scanné : on
       // envoie le document lui-même, que l'IA lit comme des images.
-      const result =
-        bodyText.length >= 200
-          ? await extractListingWithAi({ kind: "text", text: bodyText }, "none")
-          : await extractListingWithAi({ kind: "pdf", base64: Buffer.from(bytes).toString("base64") }, "none");
-      return aiJson(result, file.name, "fichier PDF");
+      try {
+        const result =
+          bodyText.length >= 200
+            ? await extractListingWithAi({ kind: "text", text: bodyText }, "none")
+            : await extractListingWithAi({ kind: "pdf", base64: Buffer.from(bytes).toString("base64") }, "none");
+        return aiJson(result, file.name, "fichier PDF");
+      } catch (error) {
+        // IA indisponible : on continue avec la lecture classique du texte du PDF.
+        console.error("[extract-file] AI PDF extraction failed", error);
+        if (bodyText.length < 20) {
+          return NextResponse.json({ error: AI_UNAVAILABLE_MESSAGE, code: "ai_unavailable" }, { status: 503 });
+        }
+      }
     }
 
     if (!bodyText || bodyText.length < 20) {
