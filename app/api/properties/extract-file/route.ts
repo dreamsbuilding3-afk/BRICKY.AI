@@ -1,8 +1,34 @@
 import { NextRequest, NextResponse } from "next/server";
 import { extractText, getDocumentProxy } from "unpdf";
 import { classifyPropertyType } from "@/lib/data/propertyTypeClassifier";
+import { extractListingWithAi, isAiExtractionEnabled } from "@/lib/ai/listingExtractor";
+import { enforceRateLimit } from "@/lib/rateLimit";
+import { requireUser } from "@/lib/auth/requireUser";
 
-export const maxDuration = 30;
+export const maxDuration = 60;
+
+const IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+const MAX_IMAGES = 5;
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+
+function aiJson(result: Awaited<ReturnType<typeof extractListingWithAi>>, sourceUrl: string, sourceDomain: string) {
+  return NextResponse.json({
+    source_url: sourceUrl,
+    source_domain: sourceDomain,
+    extracted: result.extracted,
+    extra: result.extra,
+    extraction: {
+      status: result.missing_critical.length ? "partial" : "complete",
+      method: "ai",
+      model: result.model,
+      fields_found: result.fields_found.length,
+      fields: result.fields_found,
+      missing_critical: result.missing_critical,
+      cost_usd: result.usage.cost_usd,
+      note: "Données lues par l'IA dans le fichier. Un champ absent reste vide : Bricky n'invente aucune valeur.",
+    },
+  });
+}
 
 const PRICE_RE = /(?:prix|price)[^\d]{0,40}([\d\s.,]+)\s*€?/i;
 const SURFACE_RE = /(?:surface|area)[^\d]{0,40}(\d+(?:[.,]\d+)?)\s*m(?:²|2)/i;
@@ -29,25 +55,46 @@ function firstMatch(text: string, regex: RegExp) {
 }
 
 export async function POST(request: NextRequest) {
-  const authorization = request.headers.get("authorization");
-  if (!authorization?.startsWith("Bearer ")) {
-    return NextResponse.json({ error: "Authentication required." }, { status: 401 });
-  }
+  const rateLimitResponse = await enforceRateLimit(request, { endpoint: "properties.extract_file", maxRequests: 10, windowSeconds: 60 });
+  if (rateLimitResponse) return rateLimitResponse;
+
+  const authResponse = await requireUser(request);
+  if (authResponse) return authResponse;
 
   try {
     const formData = await request.formData();
-    const file = formData.get("file");
-    if (!(file instanceof File)) {
+    const files = formData.getAll("file").filter((f): f is File => f instanceof File);
+    const file = files[0];
+    if (!file) {
       return NextResponse.json({ error: "Fichier requis." }, { status: 400 });
     }
     if (file.size > 15 * 1024 * 1024) {
       return NextResponse.json({ error: "Fichier trop volumineux (15 Mo max)." }, { status: 413 });
     }
 
+    // Captures d'écran : lues directement par l'IA (vision).
+    const images = files.filter((f) => IMAGE_TYPES.includes(f.type));
+    if (images.length > 0) {
+      if (!isAiExtractionEnabled()) {
+        return NextResponse.json({ error: "La lecture des captures d'écran n'est pas encore activée sur ce serveur." }, { status: 503 });
+      }
+      if (images.length > MAX_IMAGES) {
+        return NextResponse.json({ error: `${MAX_IMAGES} captures maximum par analyse.` }, { status: 400 });
+      }
+      if (images.some((img) => img.size > MAX_IMAGE_BYTES)) {
+        return NextResponse.json({ error: "Chaque capture doit faire moins de 5 Mo." }, { status: 413 });
+      }
+      const encoded = await Promise.all(
+        images.map(async (img) => ({ mediaType: img.type, base64: Buffer.from(await img.arrayBuffer()).toString("base64") })),
+      );
+      const result = await extractListingWithAi({ kind: "images", images: encoded }, "none");
+      return aiJson(result, images.map((i) => i.name).join(", "), images.length > 1 ? `${images.length} captures d'écran` : "capture d'écran");
+    }
+
     const isPdf = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
     if (!isPdf) {
       return NextResponse.json(
-        { error: "Seuls les fichiers PDF sont acceptés pour le moment. Pour une photo d'annonce, exporte-la en PDF ou colle le texte directement." },
+        { error: "Formats acceptés : PDF, ou captures d'écran (JPG, PNG, WebP). Tu peux aussi coller le texte de l'annonce." },
         { status: 415 },
       );
     }
@@ -69,6 +116,16 @@ export async function POST(request: NextRequest) {
     }
 
     const bodyText = cleanText(rawText || "");
+
+    if (isAiExtractionEnabled()) {
+      // PDF avec du texte : on envoie le texte (moins cher). PDF scanné : on
+      // envoie le document lui-même, que l'IA lit comme des images.
+      const result =
+        bodyText.length >= 200
+          ? await extractListingWithAi({ kind: "text", text: bodyText }, "none")
+          : await extractListingWithAi({ kind: "pdf", base64: Buffer.from(bytes).toString("base64") }, "none");
+      return aiJson(result, file.name, "fichier PDF");
+    }
 
     if (!bodyText || bodyText.length < 20) {
       return NextResponse.json(
@@ -109,6 +166,7 @@ export async function POST(request: NextRequest) {
       },
       extraction: {
         status: "partial",
+        method: "regex",
         fields_found: [price, surface, rooms, bedrooms, monthlyRent, dpe, ges, city, propertyType?.type].filter(
           (v) => v !== null && v !== "" && v !== undefined,
         ).length,
