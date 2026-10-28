@@ -2504,3 +2504,25 @@ label.auto-filled input, label.auto-filled select { border-color: rgba(22,163,74
 [data-theme="dark"] .age-gate-card { background: #161616; color: #f3f3f3; }
 [data-theme="dark"] .age-gate-card p, [data-theme="dark"] .age-gate-card label, [data-theme="dark"] .auth-hint { color: #aaa; }
 [data-theme="dark"] .age-gate-card input { background: #1f1f1f; border-color: #333; color: #f3f3f3; }
+
+/* ---- Vignettes 3D des biens (Mes biens) ---- */
+.property-row { grid-template-columns: 22px 112px minmax(0, 1.6fr) minmax(0, 1fr) auto; gap: 16px; padding: 14px 22px 14px 18px; }
+.property-row .property-row-check { margin-right: 0; }
+.property-thumb { width: 112px; height: 88px; padding: 6px; border-radius: 16px; display: flex; align-items: center; justify-content: center; overflow: hidden; background: linear-gradient(160deg, #fff6ef, #ffe4d2); box-shadow: inset 0 0 0 1px rgba(17,17,17,.04); }
+.property-thumb svg { display: block; width: 100%; height: 100%; transition: transform .25s ease; }
+.property-row:hover .property-thumb svg { transform: translateY(-2px) scale(1.05); }
+.property-thumb-immeuble, .property-thumb-terrain { background: linear-gradient(160deg, #f4fbf1, #dff1d8); }
+.property-thumb-villa { background: linear-gradient(160deg, #f2f8ff, #dcebfb); }
+.property-thumb-commerce { background: linear-gradient(160deg, #fffaf0, #fdecc8); }
+.property-thumb-parking { background: linear-gradient(160deg, #f7f7f5, #e9e9e4); }
+.property-row-info { min-width: 0; }
+.property-row-info b { overflow-wrap: anywhere; }
+.property-row-info span { display: block; margin-top: 5px; color: #777; font-size: 13px; }
+[data-theme="dark"] .property-thumb { background: linear-gradient(160deg, #2a221d, #1d1a17); box-shadow: inset 0 0 0 1px rgba(255,255,255,.06); }
+[data-theme="dark"] .property-row-info span { color: #aaa; }
+@media (max-width: 720px) {
+  .property-row { grid-template-columns: 22px 76px minmax(0, 1fr); gap: 12px; padding: 14px; }
+  .property-thumb { width: 76px; height: 62px; padding: 4px; border-radius: 12px; }
+  .property-row-metrics, .property-row-verdict { grid-column: 3; }
+  .property-row-metrics { flex-direction: row; flex-wrap: wrap; gap: 4px 12px; }
+}
