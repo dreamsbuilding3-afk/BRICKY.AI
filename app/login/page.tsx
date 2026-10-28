@@ -4,11 +4,13 @@ import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase/client";
 import { hasPendingImport } from "@/lib/brickyImport";
+import { birthDateError, maxBirthDate, MIN_AGE } from "@/lib/age";
 
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [birthDate, setBirthDate] = useState("");
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
@@ -33,9 +35,18 @@ export default function LoginPage() {
     setError("");
     setMessage("");
 
+    if (mode === "signup") {
+      const problem = birthDateError(birthDate);
+      if (problem) {
+        setError(problem);
+        setLoading(false);
+        return;
+      }
+    }
+
     const result = mode === "login"
       ? await supabase.auth.signInWithPassword({ email, password })
-      : await supabase.auth.signUp({ email, password });
+      : await supabase.auth.signUp({ email, password, options: { data: { birth_date: birthDate, age_confirmed_at: new Date().toISOString() } } });
 
     if (result.error) {
       setError(result.error.message);
@@ -105,6 +116,9 @@ export default function LoginPage() {
             <form className="property-form auth-form" onSubmit={handleSubmit}>
               <label>E-mail<input required type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="vous@exemple.com" /></label>
               <label>Mot de passe<input required type="password" minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" /></label>
+              {mode === "signup" && (
+                <label>Date de naissance<input required type="date" max={maxBirthDate()} min="1900-01-01" value={birthDate} onChange={(e) => setBirthDate(e.target.value)} /><small className="auth-hint">Bricky est réservé aux personnes de {MIN_AGE} ans et plus.</small></label>
+              )}
               {mode === "login" && (
                 <button type="button" className="auth-switch auth-forgot" onClick={handleForgotPassword} disabled={loading}>
                   Mot de passe oublié ?
