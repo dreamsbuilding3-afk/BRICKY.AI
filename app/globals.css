@@ -2432,3 +2432,24 @@ label.auto-filled input, label.auto-filled select { border-color: rgba(22,163,74
 [data-theme="dark"] .primary-extract-button { background: #f3f3f3; color: #111; border-color: #f3f3f3; }
 [data-theme="dark"] label.auto-filled::after { color: #4ade80; background: rgba(74,222,128,.14); }
 [data-theme="dark"] label.auto-filled input, [data-theme="dark"] label.auto-filled select { border-color: rgba(74,222,128,.45); background: rgba(74,222,128,.06); }
+
+/* ---- Bouton « Envoyer à Bricky » (favori) ---- */
+.bookmarklet-tip { margin: 10px 4px 0; color: #666; font-size: 13px; }
+.bookmarklet-tip a { color: inherit; font-weight: 700; text-decoration: underline; }
+.bouton-shell { max-width: 760px; }
+.bouton-card { margin: 36px auto 0; padding: 32px 18px; text-align: center; border: 1.5px dashed rgba(17,17,17,.25); border-radius: 24px; background: rgba(255,255,255,.7); }
+.bouton-bookmarklet { display: inline-flex; align-items: center; gap: 10px; padding: 14px 22px; border-radius: 999px; background: #111; color: #fff; font-weight: 800; font-size: 16px; text-decoration: none; cursor: grab; box-shadow: 0 10px 24px -10px rgba(17,17,17,.5); }
+.bouton-bookmarklet img { width: 26px; height: 26px; border-radius: 50%; }
+.bouton-hint { margin: 14px 0 0; color: #666; font-size: 14px; font-weight: 600; }
+.bouton-steps { margin-top: 36px; }
+.bouton-steps h2 { font-size: 18px; letter-spacing: -.02em; margin: 28px 0 10px; }
+.bouton-steps ol { margin: 0; padding-left: 22px; color: #444; line-height: 1.7; }
+.bouton-steps li { margin-bottom: 6px; }
+.bouton-steps .secondary-button { min-height: 34px; margin-left: 6px; }
+.bouton-steps kbd { display: inline-block; padding: 1px 7px; border: 1px solid #ccc; border-bottom-width: 2px; border-radius: 6px; font-size: 12px; background: #fafaf8; }
+.bouton-privacy { margin-top: 28px; color: #777; font-size: 13px; line-height: 1.5; }
+[data-theme="dark"] .bouton-card { background: rgba(255,255,255,.04); border-color: rgba(255,255,255,.2); }
+[data-theme="dark"] .bouton-bookmarklet { background: #f3f3f3; color: #111; }
+[data-theme="dark"] .bouton-steps ol, [data-theme="dark"] .bouton-hint, [data-theme="dark"] .bookmarklet-tip, [data-theme="dark"] .bouton-privacy { color: #bbb; }
+[data-theme="dark"] .bouton-steps kbd { background: #1a1a1a; border-color: #444; color: #eee; }
+@media (max-width: 720px) { .bouton-card { padding: 24px 14px; } }
