@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase/client";
 import { AppNav } from "../../components/AppNav";
 import { AnalysesCounter } from "../../components/AnalysesCounter";
+import { PropertyIllustration } from "../../components/PropertyIllustration";
 
 type AnalysisRow = {
   id: string;
@@ -22,9 +23,27 @@ type PropertyRow = {
   city: string | null;
   price: number | null;
   surface_m2: number | null;
+  property_type: string | null;
   created_at: string;
   analyses: AnalysisRow[] | null;
 };
+
+// Les titres récupérés sur certaines annonces contiennent des entités HTML (« 80 000 &amp;euro; »).
+function decodeEntities(text: string): string {
+  let out = text;
+  for (let i = 0; i < 2; i++) {
+    out = out
+      .replace(/&euro;/gi, "€")
+      .replace(/&nbsp;/gi, " ")
+      .replace(/&#39;|&apos;/gi, "'")
+      .replace(/&quot;/gi, '"')
+      .replace(/&lt;/gi, "<")
+      .replace(/&gt;/gi, ">")
+      .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n)))
+      .replace(/&amp;/gi, "&");
+  }
+  return out;
+}
 
 function latestAnalysis(row: PropertyRow): AnalysisRow | null {
   const list = row.analyses || [];
@@ -102,7 +121,7 @@ export default function PropertiesPage() {
       setUserEmail(sessionData.session.user.email ?? "");
       const { data, error: queryError } = await supabase
         .from("properties")
-        .select("id, title, address, city, price, surface_m2, created_at, analyses(id, verdict, overall_score, confidence_score, status, created_at)")
+        .select("id, title, address, city, price, surface_m2, property_type, created_at, analyses(id, verdict, overall_score, confidence_score, status, created_at)")
         .order("created_at", { ascending: false });
       if (cancelled) return;
       if (queryError) { setError("Impossible de charger vos biens."); setLoading(false); return; }
@@ -198,7 +217,7 @@ export default function PropertiesPage() {
           {!showFirstAnalysisCongrats && (
             <a href={"/analyze?property_id=" + rows[0].id} className="resume-banner">
               <div>
-                <b>Reprendre : {rows[0].title || rows[0].address || "votre dernier bien"}</b>
+                <b>Reprendre : {decodeEntities(rows[0].title || rows[0].address || "votre dernier bien")}</b>
                 <p>Continuez où vous en étiez, ou lancez une nouvelle analyse ci-dessous.</p>
               </div>
               <span className="primary-button resume-cta">Reprendre →</span>
@@ -218,8 +237,9 @@ export default function PropertiesPage() {
                   >
                     <input type="checkbox" checked={isSelected} readOnly />
                   </label>
-                  <div>
-                    <b>{row.title || row.address || "Bien sans titre"}</b>
+                  <PropertyIllustration propertyType={row.property_type} title={row.title} />
+                  <div className="property-row-info">
+                    <b>{decodeEntities(row.title || row.address || "Bien sans titre")}</b>
                     <span>{[row.address, row.city].filter(Boolean).join(", ") || "Adresse non renseignée"}</span>
                   </div>
                   <div className="property-row-metrics">
