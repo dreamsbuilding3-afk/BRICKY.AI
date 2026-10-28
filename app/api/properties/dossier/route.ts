@@ -352,6 +352,12 @@ export async function POST(request: NextRequest) {
 
   const financial = (analysis?.financial_snapshot as Record<string, unknown>) || {};
   const metrics = (financial.metrics as Record<string, unknown>) || {};
+  // Un seul rendement, avec sa base : sur coût total (frais + travaux) quand il existe, sinon sur prix.
+  const acquisitionData = (financial.acquisition as Record<string, unknown>) || {};
+  const onTotalCost = acquisitionData.net_yield_on_total_cost_pct != null;
+  const grossYield = onTotalCost ? acquisitionData.gross_yield_on_total_cost_pct : metrics.gross_yield_pct;
+  const netYield = onTotalCost ? acquisitionData.net_yield_on_total_cost_pct : metrics.net_yield_pct;
+  const yieldBase = onTotalCost ? "sur coût total" : "sur prix";
   const scenarios = (financial.scenarios as Record<string, unknown>) || {};
   const decisionSnapshot = (analysis?.decision_snapshot as Record<string, unknown>) || {};
   const decision = (decisionSnapshot.decision as Record<string, unknown>) || {};
@@ -446,8 +452,8 @@ export async function POST(request: NextRequest) {
     ["SURFACE", fmtNum(property.surface_m2, " m²")],
     ["PIÈCES / CHAMBRES", `${fmtStr(property.rooms)} / ${fmtStr(property.bedrooms)}`],
     ["LOYER MENSUEL ESTIMÉ", fmtNum(metrics.monthly_rent, " €")],
-    ["RENDEMENT BRUT", fmtNum(metrics.gross_yield_pct, " %")],
-    ["RENDEMENT NET", fmtNum(metrics.net_yield_pct, " %")],
+    [`RENDEMENT BRUT (${yieldBase.toUpperCase()})`, fmtNum(grossYield, " %")],
+    [`RENDEMENT NET (${yieldBase.toUpperCase()})`, fmtNum(netYield, " %")],
   ];
   const colW = (PAGE_WIDTH - 2 * MARGIN) / 3;
   const rowH = 56;
@@ -546,8 +552,8 @@ export async function POST(request: NextRequest) {
   const finRows: [string, string][] = [
     ["Loyer mensuel", fmtNum(metrics.monthly_rent, " €")],
     ["Revenu net annuel", fmtNum(metrics.annual_net_income, " €")],
-    ["Rendement brut", fmtNum(metrics.gross_yield_pct, " %")],
-    ["Rendement net", fmtNum(metrics.net_yield_pct, " %")],
+    [`Rendement brut (${yieldBase})`, fmtNum(grossYield, " %")],
+    [`Rendement net (${yieldBase})`, fmtNum(netYield, " %")],
   ];
   finRows.forEach(([l, v], i) => { ry = flow.kvRowAt(rightX, ry, colW2, l, v, i % 2 === 0); });
   ry -= 4;

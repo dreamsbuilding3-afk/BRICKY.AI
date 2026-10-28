@@ -459,49 +459,6 @@ return <main className="page">
 </main>;
 }
 
-function RingCard({ title, pct, colorFrom, colorTo, gradientId, value, caption, chipText, chipTone, delayMs = 0 }: { title: string; pct: number; colorFrom: string; colorTo: string; gradientId: string; value: string; caption: string; chipText?: string | null; chipTone?: "good" | "warn" | "bad" | "neutral"; delayMs?: number }) {
-  const r = 52;
-  const c = 2 * Math.PI * r;
-  const safePct = Math.min(100, Math.max(0, pct));
-  const offset = c - (safePct / 100) * c;
-  const [displayPct, setDisplayPct] = useState(0);
-  useEffect(() => {
-    let raf = 0;
-    const startTimer = setTimeout(() => {
-      const start = performance.now();
-      const duration = 1000;
-      function tick(now: number) {
-        const t = Math.min(1, (now - start) / duration);
-        const eased = 1 - Math.pow(1 - t, 3);
-        setDisplayPct(Math.round(eased * safePct));
-        if (t < 1) raf = requestAnimationFrame(tick);
-      }
-      raf = requestAnimationFrame(tick);
-    }, delayMs);
-    return () => { clearTimeout(startTimer); cancelAnimationFrame(raf); };
-  }, [safePct, delayMs]);
-  return <div className="ring-card">
-    <div className="ring-card-head"><span className="ring-card-title">{title}</span></div>
-    <div className="ring-card-ring" style={{ ["--ring-glow" as any]: colorTo }}>
-      <svg viewBox="0 0 120 120" width="120" height="120">
-        <defs><linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor={colorFrom} /><stop offset="100%" stopColor={colorTo} /></linearGradient></defs>
-        <circle className="ring-card-track" cx="60" cy="60" r={r} fill="none" strokeWidth="10" />
-        <circle className="ring-card-progress" cx="60" cy="60" r={r} fill="none" stroke={`url(#${gradientId})`} strokeWidth="10" strokeLinecap="round" strokeDasharray={c} style={{ ["--ring-c" as any]: c, ["--ring-offset" as any]: offset, animationDelay: `${delayMs}ms` }} transform="rotate(-90 60 60)" />
-      </svg>
-      <div className="ring-card-center">{displayPct}%</div>
-    </div>
-    <span className="ring-card-caption">{caption}</span>
-    <b className="ring-card-value">{value}</b>
-    {chipText ? <span className={`ring-card-chip ring-card-chip-${chipTone || "neutral"}`}>{chipText}</span> : null}
-  </div>;
-}
-
-function FunnelChart({ steps }: { steps: { label: string; value: string; pct: number; tone?: "good" | "bad" | "accent" }[] }) {
-  return <div className="funnel-steps">
-    {steps.map((s, i) => <div className="funnel-step" key={s.label}><span>{s.label}</span><div className="funnel-bar"><div className={`funnel-bar-fill funnel-bar-${s.tone || "accent"}`} style={{ ["--w" as any]: `${Math.max(0, Math.min(100, s.pct))}%`, animationDelay: `${i * 100}ms` }} /></div><b>{s.value}</b></div>)}
-  </div>;
-}
-
 function BarChart({ items }: { items: { key: string; label: string; display: string; pct: number }[] }) {
   return <div className="scenario-bars">
     {items.map((it, i) => <div className="scenario-bar-col" key={it.key}><b>{it.display}</b><div className="scenario-bar-track"><div className="scenario-bar-fill" style={{ ["--h" as any]: `${Math.max(0, Math.min(100, it.pct))}%`, animationDelay: `${i * 90}ms` }} /></div><span>{it.label}</span></div>)}
@@ -580,16 +537,9 @@ const actions = Array.isArray(decision.actions) ? decision.actions : [];
 const risks = Array.isArray(risk.risks) ? risk.risks : [];
 const missing = Array.isArray(financialSnapshot.missing_data) ? financialSnapshot.missing_data : [];
 const confidenceLabel = confidence == null ? null : confidence >= 75 ? "Élevée" : confidence >= 50 ? "Moyenne" : "Faible";
-const scorePct = score == null ? 0 : Math.min(100, Math.max(0, Number(score)));
-const yieldPct = metrics.net_yield_pct == null ? 0 : Math.min(100, Math.max(0, (Number(metrics.net_yield_pct) / 12) * 100));
-const cashflowValue = financing.monthly_cashflow == null ? null : Number(financing.monthly_cashflow);
-const cashflowPct = cashflowValue == null ? 50 : Math.min(100, Math.max(0, 50 + cashflowValue / 10));
-const yieldLabel = metrics.net_yield_pct == null ? null : Number(metrics.net_yield_pct) >= 6 ? "Rendement solide" : Number(metrics.net_yield_pct) >= 3 ? "Rendement modéré" : "Rendement à surveiller";
-const yieldTone = metrics.net_yield_pct == null ? "neutral" : Number(metrics.net_yield_pct) >= 6 ? "good" : Number(metrics.net_yield_pct) >= 3 ? "warn" : "bad";
-const cashflowLabel = cashflowValue == null ? null : cashflowValue >= 0 ? "Cash-flow positif" : "Cash-flow négatif";
-const cashflowTone = cashflowValue == null ? "neutral" : cashflowValue >= 0 ? "good" : "bad";
-const confidenceTone = confidenceLabel === "Élevée" ? "good" : confidenceLabel === "Moyenne" ? "warn" : confidenceLabel === "Faible" ? "bad" : "neutral";
 const missingCount = missing.length;
+// Un seul rendement affiché, avec sa base : sur coût total (frais + travaux inclus) quand on l'a, sinon sur prix.
+const yieldOnTotalCost = acquisition.net_yield_on_total_cost_pct != null;
 const rows = ["base", "conservative", "optimistic"].filter((k) => scenarios[k]);
 const label = verdict === "interesting" ? "Intéressant" : verdict === "unattractive" ? "Peu intéressant" : "À vérifier & négocier";
 const marketReady = market.status === "ready";
@@ -632,20 +582,19 @@ setDownloadingDossier(false);
 return <section className="result-panel decision-dashboard"><div className="result-head"><div><span className="eyebrow">Analyse terminée</span><h2>Voici ce que Bricky en pense.</h2></div><div className="result-head-actions">{propertyId && <button type="button" className="secondary-button" onClick={downloadDossier} disabled={downloadingDossier}>{downloadingDossier ? "Génération…" : "Télécharger le dossier complet (PDF) →"}</button>}<span className="status-dot">● Décision</span></div></div>
 {dossierError ? <p className="share-error" style={{ marginTop: 4 }}>{dossierError}</p> : null}
 <div className="decision-hero"><div><span className="decision-label">Verdict</span><strong>{label}</strong></div><div className="score-block"><span>Score</span><b>{score ?? "—"}<small>/100</small></b></div><div className="score-block"><span>Confiance</span><b>{confidence ?? "—"}<small>%</small></b>{confidenceLabel ? <em className="confidence-tag">{confidenceLabel}</em> : null}</div></div>{missingCount > 0 ? <p className="confidence-note">Score basé sur {missingCount} donnée{missingCount > 1 ? "s" : ""} manquante{missingCount > 1 ? "s" : ""} — plus vous complétez le bien, plus l'estimation est fiable.</p> : null}
-<div className="insights-band"><div className="ring-cards"><RingCard title="Score Bricky" pct={scorePct} colorFrom="#6366f1" colorTo="#3b82f6" gradientId="ringScore" value={`${score ?? "—"}/100`} caption="Fiabilité du score" chipText={confidenceLabel ? `Confiance ${confidenceLabel}` : null} chipTone={confidenceTone} delayMs={0} /><RingCard title="Rendement net" pct={yieldPct} colorFrom="#16a34a" colorTo="#4ade80" gradientId="ringYield" value={`${metrics.net_yield_pct ?? "—"}%`} caption="Rendement net annuel" chipText={yieldLabel} chipTone={yieldTone} delayMs={120} /><RingCard title="Cash-flow mensuel" pct={cashflowPct} colorFrom={cashflowTone === "bad" ? "#f97316" : "#0ea5e9"} colorTo={cashflowTone === "bad" ? "#fb923c" : "#38bdf8"} gradientId="ringCashflow" value={`${financing.monthly_cashflow ?? "—"} €`} caption="Après charges & prêt" chipText={cashflowLabel} chipTone={cashflowTone} delayMs={240} /></div><div className="funnel-card"><h4>Du loyer au cash-flow</h4><FunnelChart steps={[{ label: "Loyer mensuel", value: `${metrics.monthly_rent ?? "—"} €`, pct: 100, tone: "accent" }, { label: "Revenu annuel net", value: `${metrics.annual_net_income ?? "—"} €`, pct: Math.min(100, Math.round(((metrics.annual_net_income ?? 0) / (((metrics.monthly_rent ?? 1) * 12) || 1)) * 100)), tone: "accent" }, { label: "Mensualité de prêt", value: `${financing.monthly_loan_payment ?? "—"} €`, pct: Math.min(100, Math.round(((financing.monthly_loan_payment ?? 0) / ((metrics.monthly_rent ?? 1) || 1)) * 100)), tone: "accent" }, { label: "Cash-flow mensuel", value: `${financing.monthly_cashflow ?? "—"} €`, pct: Math.min(100, Math.max(4, Math.round(Math.abs((financing.monthly_cashflow ?? 0) / ((metrics.monthly_rent ?? 1) || 1)) * 100))), tone: cashflowTone === "bad" ? "bad" : "good" }]} /></div>{rows.length > 0 && <div className="scenario-chart-card"><h4>Rendement net par scénario</h4><BarChart items={rows.map((key) => { const maxVal = Math.max(...rows.map((k) => scenarios[k].net_yield ?? 0), 1); const val = scenarios[key].net_yield ?? 0; const pct = Math.max(6, Math.round((val / maxVal) * 100)); return { key, label: key === "base" ? "Base" : key === "conservative" ? "Conservateur" : "Optimiste", display: `${val} %`, pct }; })} /></div>}</div>
 <div className="share-row"><button type="button" className="share-button" onClick={handleShare} disabled={shareStatus.loading}>{shareStatus.loading ? "Generation du lien..." : shareStatus.url ? "Lien actif" : "Partager cette analyse"}</button>{shareStatus.url ? <div className="share-link"><input type="text" readOnly value={shareStatus.url} onFocus={(e) => e.target.select()} /><button type="button" onClick={() => navigator.clipboard.writeText(shareStatus.url || "")}>Copier</button></div> : null}{shareStatus.error ? <p className="share-error">{shareStatus.error}</p> : null}</div>
-<div className="metric-grid"><Metric label="Loyer mensuel" value={metrics.monthly_rent} suffix=" €" /><Metric label="Revenu annuel net" value={metrics.annual_net_income} suffix=" €" /><Metric label="Rendement brut" value={metrics.gross_yield_pct} suffix=" %" /><Metric label="Rendement net" value={metrics.net_yield_pct} suffix=" %" /></div>
+<div className="metric-grid"><Metric label="Loyer mensuel" value={metrics.monthly_rent} suffix=" €" /><Metric label="Revenu annuel net" value={metrics.annual_net_income} suffix=" €" /><Metric label={yieldOnTotalCost ? "Rendement brut (sur coût total)" : "Rendement brut (sur prix)"} value={yieldOnTotalCost ? acquisition.gross_yield_on_total_cost_pct : metrics.gross_yield_pct} suffix=" %" /><Metric label={yieldOnTotalCost ? "Rendement net (sur coût total)" : "Rendement net (sur prix)"} value={yieldOnTotalCost ? acquisition.net_yield_on_total_cost_pct : metrics.net_yield_pct} suffix=" %" /></div>
 {propertyId && <CadastralPanel propertyId={propertyId} address={address} />}
 {propertyId && <UrbanismePanel propertyId={propertyId} address={address} />}
 {propertyId && <EnvironmentalRiskPanel propertyId={propertyId} address={address} onAnalysisRefreshed={() => onResultRefresh?.(propertyId)} />}
 {propertyId && <LocationPanel propertyId={propertyId} address={address} />}
-<div className="dashboard-section"><h3>Achat &amp; financement (estimation)</h3><div className="metric-grid"><Metric label="Frais de notaire" value={acquisition.notary_fees} suffix=" €" /><Metric label="Frais de garantie" value={acquisition.guarantee_fees} suffix=" €" /><Metric label="Travaux" value={acquisition.renovation_budget} suffix=" €" /><Metric label="Coût total d'acquisition" value={acquisition.total_acquisition_cost} suffix=" €" /></div><div className="metric-grid" style={{marginTop:12}}><Metric label="Mensualité de prêt" value={financing.monthly_loan_payment} suffix=" €/mois" /><Metric label="Cash-flow mensuel" value={financing.monthly_cashflow} suffix=" €" /><Metric label="Rentabilité brute (coût total)" value={acquisition.gross_yield_on_total_cost_pct} suffix=" %" /><Metric label="Rentabilité nette (coût total)" value={acquisition.net_yield_on_total_cost_pct} suffix=" %" /></div>{financing.is_estimated ? <p className="extract-note">Estimation Bricky (apport ~10%, taux ~3,9% sur 20 ans, garantie ~1,2%) tant que ces données ne sont pas renseignées — à affiner avec votre courtier.</p> : null}</div>
+<div className="dashboard-section"><h3>Achat &amp; financement (estimation)</h3><div className="metric-grid"><Metric label="Frais de notaire" value={acquisition.notary_fees} suffix=" €" /><Metric label="Frais de garantie" value={acquisition.guarantee_fees} suffix=" €" /><Metric label="Travaux" value={acquisition.renovation_budget} suffix=" €" /><Metric label="Coût total d'acquisition" value={acquisition.total_acquisition_cost} suffix=" €" /></div><div className="metric-grid" style={{marginTop:12}}><Metric label="Mensualité de prêt" value={financing.monthly_loan_payment} suffix=" €/mois" /><Metric label="Cash-flow mensuel" value={financing.monthly_cashflow} suffix=" €" /></div>{financing.is_estimated ? <p className="extract-note">Estimation Bricky (apport ~10%, taux ~3,9% sur 20 ans, garantie ~1,2%) tant que ces données ne sont pas renseignées — à affiner avec votre courtier.</p> : null}</div>
 <div className="dashboard-section"><h3>Simulateur de financement</h3><div className="sim-grid"><label>Apport ({simDownPct}%)<input type="range" min={0} max={50} step={1} value={simDownPct} onChange={(e) => setSimDownPct(Number(e.target.value))} /></label><label>Taux ({simRate.toFixed(2)}%)<input type="range" min={0.5} max={7} step={0.1} value={simRate} onChange={(e) => setSimRate(Number(e.target.value))} /></label><label>Duree ({simDuration} ans)<input type="range" min={5} max={30} step={1} value={simDuration} onChange={(e) => setSimDuration(Number(e.target.value))} /></label></div><div className="metric-grid"><Metric label="Apport" value={Math.round(simDownPayment)} suffix=" €" /><Metric label="Montant emprunte" value={Math.round(simLoanAmount)} suffix=" €" /><Metric label="Mensualite" value={Math.round(simMonthlyPayment)} suffix=" €" /><Metric label="Cashflow mensuel" value={Math.round(simCashflow)} suffix=" €" /></div><p className="extract-note">Simulation en direct — ajustez les curseurs pour voir l'impact sur la mensualite et le cashflow.</p>
-{metrics.annual_net_income != null && Number(metrics.annual_net_income) > 0 && <><h3 style={{marginTop:24}}>À quel prix ce bien devient une bonne affaire ?</h3><div className="negotiation-grid"><div className="negotiation-card"><span>Négocier sous</span><b>{Math.round(Number(metrics.annual_net_income) / 0.04).toLocaleString("fr-FR")} €</b></div><div className="negotiation-card"><span>Opportunité correcte sous</span><b>{Math.round(Number(metrics.annual_net_income) / 0.06).toLocaleString("fr-FR")} €</b></div><div className="negotiation-card"><span>Opportunité forte sous</span><b>{Math.round(Number(metrics.annual_net_income) / 0.08).toLocaleString("fr-FR")} €</b></div></div><p className="extract-note">Seuils calculés à partir du revenu net annuel actuel ({Math.round(Number(metrics.annual_net_income)).toLocaleString("fr-FR")} €) pour viser respectivement 4%, 6% et 8% de rendement net — à titre indicatif, indépendamment du financement.</p></>}
+
 </div>
 
 <div className="dashboard-section market-card"><div className="section-heading"><div><h3>Valeur marché</h3><small>Transactions comparables · données disponibles</small></div><span className="market-badge">{marketReady ? `${market.confidence_score ?? 0}% confiance` : "Données insuffisantes"}</span></div>{marketReady ? <div className="market-grid"><Metric label="Prix du bien" value={market.property_price_m2} suffix=" €/m²" /><Metric label="Marché médian" value={market.market_price_m2_median} suffix=" €/m²" /><Metric label="Valeur estimée" value={market.market_value_estimate} suffix=" €" /><Metric label="Écart au marché" value={market.market_gap_pct} suffix=" %" /></div> : <p className="empty-note">Bricky ne dispose pas encore de suffisamment de transactions comparables pour produire une estimation fiable. Aucune valeur n'est inventée.</p>}</div><div className="dashboard-section price-history-card"><div className="section-heading"><div><h3>Évolution des prix (DVF)</h3><small>Prix médian au m² par année de transaction · biens comparables dans la commune</small></div>{historyReady && priceHistory.trend_pct_total != null ? <span className="market-badge">{priceHistory.trend_pct_total >= 0 ? "+" : ""}{priceHistory.trend_pct_total}% sur {historyYears.length} ans</span> : null}</div>{historyReady ? <><BarChart items={historyYears.map((y: any) => { const val = Number(y.median_price_m2) || 0; const pct = Math.max(8, Math.round(((val - historyMin) / historyRange) * 100)); return { key: String(y.year), label: String(y.year), display: `${Math.round(val).toLocaleString("fr-FR")} €`, pct }; })} />{priceHistory.trend_pct_annualized != null && <p className="extract-note">Soit environ {priceHistory.trend_pct_annualized >= 0 ? "+" : ""}{priceHistory.trend_pct_annualized}%/an en moyenne entre {priceHistory.first_year} et {priceHistory.last_year}, sur les transactions DVF comparables (même commune, surface proche).</p>}</> : <p className="empty-note">Pas encore assez de transactions DVF réparties sur plusieurs années pour tracer une tendance ici. Cela s'enrichit automatiquement à mesure que la base de comparables grandit.</p>}</div>
-{rows.length > 0 && <div className="dashboard-section"><h3>Scénarios</h3><div className="scenario-grid">{rows.map((key) => <div className="scenario" key={key}><span>{key === "base" ? "Base" : key === "conservative" ? "Conservateur" : "Optimiste"}</span><b>{scenarios[key].net_yield ?? "—"} %</b><small>rendement net</small></div>)}</div></div>}
+{rows.length > 0 && <div className="dashboard-section"><h3>Scénarios</h3><div className="scenario-grid">{rows.map((key) => <div className="scenario" key={key}><span>{key === "base" ? "Base" : key === "conservative" ? "Conservateur" : "Optimiste"}</span><b>{scenarios[key].net_yield ?? "—"} %</b><small>rendement net (sur prix)</small></div>)}</div></div>}
 {verdict && <div className="dashboard-section"><h3>Pourquoi ce verdict ?</h3><p className="empty-note" style={{fontSize:14, lineHeight:1.6}}>
 Bricky a classé ce bien comme <b>« {label} »</b>{score != null ? <> avec un score de <b>{score}/100</b></> : null}{confidenceLabel ? <> (confiance {confidenceLabel.toLowerCase()})</> : null}.{" "}
 {risk.risk_level ? <>Le niveau de risque détecté est <b>{risk.risk_level}</b>{risk.high_signal_count != null && Number(risk.high_signal_count) > 0 ? <> avec {risk.high_signal_count} signal{Number(risk.high_signal_count) > 1 ? "aux" : ""} fort{Number(risk.high_signal_count) > 1 ? "s" : ""}</> : null}. </> : null}
@@ -794,18 +743,18 @@ setResult(body.cadastral);
 finally { setLoading(false); }
 }
 
-const manualVisible = showManual || autoStatus === "failed" || (!address && autoStatus === "idle");
+const manualVisible = showManual || (!address && autoStatus === "idle");
 
 return <div className="dashboard-section cadastral-card">
 <div className="section-heading"><div><span className="eyebrow">Donnée foncière</span><h3>Plan cadastral</h3><small>Référence parcellaire + extrait officiel DGFiP</small></div>{result && <span className="market-badge">✓ Référence enregistrée</span>}</div>
 <p className="empty-note">Bricky rattache la parcelle au bien et prépare son plan cadastral. On garde la référence exacte et la source pour la traçabilité.</p>
 {autoStatus === "loading" && <div className="extract-note">Détection automatique de la parcelle à partir de l'adresse…</div>}
-{autoStatus === "failed" && <div className="error-box">{autoNote} Renseigne la référence manuellement ci-dessous.</div>}
+{autoStatus === "failed" && !manualVisible && <p className="extract-note cadastral-muted">Parcelle non détectée automatiquement pour cette adresse. Tu peux la saisir si tu la connais (elle figure sur l'acte ou l'avis de taxe foncière).</p>}
 {!manualVisible && !result && autoStatus !== "loading" && (
 <button type="button" className="secondary-button" onClick={() => setShowManual(true)}>Saisir la parcelle manuellement</button>
 )}
 {manualVisible && !result && (
-<div className="cadastral-form"><label>Commune INSEE<input value={communeCode} onChange={(e) => setCommuneCode(e.target.value.toUpperCase())} placeholder="97209" maxLength={5} /></label><label>Préfixe<input value={prefix} onChange={(e) => setPrefix(e.target.value)} placeholder="000" maxLength={3} /></label><label>Section<input value={section} onChange={(e) => setSection(e.target.value.toUpperCase())} placeholder="AB" maxLength={2} /></label><label>Parcelle<input value={parcel} onChange={(e) => setParcel(e.target.value)} placeholder="123" maxLength={4} /></label><button type="button" className="secondary-button" onClick={generatePlan} disabled={loading || !communeCode || !section || !parcel}>{loading ? "Génération…" : "Générer le plan →"}</button></div>
+<div className="cadastral-form"><label>Commune INSEE<input value={communeCode} onChange={(e) => setCommuneCode(e.target.value.toUpperCase())} placeholder="5 chiffres" maxLength={5} /></label><label>Préfixe<input value={prefix} onChange={(e) => setPrefix(e.target.value)} placeholder="000" maxLength={3} /></label><label>Section<input value={section} onChange={(e) => setSection(e.target.value.toUpperCase())} placeholder="2 lettres" maxLength={2} /></label><label>Parcelle<input value={parcel} onChange={(e) => setParcel(e.target.value)} placeholder="N°" maxLength={4} /></label><button type="button" className="secondary-button" onClick={generatePlan} disabled={loading || !communeCode || !section || !parcel}>{loading ? "Génération…" : "Générer le plan →"}</button></div>
 )}
 {error && <div className="error-box">{error}</div>}
 {result && <div className="cadastral-result"><div><b>Parcelle {result.section} {result.parcel_number}</b><span>{result.parcel_id} · commune {result.commune_code}</span>{typeof result.parcel_area_m2 === "number" && <span>Surface parcelle : {result.parcel_area_m2.toLocaleString("fr-FR")} m²</span>}</div><a className="primary-button" href={result.plan_url} target="_blank" rel="noreferrer">Ouvrir l’extrait cadastral</a><small>Source : {result.source}{autoStatus === "success" ? " · détectée automatiquement" : ""}</small></div>}
