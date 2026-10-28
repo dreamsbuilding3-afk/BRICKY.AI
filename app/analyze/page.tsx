@@ -4,6 +4,8 @@ import { FormEvent, Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabase/client";
 import { AppNav } from "../../components/AppNav";
+import { ModeChooser } from "./ModeChooser";
+import { RentalAnalyzer } from "./RentalAnalyzer";
 import { PROPERTY_TYPE_LABELS } from "../../lib/data/propertyTypeClassifier";
 import { clearPendingImport, takePendingImportFromLocation, type PendingImport } from "../../lib/brickyImport";
 
@@ -114,7 +116,17 @@ function ExtraFieldsSection({ fields, extra, onChange, autoFields }: { fields: E
 }
 
 export default function AnalyzePage() {
-return <Suspense fallback={null}><AnalyzePageInner /></Suspense>;
+return <Suspense fallback={null}><AnalyzeEntry /></Suspense>;
+}
+
+// « Nouvelle analyse » : écran de choix (achat / location), puis le bon formulaire.
+// Un bien déjà enregistré (?property_id=…) s'ouvre directement en mode achat.
+function AnalyzeEntry() {
+const searchParams = useSearchParams();
+const mode = searchParams.get("mode");
+if (searchParams.get("property_id") || mode === "achat") return <AnalyzePageInner />;
+if (mode === "location") return <RentalAnalyzer />;
+return <ModeChooser />;
 }
 
 function AnalyzePageInner() {
@@ -397,7 +409,7 @@ const update = (key: keyof Payload, value: string) => { setPayload((current) => 
 return <main className="page">
 <AppNav email={userEmail} active="analyze" />
 <section className="analysis-shell">
-<div className="analysis-intro"><span className="eyebrow">Bricky · V1</span><h1>{propertyIdParam ? "Voici l’analyse de ce bien." : "Est-ce que ce bien mérite votre attention ?"}</h1><p className="sub">{propertyIdParam ? "Analyse enregistrée, telle que calculée par Bricky." : "Collez une annonce ou saisissez les données que vous connaissez. Bricky calcule, vérifie et signale ce qui manque — sans inventer."}</p></div>
+<div className="analysis-intro">{!propertyIdParam && <a className="mode-switch" href="/analyze">← Achat ou location ?</a>}<span className="eyebrow">Bricky · Achat</span><h1>{propertyIdParam ? "Voici l’analyse de ce bien." : "Est-ce que ce bien mérite votre attention ?"}</h1><p className="sub">{propertyIdParam ? "Analyse enregistrée, telle que calculée par Bricky." : "Collez une annonce ou saisissez les données que vous connaissez. Bricky calcule, vérifie et signale ce qui manque — sans inventer."}</p></div>
 {loadingExisting && <div className="extract-note">Chargement du bien…</div>}
 {loadError && <div className="error-box">{loadError}</div>}
 {draftRestored && !propertyIdParam && <div className="draft-banner"><span>Brouillon restaure automatiquement, votre saisie precedente a ete recuperee.</span><button type="button" className="secondary-button" onClick={clearDraft}>Effacer</button></div>}
