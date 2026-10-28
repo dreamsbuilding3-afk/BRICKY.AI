@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase/client";
 import { AppNav } from "../../components/AppNav";
+import { SpaceTabs } from "../../components/SpaceTabs";
 
 type ApiKeyRow = {
   id: string;
@@ -154,6 +155,7 @@ export default function ExportPage() {
     <main className="page">
       <AppNav email={userEmail} active="export" />
       <section className="analysis-shell">
+        <SpaceTabs active="export" />
         <div className="analysis-intro">
           <span className="eyebrow">Bricky · Export</span>
           <h1>Export API &amp; CSV</h1>

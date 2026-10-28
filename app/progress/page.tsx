@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase/client";
 import { AppNav } from "../../components/AppNav";
+import { SpaceTabs } from "../../components/SpaceTabs";
 
 type DashboardData = {
   period_key: string;
@@ -90,6 +91,7 @@ export default function ProgressPage() {
     <main className="page">
       <AppNav email={userEmail} active="progress" />
       <section className="analysis-shell">
+        <SpaceTabs active="progress" />
         <div className="analysis-intro">
           <span className="eyebrow">Bricky · Investor Progress</span>
           <h1>Votre progression <span className="accent">investisseur</span></h1>
