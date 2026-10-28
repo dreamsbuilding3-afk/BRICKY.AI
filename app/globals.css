@@ -2490,3 +2490,17 @@ label.auto-filled input, label.auto-filled select { border-color: rgba(22,163,74
 [data-theme="dark"] .mode-icon { background: #f3f3f3; color: #111; }
 [data-theme="dark"] .mode-desc, [data-theme="dark"] .mode-switch, [data-theme="dark"] .rental-location, [data-theme="dark"] .rental-check span, [data-theme="dark"] .rental-metrics small { color: #aaa; }
 [data-theme="dark"] .rental-check { border-color: #2c2c2c; }
+
+/* ---- Date de naissance obligatoire ---- */
+.auth-hint { display: block; margin-top: 6px; color: #777; font-size: 12px; font-weight: 500; }
+.age-gate { position: fixed; inset: 0; z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(10,10,10,.55); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
+.age-gate-card { width: 100%; max-width: 420px; padding: 28px; border-radius: 24px; background: #fff; text-align: center; box-shadow: 0 30px 60px -20px rgba(0,0,0,.45); }
+.age-gate-card h2 { margin: 10px 0 6px; font-size: 24px; letter-spacing: -.03em; }
+.age-gate-card p { margin: 0 0 18px; color: #555; line-height: 1.5; }
+.age-gate-card label { display: flex; flex-direction: column; gap: 8px; text-align: left; color: #555; font-size: 13px; font-weight: 700; }
+.age-gate-card input { border: 1px solid #ddd; border-radius: 12px; padding: 12px 14px; font: inherit; color: #111; background: #fafaf8; }
+.age-gate-mascot { width: 56px; height: 56px; border-radius: 50%; }
+.age-gate-logout { margin-top: 12px; border: 0; background: none; color: #777; font-size: 13px; text-decoration: underline; cursor: pointer; }
+[data-theme="dark"] .age-gate-card { background: #161616; color: #f3f3f3; }
+[data-theme="dark"] .age-gate-card p, [data-theme="dark"] .age-gate-card label, [data-theme="dark"] .auth-hint { color: #aaa; }
+[data-theme="dark"] .age-gate-card input { background: #1f1f1f; border-color: #333; color: #f3f3f3; }
