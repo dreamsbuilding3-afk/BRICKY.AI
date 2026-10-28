@@ -84,3 +84,47 @@ export function clearPendingImport() {
     window.sessionStorage.removeItem(IMPORT_STORAGE_KEY);
   } catch {}
 }
+
+/**
+ * Met de côté l'annonce reçue dans l'URL (sans la consommer) et nettoie la
+ * barre d'adresse. Utilisé par l'écran de choix achat / location.
+ */
+export function peekPendingImport(): PendingImport | null {
+  if (typeof window === "undefined") return null;
+  const imported = takePendingImportFromLocation();
+  // takePendingImportFromLocation laisse l'annonce en sessionStorage : elle sera
+  // consommée par l'écran d'analyse choisi.
+  return imported;
+}
+
+/**
+ * Devine si l'annonce est une vente ou une location, à partir de l'adresse de
+ * la page et de son texte. Renvoie null en cas de doute (l'utilisateur choisit).
+ */
+export function guessTransactionType(url: string, text: string): "achat" | "location" | null {
+  const u = url.toLowerCase();
+  if (/[/_-](locations?|louer|a-louer|rent|rental)([/_.?-]|$)/.test(u)) return "location";
+  if (/[/_-](vente|ventes|ventes_immobilieres|achat|acheter|buy)([/_.?-]|$)/.test(u)) return "achat";
+
+  const t = text.slice(0, 6000).toLowerCase();
+  const rentSignals = [
+    /€\s*(cc|c\.c\.|charges comprises)/,
+    /€\s*\/\s*mois/,
+    /par mois/,
+    /d[ée]p[ôo]t de garantie/,
+    /honoraires[^.\n]{0,40}locataire/,
+    /provision (pour|sur) charges/,
+    /[àa] louer/,
+  ].filter((re) => re.test(t)).length;
+  const saleSignals = [
+    /prix de vente/,
+    /honoraires[^.\n]{0,40}(acqu[ée]reur|vendeur)/,
+    /frais de notaire/,
+    /[àa] vendre/,
+    /\btaxe fonci[èe]re\b/,
+    /€\s*\/\s*m²/,
+  ].filter((re) => re.test(t)).length;
+  if (rentSignals >= 2 && saleSignals === 0) return "location";
+  if (saleSignals >= 2 && rentSignals <= 1) return "achat";
+  return null;
+}
