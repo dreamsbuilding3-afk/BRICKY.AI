@@ -88,26 +88,27 @@ const RENTAL_WORKS_FIELDS: ExtraFieldDef[] = [
   { key: "major_works_planned", label: "Gros travaux prévus (copropriété)", kind: "text", placeholder: "Ex. réfection toiture votée" },
 ];
 
-function ExtraField({ def, value, onChange }: { def: ExtraFieldDef; value: string; onChange: (v: string) => void }) {
+function ExtraField({ def, value, onChange, auto = false }: { def: ExtraFieldDef; value: string; onChange: (v: string) => void; auto?: boolean }) {
+  const cls = auto ? "auto-filled" : undefined;
   if (def.kind === "bool") {
-    return <label>{def.label}<select value={value} onChange={(e) => onChange(e.target.value)}>
+    return <label className={cls}>{def.label}<select value={value} onChange={(e) => onChange(e.target.value)}>
       <option value="">Non précisé</option>
       <option value="true">Oui</option>
       <option value="false">Non</option>
     </select></label>;
   }
   if (def.kind === "select") {
-    return <label>{def.label}<select value={value} onChange={(e) => onChange(e.target.value)}>
+    return <label className={cls}>{def.label}<select value={value} onChange={(e) => onChange(e.target.value)}>
       <option value="">Non précisé</option>
       {(def.options || []).map((opt) => <option key={opt} value={opt}>{opt}</option>)}
     </select></label>;
   }
-  return <label>{def.label}<input type={def.kind === "number" ? "number" : "text"} min={def.kind === "number" ? "0" : undefined} value={value} onChange={(e) => onChange(e.target.value)} placeholder={def.placeholder} /></label>;
+  return <label className={cls}>{def.label}<input type={def.kind === "number" ? "number" : "text"} min={def.kind === "number" ? "0" : undefined} value={value} onChange={(e) => onChange(e.target.value)} placeholder={def.placeholder} /></label>;
 }
 
-function ExtraFieldsSection({ fields, extra, onChange }: { fields: ExtraFieldDef[]; extra: Record<string, string>; onChange: (key: string, value: string) => void }) {
+function ExtraFieldsSection({ fields, extra, onChange, autoFields }: { fields: ExtraFieldDef[]; extra: Record<string, string>; onChange: (key: string, value: string) => void; autoFields?: Set<string> }) {
   return <div className="form-grid charges-grid">
-    {fields.map((def) => <ExtraField key={def.key} def={def} value={extra[def.key] ?? ""} onChange={(v) => onChange(def.key, v)} />)}
+    {fields.map((def) => <ExtraField key={def.key} def={def} value={extra[def.key] ?? ""} onChange={(v) => onChange(def.key, v)} auto={autoFields?.has(def.key) ?? false} />)}
   </div>;
 }
 
@@ -123,7 +124,13 @@ const [payload, setPayload] = useState<Payload>({ title: "", city: "", address: 
 const [showCharges, setShowCharges] = useState(false);
 const [extra, setExtra] = useState<Record<string, string>>({});
 const [openExtraSection, setOpenExtraSection] = useState<string | null>(null);
-const updateExtra = (key: string, value: string) => setExtra((cur) => ({ ...cur, [key]: value }));
+const [autoFields, setAutoFields] = useState<Set<string>>(new Set());
+const [pastedText, setPastedText] = useState("");
+const [extractingText, setExtractingText] = useState(false);
+const clearAuto = (key: string) => setAutoFields((cur) => { if (!cur.has(key)) return cur; const next = new Set(cur); next.delete(key); return next; });
+const updateExtra = (key: string, value: string) => { setExtra((cur) => ({ ...cur, [key]: value })); clearAuto(key); };
+// Classe CSS d'un champ pré-rempli par l'IA (badge "Auto").
+const af = (key: string, base = "") => [base, autoFields.has(key) ? "auto-filled" : ""].filter(Boolean).join(" ") || undefined;
 const [loading, setLoading] = useState(false);
 const [extracting, setExtracting] = useState(false);
 const [extractingFile, setExtractingFile] = useState(false);
@@ -246,6 +253,70 @@ verdict: analysisRow.verdict,
 }
 }
 
+// Applique le résultat d'une extraction (lien, texte collé, capture ou PDF) au
+// formulaire. Seules les valeurs trouvées remplacent la saisie existante.
+function applyExtraction(data: any, sourceLabel: string) {
+const e = data.extracted || {};
+const filled = new Set<string>();
+const pick = (key: keyof Payload, value: unknown, current: string) => {
+  if (value === null || value === undefined || value === "") return current;
+  filled.add(key);
+  return String(value);
+};
+setPayload((current) => ({
+  ...current,
+  title: pick("title", e.title, current.title),
+  city: pick("city", e.city, current.city),
+  address: pick("address", e.address ?? (e.postal_code ? `${e.postal_code} ${e.city ?? ""}`.trim() : null), current.address),
+  price: pick("price", e.price, current.price),
+  surface_m2: pick("surface_m2", e.surface_m2, current.surface_m2),
+  rooms: pick("rooms", e.rooms, current.rooms),
+  bedrooms: pick("bedrooms", e.bedrooms, current.bedrooms),
+  property_type: pick("property_type", e.property_type, current.property_type),
+  dpe_class: pick("dpe_class", e.dpe_class, current.dpe_class),
+  ges_class: pick("ges_class", e.ges_class, current.ges_class),
+  monthly_rent: pick("monthly_rent", e.monthly_rent, current.monthly_rent),
+  renovation_budget: pick("renovation_budget", e.renovation_budget, current.renovation_budget),
+  annual_property_tax: pick("annual_property_tax", e.annual_property_tax, current.annual_property_tax),
+  // Charges de copro annoncées (totales) : prudent, la part récupérable sur le locataire n'est pas déduite.
+  other_annual_charges: pick("other_annual_charges", e.annual_condo_charges, current.other_annual_charges),
+}));
+const extraFound: Record<string, string> = data.extra || {};
+if (Object.keys(extraFound).length) {
+  setExtra((cur) => ({ ...cur, ...extraFound }));
+  Object.keys(extraFound).forEach((k) => filled.add(k));
+}
+if (e.annual_property_tax != null || e.annual_condo_charges != null) setShowCharges(true);
+setAutoFields(filled);
+const missing: string[] = [];
+if (e.price == null) missing.push("prix");
+if (e.surface_m2 == null) missing.push("surface");
+if (e.city == null) missing.push("ville");
+const parts = [`${filled.size} données remplies automatiquement depuis ${sourceLabel}.`];
+if (e.property_type_label) parts.push(`Type détecté : ${e.property_type_label}.`);
+if (missing.length) parts.push(`À compléter : ${missing.join(", ")}.`);
+if (e.monthly_rent == null) parts.push("Loyer absent de l'annonce : Bricky l'estimera avec la carte des loyers.");
+if (e.annual_condo_charges != null) parts.push("Charges de copro reprises en totalité (estimation prudente).");
+if (e.condo_procedure === true) parts.push("⚠ Procédure en cours dans la copropriété.");
+parts.push("Les champs marqués Auto viennent de l'annonce : vérifie-les d'un coup d'œil.");
+setExtractNote(parts.join(" "));
+}
+
+async function extractFromText() {
+if (pastedText.trim().length < 30) { setError("Colle le texte complet de l'annonce (au moins quelques lignes)."); return; }
+setExtractingText(true); setError(""); setExtractNote("");
+try {
+const { data: sessionData } = await supabase.auth.getSession();
+const token = sessionData.session?.access_token;
+if (!token) throw new Error("Session expirée, reconnecte-toi.");
+const response = await fetch("/api/properties/preview", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ text: pastedText, url: payload.source_url.trim() || undefined }) });
+const data = await response.json();
+if (!response.ok) throw new Error(data?.error || "Impossible de lire ce texte.");
+applyExtraction(data, "le texte collé");
+} catch (err) { setError(err instanceof Error ? err.message : "Extraction impossible."); }
+finally { setExtractingText(false); }
+}
+
 async function extractListing() {
 if (!payload.source_url.trim()) return;
 setExtracting(true); setError(""); setExtractNote("");
@@ -256,29 +327,23 @@ if (!previewToken) throw new Error("Session expiree, reconnecte-toi.");
 const response = await fetch("/api/properties/preview", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${previewToken}` }, body: JSON.stringify({ url: payload.source_url.trim() }) });
 const data = await response.json();
 if (!response.ok) throw new Error(data?.error || "Impossible de lire cette annonce.");
-const e = data.extracted || {};
-setPayload((current) => ({ ...current, title: e.title || current.title, city: e.city || current.city, address: e.address || current.address, price: e.price != null ? String(e.price) : current.price, surface_m2: e.surface_m2 != null ? String(e.surface_m2) : current.surface_m2, rooms: e.rooms != null ? String(e.rooms) : current.rooms, bedrooms: e.bedrooms != null ? String(e.bedrooms) : current.bedrooms, property_type: e.property_type || current.property_type, dpe_class: e.dpe_class || current.dpe_class, ges_class: e.ges_class || current.ges_class, monthly_rent: e.monthly_rent != null ? String(e.monthly_rent) : current.monthly_rent }));
-const typeNote = e.property_type_label ? ` Type détecté : ${e.property_type_label}.` : "";
-setExtractNote(`${data.extraction?.fields_found ?? 0} données détectées.${typeNote} Vérifie-les avant de lancer l'analyse.`);
+applyExtraction(data, "l'annonce");
 } catch (err) { setError(err instanceof Error ? err.message : "Extraction impossible."); }
 finally { setExtracting(false); }
 }
 
-async function extractFromFile(file: File) {
+async function extractFromFile(files: File[]) {
 setExtractingFile(true); setError(""); setExtractNote("");
 try {
 const { data: sessionData } = await supabase.auth.getSession();
 const token = sessionData.session?.access_token;
 if (!token) { setError("Session expirée."); return; }
 const formData = new FormData();
-formData.append("file", file);
+files.forEach((f) => formData.append("file", f));
 const response = await fetch("/api/properties/extract-file", { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: formData });
 const data = await response.json();
 if (!response.ok) throw new Error(data?.error || "Impossible de lire ce fichier.");
-const e = data.extracted || {};
-setPayload((current) => ({ ...current, title: e.title || current.title, city: e.city || current.city, price: e.price != null ? String(e.price) : current.price, surface_m2: e.surface_m2 != null ? String(e.surface_m2) : current.surface_m2, rooms: e.rooms != null ? String(e.rooms) : current.rooms, bedrooms: e.bedrooms != null ? String(e.bedrooms) : current.bedrooms, property_type: e.property_type || current.property_type, dpe_class: e.dpe_class || current.dpe_class, ges_class: e.ges_class || current.ges_class, monthly_rent: e.monthly_rent != null ? String(e.monthly_rent) : current.monthly_rent }));
-const typeNote = e.property_type_label ? ` Type détecté : ${e.property_type_label}.` : "";
-setExtractNote(`${data.extraction?.fields_found ?? 0} données détectées dans le fichier.${typeNote} Vérifie-les avant de lancer l'analyse.`);
+applyExtraction(data, "le fichier");
 } catch (err) { setError(err instanceof Error ? err.message : "Extraction du fichier impossible."); }
 finally { setExtractingFile(false); }
 }
@@ -299,7 +364,7 @@ const data = await response.json(); if (!response.ok) throw new Error(data?.deta
 finally { setLoading(false); }
 }
 
-const update = (key: keyof Payload, value: string) => setPayload((current) => ({ ...current, [key]: value }));
+const update = (key: keyof Payload, value: string) => { setPayload((current) => ({ ...current, [key]: value })); clearAuto(key); };
 
 return <main className="page">
 <AppNav email={userEmail} active="analyze" />
@@ -309,10 +374,12 @@ return <main className="page">
 {loadError && <div className="error-box">{loadError}</div>}
 {draftRestored && !propertyIdParam && <div className="draft-banner"><span>Brouillon restaure automatiquement, votre saisie precedente a ete recuperee.</span><button type="button" className="secondary-button" onClick={clearDraft}>Effacer</button></div>}
 {!propertyIdParam && <>
-<div className="url-import"><label>URL de l'annonce<input value={payload.source_url} onChange={(e) => update("source_url", e.target.value)} placeholder="https://..." /></label><button type="button" className="secondary-button" onClick={extractListing} disabled={extracting || !payload.source_url.trim()}>{extracting ? "Lecture…" : "Extraire les données"}</button></div><div className="url-import file-import"><label>Ou dépose un fichier (PDF de l'annonce ou du dossier)<input type="file" accept="application/pdf" onChange={(e) => { const f = e.target.files?.[0]; if (f) extractFromFile(f); e.target.value = ""; }} disabled={extractingFile} /></label>{extractingFile && <span className="extract-note">Lecture du fichier…</span>}</div>
+<div className="url-import"><label>Lien de l'annonce<input value={payload.source_url} onChange={(e) => update("source_url", e.target.value)} placeholder="Colle le lien : Bricky remplit tout" /></label><button type="button" className="primary-extract-button secondary-button" onClick={extractListing} disabled={extracting || !payload.source_url.trim()}>{extracting ? "Bricky lit l'annonce…" : "Remplir automatiquement"}</button></div>
+<div className="url-import text-import"><label>Lien illisible ? Colle le texte de l'annonce<textarea value={pastedText} onChange={(e) => setPastedText(e.target.value)} rows={4} placeholder="Sélectionne tout le texte de l'annonce (Ctrl+A / Cmd+A), copie-le et colle-le ici." /></label><button type="button" className="secondary-button" onClick={extractFromText} disabled={extractingText || pastedText.trim().length < 30}>{extractingText ? "Lecture…" : "Analyser le texte"}</button></div>
+<div className="url-import file-import"><label>Ou envoie des captures d'écran (jusqu'à 5) ou le PDF de l'annonce<input type="file" accept="application/pdf,image/jpeg,image/png,image/webp" multiple onChange={(e) => { const list = Array.from(e.target.files ?? []); if (list.length) extractFromFile(list); e.target.value = ""; }} disabled={extractingFile} /></label>{extractingFile && <span className="extract-note">Bricky lit le fichier…</span>}</div>
 {extractNote && <div className="extract-note">✓ {extractNote}</div>}
 <form className="property-form" onSubmit={handleSubmit}><div className="form-grid">
-<label>Titre<input value={payload.title} onChange={(e) => update("title", e.target.value)} /></label><label>Ville<input value={payload.city} onChange={(e) => update("city", e.target.value)} placeholder="Fort-de-France" /></label><label>Adresse<input value={payload.address} onChange={(e) => update("address", e.target.value)} placeholder="Adresse du bien" /></label><label className="type-field">Type de bien<PropertyTypeScroller value={payload.property_type} onChange={(v) => update("property_type", v)} /></label><label>Prix (€)<input required type="number" min="1" value={payload.price} onChange={(e) => update("price", e.target.value)} placeholder="250000" /></label><label>Surface (m²)<input required type="number" min="1" value={payload.surface_m2} onChange={(e) => update("surface_m2", e.target.value)} placeholder="65" /></label><label>Loyer mensuel (€)<input type="number" min="0" value={payload.monthly_rent} onChange={(e) => update("monthly_rent", e.target.value)} placeholder="1200" /></label><label>Apport (€)<input type="number" min="0" value={payload.down_payment} onChange={(e) => update("down_payment", e.target.value)} placeholder="40000" /></label><label>Taux du prêt (%)<input type="number" min="0" step="0.1" value={payload.loan_rate_pct} onChange={(e) => update("loan_rate_pct", e.target.value)} placeholder="3.9" /></label><label>Durée du prêt (années)<input type="number" min="1" value={payload.loan_duration_years} onChange={(e) => update("loan_duration_years", e.target.value)} placeholder="20" /></label><label>Budget travaux (€)<input type="number" min="0" value={payload.renovation_budget} onChange={(e) => update("renovation_budget", e.target.value)} placeholder="0" /></label><label>Pièces<input type="number" min="0" value={payload.rooms} onChange={(e) => update("rooms", e.target.value)} placeholder="3" /></label><label>Chambres<input type="number" min="0" value={payload.bedrooms} onChange={(e) => update("bedrooms", e.target.value)} placeholder="2" /></label><label>DPE<input value={payload.dpe_class} onChange={(e) => update("dpe_class", e.target.value.toUpperCase())} placeholder="D" maxLength={1} /></label><label>GES<input value={payload.ges_class} onChange={(e) => update("ges_class", e.target.value.toUpperCase())} placeholder="D" maxLength={1} /></label>
+<label className={af("title")}>Titre<input value={payload.title} onChange={(e) => update("title", e.target.value)} /></label><label className={af("city")}>Ville<input value={payload.city} onChange={(e) => update("city", e.target.value)} placeholder="Fort-de-France" /></label><label className={af("address")}>Adresse<input value={payload.address} onChange={(e) => update("address", e.target.value)} placeholder="Adresse du bien" /></label><label className={af("property_type", "type-field")}>Type de bien<PropertyTypeScroller value={payload.property_type} onChange={(v) => update("property_type", v)} /></label><label className={af("price")}>Prix (€)<input required type="number" min="1" value={payload.price} onChange={(e) => update("price", e.target.value)} placeholder="250000" /></label><label className={af("surface_m2")}>Surface (m²)<input required type="number" min="1" value={payload.surface_m2} onChange={(e) => update("surface_m2", e.target.value)} placeholder="65" /></label><label className={af("monthly_rent")}>Loyer mensuel (€)<input type="number" min="0" value={payload.monthly_rent} onChange={(e) => update("monthly_rent", e.target.value)} placeholder="1200" /></label><label className={af("down_payment")}>Apport (€)<input type="number" min="0" value={payload.down_payment} onChange={(e) => update("down_payment", e.target.value)} placeholder="40000" /></label><label className={af("loan_rate_pct")}>Taux du prêt (%)<input type="number" min="0" step="0.1" value={payload.loan_rate_pct} onChange={(e) => update("loan_rate_pct", e.target.value)} placeholder="3.9" /></label><label className={af("loan_duration_years")}>Durée du prêt (années)<input type="number" min="1" value={payload.loan_duration_years} onChange={(e) => update("loan_duration_years", e.target.value)} placeholder="20" /></label><label className={af("renovation_budget")}>Budget travaux (€)<input type="number" min="0" value={payload.renovation_budget} onChange={(e) => update("renovation_budget", e.target.value)} placeholder="0" /></label><label className={af("rooms")}>Pièces<input type="number" min="0" value={payload.rooms} onChange={(e) => update("rooms", e.target.value)} placeholder="3" /></label><label className={af("bedrooms")}>Chambres<input type="number" min="0" value={payload.bedrooms} onChange={(e) => update("bedrooms", e.target.value)} placeholder="2" /></label><label className={af("dpe_class")}>DPE<input value={payload.dpe_class} onChange={(e) => update("dpe_class", e.target.value.toUpperCase())} placeholder="D" maxLength={1} /></label><label className={af("ges_class")}>GES<input value={payload.ges_class} onChange={(e) => update("ges_class", e.target.value.toUpperCase())} placeholder="D" maxLength={1} /></label>
 </div>
 <div className="charges-toggle-row">
 <button type="button" className="secondary-button" onClick={() => setShowCharges((v) => !v)}>
@@ -320,12 +387,12 @@ return <main className="page">
 </button>
 </div>
 {showCharges && <div className="form-grid charges-grid">
-<label>Taxe foncière annuelle (€)<input type="number" min="0" value={payload.annual_property_tax} onChange={(e) => update("annual_property_tax", e.target.value)} placeholder="900" /></label>
-<label>Charges non récupérables (€/an)<input type="number" min="0" value={payload.other_annual_charges} onChange={(e) => update("other_annual_charges", e.target.value)} placeholder="600" /></label>
-<label>Assurance (PNO) annuelle (€)<input type="number" min="0" value={payload.annual_insurance} onChange={(e) => update("annual_insurance", e.target.value)} placeholder="150" /></label>
-<label>Entretien / travaux courants (€/an)<input type="number" min="0" value={payload.annual_maintenance} onChange={(e) => update("annual_maintenance", e.target.value)} placeholder="300" /></label>
-<label>Frais de gestion locative (€/an)<input type="number" min="0" value={payload.annual_management_fees} onChange={(e) => update("annual_management_fees", e.target.value)} placeholder="0" /></label>
-<label>Vacance locative estimée (%)<input type="number" min="0" max="100" step="0.5" value={payload.vacancy_rate} onChange={(e) => update("vacancy_rate", e.target.value)} placeholder="5" /></label>
+<label className={af("annual_property_tax")}>Taxe foncière annuelle (€)<input type="number" min="0" value={payload.annual_property_tax} onChange={(e) => update("annual_property_tax", e.target.value)} placeholder="900" /></label>
+<label className={af("other_annual_charges")}>Charges non récupérables (€/an)<input type="number" min="0" value={payload.other_annual_charges} onChange={(e) => update("other_annual_charges", e.target.value)} placeholder="600" /></label>
+<label className={af("annual_insurance")}>Assurance (PNO) annuelle (€)<input type="number" min="0" value={payload.annual_insurance} onChange={(e) => update("annual_insurance", e.target.value)} placeholder="150" /></label>
+<label className={af("annual_maintenance")}>Entretien / travaux courants (€/an)<input type="number" min="0" value={payload.annual_maintenance} onChange={(e) => update("annual_maintenance", e.target.value)} placeholder="300" /></label>
+<label className={af("annual_management_fees")}>Frais de gestion locative (€/an)<input type="number" min="0" value={payload.annual_management_fees} onChange={(e) => update("annual_management_fees", e.target.value)} placeholder="0" /></label>
+<label className={af("vacancy_rate")}>Vacance locative estimée (%)<input type="number" min="0" max="100" step="0.5" value={payload.vacancy_rate} onChange={(e) => update("vacancy_rate", e.target.value)} placeholder="5" /></label>
 </div>}
 <div className="charges-toggle-row">
 {[
@@ -339,10 +406,10 @@ return <main className="page">
   </button>
 ))}
 </div>
-{openExtraSection === "characteristics" && <ExtraFieldsSection fields={CHARACTERISTICS_FIELDS} extra={extra} onChange={updateExtra} />}
-{openExtraSection === "diagnostics" && <ExtraFieldsSection fields={DIAGNOSTICS_FIELDS} extra={extra} onChange={updateExtra} />}
-{openExtraSection === "financing" && <ExtraFieldsSection fields={FINANCING_EXTRA_FIELDS} extra={extra} onChange={updateExtra} />}
-{openExtraSection === "rental_works" && <ExtraFieldsSection fields={RENTAL_WORKS_FIELDS} extra={extra} onChange={updateExtra} />}
+{openExtraSection === "characteristics" && <ExtraFieldsSection fields={CHARACTERISTICS_FIELDS} extra={extra} onChange={updateExtra} autoFields={autoFields} />}
+{openExtraSection === "diagnostics" && <ExtraFieldsSection fields={DIAGNOSTICS_FIELDS} extra={extra} onChange={updateExtra} autoFields={autoFields} />}
+{openExtraSection === "financing" && <ExtraFieldsSection fields={FINANCING_EXTRA_FIELDS} extra={extra} onChange={updateExtra} autoFields={autoFields} />}
+{openExtraSection === "rental_works" && <ExtraFieldsSection fields={RENTAL_WORKS_FIELDS} extra={extra} onChange={updateExtra} autoFields={autoFields} />}
 <button className="primary-button" disabled={loading}>{loading ? "Analyse en cours…" : "Lancer l’analyse Bricky →"}</button>{error && <div className="error-box">{error}</div>}</form>
 </>}
 {result && <AnalysisDashboard result={result} address={payload.address} onResultRefresh={refreshAnalysisFromDb} />}
