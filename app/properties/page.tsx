@@ -259,19 +259,28 @@ export default function PropertiesPage() {
     </section>
 
     {selected.length > 0 && (
-      <div className="compare-bar">
-        <span>{selected.length} bien{selected.length > 1 ? "s" : ""} sélectionné{selected.length > 1 ? "s" : ""}</span>
-        <div className="compare-bar-actions">
-          <button type="button" className="secondary-button" onClick={() => setSelected([])}>Annuler</button>
-          <button
-            type="button"
-            className="primary-button"
-            disabled={selected.length < 2}
-            onClick={() => router.push("/compare?ids=" + selected.join(","))}
-          >
-            Comparer
-          </button>
+      <div className="compare-brick" role="region" aria-label="Comparaison de biens">
+        <div className="compare-brick-stack" aria-hidden="true">
+          {[0, 1, 2].map((i) => (
+            <span key={i} className={"compare-brick-slot compare-brick-slot-" + i + (i < selected.length ? " is-filled" : "")} />
+          ))}
         </div>
+        <div className="compare-brick-text">
+          <b>{selected.length}/3 bien{selected.length > 1 ? "s" : ""}</b>
+          <span>{selected.length < 2 ? "Ajoute encore 1 bien" : selected.length < 3 ? "Prêt · 1 place libre" : "Prêt à comparer"}</span>
+        </div>
+        <button type="button" className="compare-brick-clear" aria-label="Annuler la sélection" title="Annuler" onClick={() => setSelected([])}>
+          <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
+        </button>
+        <button
+          type="button"
+          className="compare-brick-go"
+          disabled={selected.length < 2}
+          onClick={() => router.push("/compare?ids=" + selected.join(","))}
+        >
+          Comparer
+          <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M3 8h9M8.5 4.5L12 8l-3.5 3.5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
+        </button>
       </div>
     )}
   </main>;
