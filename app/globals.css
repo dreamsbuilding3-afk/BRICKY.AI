@@ -3377,10 +3377,6 @@ label.auto-filled input, label.auto-filled select { border-color: rgba(22,163,74
 
 /* scène de la mascotte */
 .ty-stage { position: relative; height: 470px; display: grid; place-items: center; }
-.ty-ring { position: absolute; width: 340px; height: 340px; border-radius: 50%; background: radial-gradient(circle, rgba(255,90,31,.22), rgba(255,90,31,0) 68%); animation: ty-pulse 3.2s ease-in-out infinite; }
-.ty-ring-2 { width: 380px; height: 380px; background: none; border: 1.5px dashed rgba(255,90,31,.35); animation: ty-spin 28s linear infinite; }
-@keyframes ty-pulse { 50% { transform: scale(1.06); opacity: .75; } }
-@keyframes ty-spin { to { transform: rotate(360deg); } }
 .ty-mascot { position: relative; width: 300px; aspect-ratio: 441 / 560; animation: ty-drop .9s cubic-bezier(.3,1.5,.5,1) both, ty-bob 3.4s ease-in-out .9s infinite; transform-origin: 50% 100%; }
 .ty-mascot img { display: block; width: 100%; height: 100%; filter: drop-shadow(0 26px 30px rgba(60,25,5,.28)); }
 @keyframes ty-drop { from { opacity: 0; transform: translateY(-120px) scale(.9); } to { opacity: 1; transform: none; } }
@@ -3414,12 +3410,23 @@ label.auto-filled input, label.auto-filled select { border-color: rgba(22,163,74
 .ty-copy p { max-width: 470px; margin: 18px 0 0; font-size: 16px; line-height: 1.6; color: #6b6860; animation: ty-up .7s ease .45s both; }
 .ty-copy p b { color: var(--ink); }
 .ty-ctas { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 26px; animation: ty-up .7s ease .6s both; }
-.ty-cta { display: inline-flex; align-items: center; gap: 8px; height: 50px; padding: 0 22px; border-radius: 14px; background: var(--accent); color: #fff; font-weight: 700; font-size: 15px; text-decoration: none; box-shadow: inset 0 -2px 0 rgba(0,0,0,.14), 0 14px 30px -14px rgba(255,90,31,.9); transition: background .15s ease; }
-.ty-cta:hover { background: var(--accent-dark); }
-.ty-cta svg { transition: transform .15s ease; }
+.ty-cta, .ty-ghost {
+  display: inline-flex; align-items: center; justify-content: center; gap: 10px; height: 48px; padding: 0 22px; border-radius: 12px;
+  font-size: 14.5px; font-weight: 600; letter-spacing: .005em; text-decoration: none; transition: transform .15s ease, box-shadow .2s ease, background .2s ease, border-color .2s ease;
+}
+.ty-cta {
+  color: #fff; background: linear-gradient(180deg, #2a2724 0%, #121110 100%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.14), inset 0 0 0 1px rgba(255,255,255,.04), 0 1px 2px rgba(0,0,0,.25), 0 12px 26px -14px rgba(0,0,0,.55);
+}
+.ty-cta svg { width: 14px; height: 14px; color: #ff8a4d; transition: transform .2s ease; }
+.ty-cta:hover { transform: translateY(-1px); box-shadow: inset 0 1px 0 rgba(255,255,255,.16), inset 0 0 0 1px rgba(255,255,255,.05), 0 2px 4px rgba(0,0,0,.25), 0 18px 32px -16px rgba(0,0,0,.6); }
 .ty-cta:hover svg { transform: translateX(3px); }
-.ty-ghost { display: inline-flex; align-items: center; height: 50px; padding: 0 20px; border-radius: 14px; border: 1px solid var(--line); background: #fff; color: var(--ink); font-weight: 700; font-size: 15px; text-decoration: none; }
-.ty-ghost:hover { border-color: #cfcbc3; }
+.ty-cta:active, .ty-ghost:active { transform: translateY(0); }
+.ty-ghost {
+  color: var(--ink); background: linear-gradient(180deg, #ffffff, #f7f6f3);
+  box-shadow: inset 0 0 0 1px rgba(17,17,17,.1), inset 0 -1px 0 rgba(17,17,17,.04), 0 1px 2px rgba(17,17,17,.06);
+}
+.ty-ghost:hover { transform: translateY(-1px); box-shadow: inset 0 0 0 1px rgba(17,17,17,.18), 0 6px 16px -10px rgba(17,17,17,.3); }
 @keyframes ty-up { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
 
 /* accès débloqués */
@@ -3448,7 +3455,6 @@ label.auto-filled input, label.auto-filled select { border-color: rgba(22,163,74
   .ty-hero { grid-template-columns: 1fr; gap: 0; text-align: center; }
   .ty-stage { height: 360px; }
   .ty-mascot { width: 220px; }
-  .ty-ring { width: 260px; height: 260px; } .ty-ring-2 { width: 290px; height: 290px; }
   .ty-shadow { bottom: 26px; width: 130px; }
   .ty-bubble { right: 6%; top: 8%; }
   .ty-copy p { margin-left: auto; margin-right: auto; }
@@ -3463,7 +3469,9 @@ label.auto-filled input, label.auto-filled select { border-color: rgba(22,163,74
 
 [data-theme="dark"] .ty-badge { background: rgba(31,157,85,.15); color: #6fdc9d; }
 [data-theme="dark"] .ty-copy p, [data-theme="dark"] .ty-perk small, [data-theme="dark"] .ty-help { color: var(--text-muted); }
-[data-theme="dark"] .ty-ghost { background: #1a1a1a; border-color: rgba(255,255,255,.1); color: var(--ink); }
+[data-theme="dark"] .ty-cta { color: #111; background: linear-gradient(180deg, #ffffff, #e9e6df); box-shadow: inset 0 1px 0 rgba(255,255,255,.9), 0 12px 26px -14px rgba(0,0,0,.8); }
+[data-theme="dark"] .ty-cta svg { color: var(--accent); }
+[data-theme="dark"] .ty-ghost { color: var(--ink); background: linear-gradient(180deg, #1c1c1c, #151515); box-shadow: inset 0 0 0 1px rgba(255,255,255,.1), inset 0 1px 0 rgba(255,255,255,.05); }
 [data-theme="dark"] .ty-bubble { background: #1c1c1c; border-color: rgba(255,255,255,.1); color: var(--ink); }
 [data-theme="dark"] .ty-perk { background: rgba(26,26,26,.85); border-color: rgba(255,255,255,.08); }
 [data-theme="dark"] .ty-body { background: #242424; }
