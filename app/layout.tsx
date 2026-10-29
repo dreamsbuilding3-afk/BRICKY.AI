@@ -4,6 +4,7 @@ import SplashScreen from "../components/SplashScreen";
 import { ThemeToggle } from "../components/ThemeToggle";
 import { LocaleProvider } from "../components/LocaleProvider";
 import { LanguageToggle } from "../components/LanguageToggle";
+import { BrickyGhost } from "../components/BrickyGhost";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://bricky-ai-three.vercel.app"),
@@ -49,6 +50,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <body>
         <LocaleProvider>
           <SplashScreen />
+          <BrickyGhost />
           <ThemeToggle />
           <LanguageToggle />
           {children}
