@@ -102,8 +102,7 @@ function ctaLabel(plan: Plan, t: (key: string, vars?: Record<string, string | nu
 
 function ctaHref(plan: Plan) {
   if (plan.plan_code === "decouverte") return "/analyze";
-  if (plan.plan_code === "agence") return "/account";
-  return "/account";
+  return `/contact?sujet=${plan.plan_code}`;
 }
 
 export default function PricingPage() {
@@ -190,7 +189,7 @@ export default function PricingPage() {
                 <div className="pricing-network">
                   <span className="pricing-network-badge">{t("pricing.network.badge")}</span>
                   <p className="pricing-network-text">{t("pricing.network.text")}</p>
-                  <a className="secondary-button pricing-compare-cta pricing-network-cta" href="#">{t("pricing.network.cta")}</a>
+                  <Link className="secondary-button pricing-compare-cta pricing-network-cta" href="/contact?sujet=reseau">{t("pricing.network.cta")}</Link>
                 </div>
               ) : null}
               {plan.plan_code === "decouverte" ? (
@@ -198,12 +197,12 @@ export default function PricingPage() {
                   {t("pricing.cta.start")}
                 </Link>
               ) : plan.plan_code === "agence" ? (
-                <Link className="secondary-button pricing-cta" href="/account">
+                <Link className="secondary-button pricing-cta" href="/contact?sujet=agence">
                   {t("pricing.cta.contact")}
                 </Link>
               ) : (
                 <div className="pricing-cta-wrap">
-                <Link className="primary-button pricing-cta" href="/account">
+                <Link className="primary-button pricing-cta" href={`/contact?sujet=${plan.plan_code}`}>
                   {t("pricing.cta.trial")}
                 </Link>
                 <span className="pricing-cta-note">{t("pricing.cta.trialNote")}</span>
@@ -213,6 +212,19 @@ export default function PricingPage() {
           ))}
         </section>
         <p className="pricing-daily-footnote">{t("pricing.daily.footnote")}</p>
+        <section className="pricing-pack" aria-labelledby="pricing-pack-title">
+          <div className="pricing-pack-text">
+            <span className="pricing-pack-eyebrow">{t("pricing.pack.eyebrow")}</span>
+            <h2 id="pricing-pack-title">{t("pricing.pack.title")}</h2>
+            <p>{t("pricing.pack.desc")}</p>
+          </div>
+          <div className="pricing-pack-offer">
+            <div className="pricing-pack-price">{t("pricing.pack.price")}</div>
+            <div className="pricing-pack-unit">{t("pricing.pack.unit")}</div>
+            <Link className="primary-button pricing-pack-cta" href="/contact?sujet=pack">{t("pricing.pack.cta")}</Link>
+            <span className="pricing-pack-note">{t("pricing.pack.note")}</span>
+          </div>
+        </section>
         </>
       )}
 
