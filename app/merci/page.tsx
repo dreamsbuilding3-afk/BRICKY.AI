@@ -96,8 +96,6 @@ function Merci() {
         </div>
 
         <div className="ty-stage" aria-hidden="true">
-          <span className="ty-ring" />
-          <span className="ty-ring ty-ring-2" />
           <div className="ty-mascot">
             <img src="/mascot-inspector.webp" alt="" width={441} height={560} />
             <span className="ty-lid ty-lid-l" />
