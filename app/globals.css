@@ -3499,3 +3499,56 @@ label.auto-filled input, label.auto-filled select { border-color: rgba(22,163,74
 [data-theme="dark"] .ty-cta::after { background: linear-gradient(90deg, transparent, rgba(255,90,31,.6), transparent); }
 [data-theme="dark"] .ty-ghost::before { background: linear-gradient(105deg, transparent, rgba(255,255,255,.08) 45%, transparent); }
 @media (prefers-reduced-motion: reduce) { .ty-cta::before, .ty-ghost::before { animation: none !important; display: none; } }
+
+/* Merci : accès débloqués façon tableau d'enquête (punaises, fils rouges, tampons) */
+.ty-board { position: relative; display: grid; grid-template-columns: repeat(3, 1fr); gap: 46px 54px; padding: 30px 14px 22px; }
+.ty-board-word {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 0; pointer-events: none; white-space: nowrap;
+  font-family: var(--font-display), "Arial Black", Arial, sans-serif; font-weight: 800; letter-spacing: -0.06em; line-height: .8;
+  font-size: clamp(80px, 13vw, 190px); color: rgba(17,17,17,.035); -webkit-text-stroke: 1.5px rgba(17,17,17,.06);
+}
+.ty-strings, .ty-pins { position: absolute; left: 0; top: 0; z-index: 1; overflow: visible; pointer-events: none; }
+.ty-pins { z-index: 3; }
+.ty-pin-dot { opacity: 0; animation: ty-pin-in .35s cubic-bezier(.3,1.6,.5,1) both; transform-box: fill-box; transform-origin: center; }
+@keyframes ty-pin-in { from { opacity: 0; transform: translateY(-8px) scale(1.4); } to { opacity: 1; transform: none; } }
+.ty-strings path {
+  fill: none; stroke: #d6322a; stroke-width: 1.6; stroke-linecap: round; filter: drop-shadow(0 2px 1.5px rgba(80,0,0,.25));
+  stroke-dasharray: 1; stroke-dashoffset: 1; animation: ty-draw 1s cubic-bezier(.4,0,.2,1) both;
+}
+@keyframes ty-draw { to { stroke-dashoffset: 0; } }
+.ty-board .ty-perk {
+  position: relative; z-index: 2; display: block; padding: 18px 18px 16px; border-radius: 4px; border: 1px solid rgba(17,17,17,.06);
+  background: linear-gradient(180deg, #ffffff, #fbfaf7);
+  box-shadow: 0 1px 1px rgba(17,17,17,.04), 0 12px 24px -14px rgba(17,17,17,.35), 0 30px 60px -40px rgba(17,17,17,.4);
+  transform: rotate(var(--r, 0deg)) translateY(var(--ty, 0));
+  animation: ty-pinned .6s cubic-bezier(.2,.8,.2,1) calc(.8s + var(--i) * .1s) both;
+}
+@keyframes ty-pinned { from { opacity: 0; transform: rotate(var(--r, 0deg)) translateY(calc(var(--ty, 0px) + 18px)); } to { opacity: 1; transform: rotate(var(--r, 0deg)) translateY(var(--ty, 0)); } }
+.ty-perk-0 { --r: -2.4deg; } .ty-perk-1 { --r: 1.6deg; --ty: 14px; } .ty-perk-2 { --r: -1.2deg; --ty: -6px; }
+.ty-perk-3 { --r: 2.2deg; } .ty-perk-4 { --r: -1.8deg; --ty: 10px; } .ty-perk-5 { --r: 1.3deg; --ty: -4px; }
+.ty-pin { position: absolute; left: 50%; top: -1px; width: 2px; height: 2px; margin-left: -1px; visibility: hidden; } /* repère des fils, la punaise est dessinée au-dessus */
+.ty-perk-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.ty-perk-file { font: 600 10px/1 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .08em; text-transform: uppercase; color: #a29e94; }
+.ty-stamp {
+  font: 800 10px/1 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .14em; text-transform: uppercase; color: #1f9d55;
+  padding: 4px 7px; border: 1.5px solid currentColor; border-radius: 4px; transform: rotate(-6deg); opacity: .85;
+  animation: ty-stamp .35s cubic-bezier(.3,1.6,.5,1) calc(1.5s + var(--i) * .15s) both;
+}
+@keyframes ty-stamp { from { opacity: 0; transform: rotate(-6deg) scale(2.2); } to { opacity: .85; transform: rotate(-6deg) scale(1); } }
+.ty-perk-main { display: flex; align-items: flex-start; gap: 12px; }
+.ty-perk-icon { flex: none; display: grid; place-items: center; width: 36px; height: 36px; border-radius: 10px; background: #fff1ea; color: var(--accent); }
+.ty-board .ty-perk b { display: block; font-size: 15px; color: var(--ink); }
+.ty-board .ty-perk small { display: block; margin-top: 4px; font-size: 13px; line-height: 1.45; color: #77746c; }
+@media (max-width: 860px) {
+  .ty-board { grid-template-columns: 1fr; gap: 26px; padding: 18px 4px 10px; }
+  .ty-board .ty-perk { width: 88%; }
+  .ty-board .ty-perk:nth-child(odd of .ty-perk) { margin-left: auto; }
+  .ty-perk-1, .ty-perk-2, .ty-perk-4, .ty-perk-5 { --ty: 0px; }
+  .ty-board-word { font-size: 110px; transform: translate(-50%, -50%) rotate(-90deg); }
+}
+@media (prefers-reduced-motion: reduce) { .ty-strings path { animation: none; stroke-dashoffset: 0; } .ty-pin-dot { animation: none; opacity: 1; } }
+[data-theme="dark"] .ty-board-word { color: rgba(255,255,255,.03); -webkit-text-stroke-color: rgba(255,255,255,.07); }
+[data-theme="dark"] .ty-board .ty-perk { background: linear-gradient(180deg, #232323, #1e1e1e); border-color: rgba(255,255,255,.07); box-shadow: 0 12px 24px -12px rgba(0,0,0,.7), 0 30px 60px -36px rgba(0,0,0,.8); }
+[data-theme="dark"] .ty-board .ty-perk small, [data-theme="dark"] .ty-perk-file { color: var(--text-muted); }
+[data-theme="dark"] .ty-perk-icon { background: rgba(255,90,31,.14); }
+[data-theme="dark"] .ty-stamp { color: #6fdc9d; }
