@@ -1149,8 +1149,8 @@ body::before {
   z-index: -1;
   pointer-events: none;
   background-image:
-    linear-gradient(rgba(17, 17, 17, 0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(17, 17, 17, 0.04) 1px, transparent 1px);
+    linear-gradient(rgba(17, 17, 17, 0.09) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(17, 17, 17, 0.09) 1px, transparent 1px);
   background-size: 46px 46px;
   transform: perspective(800px) rotateX(4deg);
   transform-origin: top center;
