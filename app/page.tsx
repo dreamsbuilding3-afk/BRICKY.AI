@@ -1,10 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { PROPERTY_TYPE_LABELS } from "../lib/data/propertyTypeClassifier";
 import { useLocale } from "../components/LocaleProvider";
 import { BrickyIsland } from "../components/BrickyIsland";
 import { ReviewsBoard } from "../components/ReviewsBoard";
+import { ContainerShowcase } from "../components/ContainerShowcase";
 
 const CAPABILITY_ROW_1 = [
   { key: "cap.rendement", color: "accent" },
@@ -47,46 +47,6 @@ function CapabilityMarquee() {
       </div>
     </section>
   );
-}
-
-const PROPERTY_CATEGORY_ICONS: Record<string, string> = { hotel: "🏨", chateau: "🏰", immeuble: "🏢", penthouse: "🏙️", loft: "🧱", duplex: "🏘️", chalet: "🏔️", local_commercial: "🏬", terrain: "🌳", parking: "🅿️", studio: "🚪", maison: "🏡", appartement: "🏠" };
-
-function PropertyCategoriesShowcase() {
-const { t } = useLocale();
-const categories = Object.entries(PROPERTY_TYPE_LABELS);
-const [active, setActive] = useState(categories[0][0]);
-const activeIndex = categories.findIndex(([code]) => code === active);
-return (
-<section className="categories-band">
-<div className="categories-intro">
-<span className="eyebrow">{t("categories.eyebrow")}</span>
-<h2>{t("categories.title1")}<br />{t("categories.title2")}</h2>
-<p className="sub">{t("categories.sub")}</p>
-</div>
-<div className="categories-picker">
-<div className="categories-picker-track">
-{categories.map(([code, label], i) => {
-const isActive = code === active;
-const dist = Math.min(Math.abs(activeIndex - i), 2);
-const angle = (dist * 10 * Math.PI) / 180;
-const radius = 70;
-const xOffset = isActive ? -16 : radius * (1 - Math.cos(angle));
-const itemScale = isActive ? 1 : Math.max(0.9, 1 - dist * 0.05);
-const itemOpacity = isActive ? 1 : Math.max(0.85, 1 - dist * 0.08);
-const labelOpacity = isActive ? 1 : Math.max(0.9, 1 - dist * 0.05);
-const itemStyle = { transform: `translateX(${xOffset}px) scale(${itemScale})`, opacity: itemOpacity };
-return (
-<button type="button" key={code} className={`categories-picker-item${isActive ? " categories-picker-item-active" : ""}`} style={itemStyle} onClick={() => setActive(code)}>
-<span className="categories-picker-icon">{PROPERTY_CATEGORY_ICONS[code] || "🏠"}</span>
-<span className="categories-picker-label" style={{ opacity: labelOpacity }}>{label}</span>
-{isActive ? <span className="categories-picker-handle" /> : null}
-</button>
-);
-})}
-</div>
-</div>
-</section>
-);
 }
 
 const HERO_FLOAT_ITEMS = [
@@ -211,7 +171,7 @@ export default function Home() {
 
       <ReviewsBoard />
 
-      <PropertyCategoriesShowcase />
+      <ContainerShowcase />
 
       <section className="highlight-band">
         <div className="highlight-intro">
