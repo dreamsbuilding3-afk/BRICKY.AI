@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Bricolage_Grotesque } from "next/font/google";
 import "./globals.css";
 import SplashScreen from "../components/SplashScreen";
 import { ThemeToggle } from "../components/ThemeToggle";
@@ -39,11 +40,14 @@ export const metadata: Metadata = {
   },
 };
 
+// Police d'affichage des grands titres (section île 3D).
+const displayFont = Bricolage_Grotesque({ subsets: ["latin"], display: "swap", variable: "--font-display" });
+
 const THEME_BOOT_SCRIPT = `(function(){try{var t=localStorage.getItem('bricky_theme');if(t!=='light'&&t!=='dark'){t=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}document.documentElement.setAttribute('data-theme',t);}catch(e){}})();`;
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="fr">
+    <html lang="fr" className={displayFont.variable}>
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
       </head>
