@@ -89,6 +89,9 @@ const fr: Dict = {
   "features.3.more": "Diagnostics à réclamer, PV d’AG et règlement de copropriété, questions précises à poser au vendeur, points de négociation et vérifications à faire sur place avant de vous engager.",
 
   "testimonials.eyebrow": "Ils utilisent Bricky",
+  "reviews.backdrop": "AVIS",
+  "reviews.file": "Dossier",
+  "reviews.stars": "Note : 5 sur 5",
   "testimonials.title": "Ce que ça change, au quotidien.",
   "testimonials.1.quote": "Avant Bricky, je passais des heures à chercher les infos d'un bien et à faire mes calculs sur plusieurs fichiers. Maintenant, j'ai une vision claire du potentiel du bien en quelques minutes. Je vois immédiatement ce qui est intéressant… et ce qui ne l'est pas.",
   "testimonials.1.role": "Investisseur immobilier",
@@ -324,6 +327,9 @@ const en: Dict = {
   "features.3.more": "Diagnostics to request, co-ownership meeting minutes and bylaws, precise questions to ask the seller, negotiation points and on-site checks to make before you commit.",
 
   "testimonials.eyebrow": "Trusted by Bricky users",
+  "reviews.backdrop": "REVIEWS",
+  "reviews.file": "File",
+  "reviews.stars": "Rating: 5 out of 5",
   "testimonials.title": "What changes, day to day.",
   "testimonials.1.quote": "Before Bricky, I spent hours hunting down property details and running my own numbers across several spreadsheets. Now I get a clear picture of a property's potential in minutes. I immediately see what's worth pursuing… and what isn't.",
   "testimonials.1.role": "Real estate investor",
@@ -559,6 +565,9 @@ const zh: Dict = {
   "features.3.more": "应索取的各类诊断报告、业主大会会议纪要及管理规约、应向卖方提出的具体问题、谈判要点,以及签约前的实地核查事项。",
 
   "testimonials.eyebrow": "Bricky用户的真实反馈",
+  "reviews.backdrop": "评价",
+  "reviews.file": "档案",
+  "reviews.stars": "评分:5 分(满分 5 分)",
   "testimonials.title": "日常使用中的真实改变。",
   "testimonials.1.quote": "使用Bricky之前,我需要花费数小时查找房产信息,并在多个表格中手动计算。现在,我几分钟内就能清楚了解一处房产的潜力,立刻看出哪些值得关注、哪些不值得。",
   "testimonials.1.role": "房地产投资者",
