@@ -2701,3 +2701,25 @@ label.auto-filled input, label.auto-filled select { border-color: rgba(22,163,74
 [data-theme="dark"] .contact-form input, [data-theme="dark"] .contact-form select, [data-theme="dark"] .contact-form textarea { background: #1a1a1a; border-color: #333; color: #f3f3f3; }
 [data-theme="dark"] .contact-success { background: #2a1d15; border-color: #4a2d1d; }
 @media (max-width: 560px) { .contact-row { grid-template-columns: 1fr; } }
+
+/* ---- Mode sombre : textes et cartes restés en couleurs claires ---- */
+[data-theme="dark"] .property-row, [data-theme="dark"] .property-row b, [data-theme="dark"] .property-row-info b { color: var(--ink); }
+[data-theme="dark"] .resume-banner b { color: var(--ink); }
+[data-theme="dark"] .resume-banner p { color: var(--text-muted); }
+[data-theme="dark"] .share-button { color: var(--ink); }
+[data-theme="dark"] .funnel-step > b { color: var(--ink); }
+[data-theme="dark"] .pricing-card { background: linear-gradient(180deg, var(--glass-1), var(--glass-2)); border-color: rgba(255,255,255,.1); }
+[data-theme="dark"] .pricing-card-current { border-color: var(--accent); }
+[data-theme="dark"] .pricing-price, [data-theme="dark"] .pricing-card { color: var(--ink); }
+[data-theme="dark"] .pricing-audience, [data-theme="dark"] .pricing-yearly, [data-theme="dark"] .pricing-features li, [data-theme="dark"] .pricing-cta-note { color: var(--text-muted); }
+[data-theme="dark"] .contact-form label { color: var(--text-muted); }
+[data-theme="dark"] .espace-file { background: #2a1d15; border-color: #4a2d1d; color: #ff8a4d; }
+[data-theme="dark"] .espace-file::before { background: #4a2d1d; }
+[data-theme="dark"] .espace-file-alt { background: #f1efe8; border-color: #f1efe8; color: #111; }
+[data-theme="dark"] .espace-file-alt::before { background: #cfcac2; }
+[data-theme="dark"] .espace-file-ghost { background: #1f1f1f; border-color: #333; color: #8d8a7c; }
+[data-theme="dark"] .espace-file-ghost::before { background: #333; }
+
+/* ---- Barre du haut : laisser la place aux boutons langue / thème (fixes en haut à droite) ---- */
+.nav { padding-right: 184px; }
+@media (max-width: 720px) { .nav { padding-right: 150px; } }
