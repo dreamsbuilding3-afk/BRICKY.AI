@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { PROPERTY_TYPE_LABELS } from "../lib/data/propertyTypeClassifier";
 import { useLocale } from "../components/LocaleProvider";
+import { BrickyIsland } from "../components/BrickyIsland";
 
 const CAPABILITY_ROW_1 = [
   { key: "cap.rendement", color: "accent" },
@@ -184,6 +185,45 @@ style={{ top: item.top, left: item.left, right: item.right }}
 );
 }
 
+// Section « Comment ça marche » : l'île 3D de la mascotte (vitrine avec des biens d'exemple)
+// et les trois étapes qui flottent autour.
+function IslandShowcase() {
+  const { t } = useLocale();
+  return (
+    <section className="island-section" aria-labelledby="island-title">
+      <div className="island-head">
+        <span className="eyebrow">{t("steps.eyebrow")}</span>
+        <h2 id="island-title" className="island-title">
+          <span>{t("island.title.a")}</span> <em>{t("island.title.b")}</em>
+        </h2>
+      </div>
+      <div className="island-scene">
+        <BrickyIsland
+          mode="demo"
+          counts={{ villa: 1, appartement: 2, immeuble: 3 }}
+          labelOverrides={{ appartement: { one: t("island.kind.penthouse.one"), many: t("island.kind.penthouse.many") } }}
+          ariaLabel={t("island.aria")}
+        />
+        <ol className="island-steps">
+          {[1, 2, 3].map((n) => (
+            <li key={n} className={"island-step island-step-" + n}>
+              <span className="island-step-n">{n}</span>
+              <span className="island-step-text"><b>{t(`steps.${n}.title`)}</b><small>{t(`island.step.${n}`)}</small></span>
+            </li>
+          ))}
+        </ol>
+      </div>
+      <div className="island-foot">
+        <p className="island-sub">{t("island.sub")}</p>
+        <a className="primary-button island-cta" href="/analyze">
+          {t("island.cta")}
+          <svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><path d="M3 8h9M8.5 4.5L12 8l-3.5 3.5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
+        </a>
+      </div>
+    </section>
+  );
+}
+
 export default function Home() {
   const { t } = useLocale();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -237,59 +277,7 @@ export default function Home() {
 
       <CapabilityMarquee />
 
-      <section className="steps">
-        <div className="steps-intro">
-          <span className="eyebrow">{t("steps.eyebrow")}</span>
-          <h2>{t("steps.title")}</h2>
-        </div>
-        <div className="steps-grid">
-          <article className="card step-card">
-            <span className="step-number">1</span>
-            <h2>{t("steps.1.title")}</h2>
-            <p>{t("steps.1.desc")}</p>
-          </article>
-          <article className="card step-card">
-            <span className="step-number">2</span>
-            <h2>{t("steps.2.title")}</h2>
-            <p>{t("steps.2.desc")}</p>
-          </article>
-          <article className="card step-card">
-            <span className="step-number">3</span>
-            <h2>{t("steps.3.title")}</h2>
-            <p>{t("steps.3.desc")}</p>
-          </article>
-        </div>
-      </section>
-
-      <section className="features">
-        <details className="card info-card">
-          <summary>
-            <span className="info-number">1</span>
-            <h2>{t("features.1.title")}</h2>
-            <p>{t("features.1.desc")}</p>
-            <span className="info-more-btn">{t("features.more")} <span className="chevron">▾</span></span>
-          </summary>
-          <div className="info-more">{t("features.1.more")}</div>
-        </details>
-        <details className="card info-card">
-          <summary>
-            <span className="info-number">2</span>
-            <h2>{t("features.2.title")}</h2>
-            <p>{t("features.2.desc")}</p>
-            <span className="info-more-btn">{t("features.more")} <span className="chevron">▾</span></span>
-          </summary>
-          <div className="info-more">{t("features.2.more")}</div>
-        </details>
-        <details className="card info-card">
-          <summary>
-            <span className="info-number">3</span>
-            <h2>{t("features.3.title")}</h2>
-            <p>{t("features.3.desc")}</p>
-            <span className="info-more-btn">{t("features.more")} <span className="chevron">▾</span></span>
-          </summary>
-          <div className="info-more">{t("features.3.more")}</div>
-        </details>
-      </section>
+      <IslandShowcase />
 
       <Testimonials />
 
