@@ -3105,3 +3105,104 @@ label.auto-filled input, label.auto-filled select { border-color: rgba(22,163,74
 [data-theme="dark"] .auth-social-btn:hover:not(:disabled) { background: #fff; }
 [data-theme="dark"] .auth-divider { color: var(--text-muted); }
 [data-theme="dark"] .auth-divider::before, [data-theme="dark"] .auth-divider::after { background: rgba(255,255,255,.12); }
+
+/* =====================================================================
+   Page de connexion / inscription (sobre, contrastée, couleurs Bricky)
+   ===================================================================== */
+.lg-page { min-height: 100vh; background: #fff; }
+.lg-shell { display: grid; grid-template-columns: minmax(380px, 46%) 1fr; gap: 0; min-height: 100vh; padding: 14px; box-sizing: border-box; }
+
+.lg-visual {
+  position: relative; overflow: hidden; border-radius: 24px; padding: 34px 40px 40px; color: #fff;
+  display: flex; flex-direction: column; justify-content: space-between; min-height: calc(100vh - 28px); box-sizing: border-box;
+  background:
+    radial-gradient(120% 70% at 50% -10%, #ffd7c2 0%, #ff8a4d 26%, #ff5a1f 42%, rgba(255,90,31,0) 72%),
+    linear-gradient(180deg, #ff6a2b 0%, #3a170a 62%, #0d0907 100%);
+}
+.lg-visual::after { /* grain très léger */
+  content: ""; position: absolute; inset: 0; pointer-events: none; opacity: .18; mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+.lg-brand { position: relative; z-index: 1; display: inline-flex; align-items: center; gap: 10px; color: #fff; text-decoration: none; font-weight: 800; font-size: 18px; letter-spacing: -0.02em; }
+.lg-brand img { width: 34px; height: 34px; border-radius: 10px; background: rgba(255,255,255,.95); padding: 3px; box-sizing: border-box; object-fit: contain; }
+.lg-visual-body { position: relative; z-index: 1; max-width: 400px; margin: 0 auto; text-align: center; }
+.lg-visual-body h1 { margin: 0; font-family: var(--font-display), Arial, sans-serif; font-weight: 800; font-size: clamp(30px, 3vw, 40px); line-height: 1.05; letter-spacing: -0.035em; color: #fff; }
+.lg-visual-body > p { margin: 12px auto 26px; max-width: 320px; font-size: 15px; line-height: 1.5; color: rgba(255,255,255,.72); }
+.lg-steps { list-style: none; margin: 0 auto; padding: 0; display: grid; gap: 10px; max-width: 300px; text-align: left; }
+.lg-steps li {
+  display: flex; align-items: center; gap: 12px; height: 48px; padding: 0 16px; border-radius: 12px; font-size: 14px; font-weight: 600;
+  background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.09); color: rgba(255,255,255,.78);
+  -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+}
+.lg-steps li.is-current { background: #fff; border-color: #fff; color: #111; box-shadow: 0 10px 30px -12px rgba(0,0,0,.5); }
+.lg-step-n { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; font-size: 11.5px; font-weight: 800; background: rgba(255,255,255,.14); color: #fff; }
+.lg-steps li.is-current .lg-step-n { background: #111; color: #fff; }
+
+.lg-form-side { display: flex; align-items: center; justify-content: center; padding: 40px 24px; }
+.lg-form { width: 100%; max-width: 400px; }
+.lg-form h2 { margin: 0; text-align: center; font-family: var(--font-display), Arial, sans-serif; font-weight: 800; font-size: 30px; letter-spacing: -0.035em; color: var(--ink); }
+.lg-lead { margin: 8px 0 26px; text-align: center; font-size: 14.5px; color: #77746c; }
+
+.lg-social { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.lg-social-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 9px; height: 46px; border-radius: 12px; cursor: pointer;
+  background: #fff; color: #111; border: 1px solid #e4e1db; font-size: 14.5px; font-weight: 600;
+  transition: border-color .15s ease, background .15s ease, transform .1s ease;
+}
+.lg-social-btn:hover:not(:disabled) { border-color: #cfcbc3; background: #faf9f7; }
+.lg-social-btn:active:not(:disabled) { transform: translateY(1px); }
+.lg-social-btn:disabled { opacity: .6; cursor: default; }
+.lg-or { display: flex; align-items: center; gap: 14px; margin: 20px 0; font-size: 12.5px; color: #a29e94; }
+.lg-or::before, .lg-or::after { content: ""; flex: 1; height: 1px; background: #ebe8e2; }
+
+.lg-fields { display: grid; gap: 16px; }
+.lg-field { display: grid; gap: 7px; font-size: 13.5px; font-weight: 600; color: var(--ink); }
+.lg-field small { font-size: 12px; font-weight: 500; color: #8d897f; }
+.lg-field input {
+  width: 100%; box-sizing: border-box; height: 48px; padding: 0 14px; border-radius: 12px; font: inherit; font-weight: 500; font-size: 14.5px;
+  background: #f5f4f1; color: var(--ink); border: 1px solid transparent; outline: none; transition: border-color .15s ease, background .15s ease, box-shadow .15s ease;
+}
+.lg-field input::placeholder { color: #a8a49b; }
+.lg-field input:focus { background: #fff; border-color: var(--accent); box-shadow: 0 0 0 4px rgba(255,90,31,.12); }
+.lg-pass { position: relative; display: block; }
+.lg-pass input { padding-right: 46px; }
+.lg-eye { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); width: 36px; height: 36px; display: grid; place-items: center; border: 0; border-radius: 9px; background: transparent; color: #8d897f; cursor: pointer; }
+.lg-eye:hover { color: var(--ink); background: rgba(17,17,17,.05); }
+.lg-forgot { justify-self: end; margin-top: -6px; border: 0; background: none; padding: 0; font-size: 13px; font-weight: 600; color: #77746c; cursor: pointer; }
+.lg-forgot:hover { color: var(--accent-dark); }
+.lg-submit {
+  height: 50px; margin-top: 4px; border: 0; border-radius: 12px; cursor: pointer;
+  background: var(--accent); color: #fff; font-size: 15px; font-weight: 700; letter-spacing: -0.005em;
+  box-shadow: inset 0 -2px 0 rgba(0,0,0,.14), 0 10px 24px -12px rgba(255,90,31,.8); transition: background .15s ease, transform .1s ease;
+}
+.lg-submit:hover:not(:disabled) { background: var(--accent-dark); }
+.lg-submit:active:not(:disabled) { transform: translateY(1px); }
+.lg-submit:disabled { opacity: .7; cursor: default; }
+.lg-switch { margin: 22px 0 0; text-align: center; font-size: 14px; color: #77746c; }
+.lg-switch button { border: 0; background: none; padding: 0; font: inherit; font-weight: 700; color: var(--ink); cursor: pointer; }
+.lg-switch button:hover { color: var(--accent-dark); }
+.lg-legal { margin: 14px auto 0; max-width: 320px; text-align: center; font-size: 11.5px; line-height: 1.5; color: #a29e94; }
+.lg-legal a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+
+@media (max-width: 860px) {
+  .lg-shell { grid-template-columns: 1fr; padding: 10px; }
+  .lg-visual { min-height: 0; padding: 22px 22px 26px; border-radius: 20px; gap: 26px; }
+  .lg-visual-body { text-align: left; margin: 0; }
+  .lg-visual-body h1 { font-size: 28px; }
+  .lg-visual-body > p { margin: 8px 0 0; }
+  .lg-steps { display: none; }
+  .lg-form-side { padding: 28px 8px 36px; align-items: flex-start; }
+}
+
+[data-theme="dark"] .lg-page { background: #0b0b0b; }
+[data-theme="dark"] .lg-lead, [data-theme="dark"] .lg-switch, [data-theme="dark"] .lg-forgot { color: var(--text-muted); }
+[data-theme="dark"] .lg-social-btn { background: #121212; color: #f1efe8; border-color: #2a2a2a; }
+[data-theme="dark"] .lg-social-btn:hover:not(:disabled) { background: #181818; border-color: #3a3a3a; }
+[data-theme="dark"] .lg-or { color: #6f6b62; }
+[data-theme="dark"] .lg-or::before, [data-theme="dark"] .lg-or::after { background: #222; }
+[data-theme="dark"] .lg-field input { background: #161616; color: #f1efe8; }
+[data-theme="dark"] .lg-field input:focus { background: #111; }
+[data-theme="dark"] .lg-field input::placeholder { color: #6f6b62; }
+[data-theme="dark"] .lg-field input[type="date"] { color-scheme: dark; }
+[data-theme="dark"] .lg-eye:hover { background: rgba(255,255,255,.06); }
+[data-theme="dark"] .lg-legal { color: #6f6b62; }
