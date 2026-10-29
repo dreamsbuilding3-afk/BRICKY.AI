@@ -2664,3 +2664,40 @@ label.auto-filled input, label.auto-filled select { border-color: rgba(22,163,74
 /* ---- Vignettes 3D : fond transparent ---- */
 .property-thumb, .property-thumb-immeuble, .property-thumb-terrain, .property-thumb-villa, .property-thumb-commerce, .property-thumb-parking, [data-theme="dark"] .property-thumb { background: none; box-shadow: none; padding: 0; border-radius: 0; overflow: visible; }
 .property-thumb svg { filter: drop-shadow(0 8px 10px rgba(17,17,17,.10)); }
+
+/* ---- Tarifs : pack 3 analyses (primo-accédants) ---- */
+.pricing-pack { max-width: 1100px; margin: 28px auto 0; padding: 26px 30px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 24px; align-items: center; border-radius: 22px; background: #fff; border: 1.5px solid rgba(17,17,17,.08); box-shadow: 0 1px 1px rgba(17,17,17,.03), 0 18px 40px -26px rgba(17,17,17,.3); }
+.pricing-pack-eyebrow { color: var(--accent); font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.pricing-pack h2 { margin: 6px 0 6px; font-size: 24px; letter-spacing: -.03em; }
+.pricing-pack p { margin: 0; max-width: 560px; color: #6b6b68; font-size: 14px; line-height: 1.55; }
+.pricing-pack-offer { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; text-align: right; }
+.pricing-pack-price { font-size: 34px; font-weight: 800; letter-spacing: -.04em; line-height: 1; }
+.pricing-pack-unit { color: var(--accent); font-size: 13px; font-weight: 700; }
+.pricing-pack .pricing-pack-cta { width: auto; min-height: 46px; margin-top: 12px; padding: 0 22px; display: inline-flex; align-items: center; text-decoration: none; }
+.pricing-pack-note { margin-top: 6px; color: #999; font-size: 12px; }
+[data-theme="dark"] .pricing-pack { background: #161616; border-color: #2a2a2a; }
+[data-theme="dark"] .pricing-pack p { color: #a1a1aa; }
+@media (max-width: 720px) {
+  .pricing-pack { grid-template-columns: 1fr; margin: 22px 16px 0; padding: 22px; }
+  .pricing-pack-offer { align-items: flex-start; text-align: left; }
+}
+
+/* ---- Contact ---- */
+.contact-card { max-width: 680px; }
+.contact-sub { color: #666; line-height: 1.55; margin: 0 0 22px; }
+.contact-form { display: grid; gap: 14px; }
+.contact-form label { display: flex; flex-direction: column; gap: 7px; color: #555; font-size: 13px; font-weight: 700; }
+.contact-form label small { color: #999; font-weight: 500; }
+.contact-form input, .contact-form select, .contact-form textarea { width: 100%; border: 1px solid #ddd; border-radius: 12px; padding: 12px 14px; font: inherit; font-weight: 400; color: #111; background: #fafaf8; outline: none; }
+.contact-form input:focus, .contact-form select:focus, .contact-form textarea:focus { border-color: var(--accent); background: #fff; }
+.contact-form textarea { resize: vertical; min-height: 120px; }
+.contact-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.contact-form .primary-button { margin-top: 4px; }
+.contact-hp { position: absolute !important; left: -9999px !important; width: 1px; height: 1px; opacity: 0; }
+.contact-legal { margin: 0; color: #999; font-size: 12px; text-align: center; }
+.contact-success { display: flex; flex-direction: column; gap: 8px; padding: 22px; border-radius: 16px; background: #fff7f2; border: 1px solid #ffd2bb; }
+.contact-success span { color: #6b6b68; }
+.contact-success .primary-button { width: auto; align-self: flex-start; min-height: 44px; margin-top: 8px; padding: 0 20px; display: inline-flex; align-items: center; text-decoration: none; }
+[data-theme="dark"] .contact-form input, [data-theme="dark"] .contact-form select, [data-theme="dark"] .contact-form textarea { background: #1a1a1a; border-color: #333; color: #f3f3f3; }
+[data-theme="dark"] .contact-success { background: #2a1d15; border-color: #4a2d1d; }
+@media (max-width: 560px) { .contact-row { grid-template-columns: 1fr; } }
