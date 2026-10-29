@@ -16,7 +16,7 @@ export default function DemoPage() {
         <div className="nav-links">
           <Link className="navlink" href="/pricing">Tarifs</Link>
           <Link className="navlink" href="/login">Se connecter</Link>
-          <Link className="nav-cta" href="/analyze">Essai gratuit de 7 jours →</Link>
+          <Link className="nav-cta" href="/analyze">1 analyse offerte →</Link>
         </div>
       </nav>
 
@@ -97,7 +97,7 @@ export default function DemoPage() {
 
         <section className="cta-band" style={{ marginTop: 40 }}>
           <h2>Prêt à lancer votre propre analyse ?</h2>
-          <Link className="nav-cta" href="/analyze">Essai gratuit de 7 jours →</Link>
+          <Link className="nav-cta" href="/analyze">1 analyse offerte →</Link>
           <div className="trial-note trial-note-light">Sans carte bancaire · résiliable à tout moment</div>
         </section>
       </section>
