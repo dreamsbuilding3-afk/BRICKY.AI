@@ -11,7 +11,7 @@ type Dict = Record<string, string>;
 const fr: Dict = {
   "nav.pricing": "Tarifs",
   "nav.login": "Se connecter",
-  "nav.cta": "Essai gratuit de 7 jours →",
+  "nav.cta": "1 analyse offerte →",
   "nav.menuOpen": "Ouvrir le menu",
   "nav.menuClose": "Fermer le menu",
 
@@ -26,7 +26,7 @@ const fr: Dict = {
   "hero.inputAriaLabel": "URL de l'annonce",
   "hero.submit": "Analyser le bien",
   "hero.proof": "Prix · comparables · rendement · risques · données manquantes · actions",
-  "hero.trialNote": "7 jours d’essai gratuit sur les paliers payants · sans carte bancaire",
+  "hero.trialNote": "1 analyse offerte · sans carte bancaire",
   "hero.demoLink": "Voir un exemple d’analyse avant de vous inscrire →",
 
   "cap.rendement": "Rendement net & cash-flow réel",
@@ -138,7 +138,7 @@ const fr: Dict = {
 
   "pricing.intro.eyebrow": "Tarifs",
   "pricing.intro.title": "Un abonnement pour chaque niveau d'investisseur.",
-  "pricing.intro.sub": "Du particulier qui vérifie un premier achat à l'agence qui traite des dizaines de dossiers par mois : chaque palier est pensé pour un usage précis — particulier, auto-entrepreneur, indépendant, investisseur ou agence. Commencez avec une analyse gratuite, puis profitez de 7 jours d'essai gratuit sur les paliers payants, sans carte bancaire.",
+  "pricing.intro.sub": "Du particulier qui vérifie un premier achat à l'agence qui traite des dizaines de dossiers par mois : chaque palier est pensé pour un usage précis — particulier, auto-entrepreneur, indépendant, investisseur ou agence. Commencez avec une analyse offerte, sans carte bancaire. Vous n'étudiez qu'un ou deux biens ? Le pack 3 analyses suffit, sans abonnement.",
   "pricing.intro.note": "Sans engagement, résiliable à tout moment sur tous les paliers payants.",
   "pricing.loadError": "Impossible de charger les tarifs pour le moment. Merci de rafraichir la page ou de reessayer dans un instant.",
 
@@ -151,6 +151,13 @@ const fr: Dict = {
   "pricing.perMonth": "€/mois",
   "pricing.perYear": "€/an",
   "pricing.or": "ou",
+  "pricing.pack.eyebrow": "Vous n'achetez qu'un bien ?",
+  "pricing.pack.title": "Pack 3 analyses",
+  "pricing.pack.price": "12 €",
+  "pricing.pack.unit": "soit 4 € par analyse",
+  "pricing.pack.desc": "Pour les primo-accédants qui comparent quelques biens avant d'acheter : 3 analyses complètes avec dossier PDF, valables 6 mois.",
+  "pricing.pack.note": "Paiement unique · sans abonnement",
+  "pricing.pack.cta": "Je prends le pack →",
   "pricing.daily.unit": "par jour",
   "pricing.daily.coffee": "Moins qu'un café",
   "pricing.daily.team": "Pour toute l'équipe",
@@ -181,8 +188,8 @@ const fr: Dict = {
 
   "pricing.cta.start": "Commencer gratuitement",
   "pricing.cta.contact": "Nous contacter",
-  "pricing.cta.trial": "Essai gratuit",
-  "pricing.cta.trialNote": "7 jours offerts, sans carte",
+  "pricing.cta.trial": "Choisir cette offre",
+  "pricing.cta.trialNote": "Testez d'abord avec 1 analyse offerte",
   "pricing.cta.ctaShortStart": "Commencer",
   "pricing.cta.ctaShortContact": "Nous contacter",
   "pricing.cta.ctaShortChoose": "Choisir",
@@ -211,7 +218,7 @@ const fr: Dict = {
 const en: Dict = {
   "nav.pricing": "Pricing",
   "nav.login": "Log in",
-  "nav.cta": "7-day free trial →",
+  "nav.cta": "1 free analysis →",
   "nav.menuOpen": "Open menu",
   "nav.menuClose": "Close menu",
 
@@ -226,7 +233,7 @@ const en: Dict = {
   "hero.inputAriaLabel": "Listing URL",
   "hero.submit": "Analyze this property",
   "hero.proof": "Price · comparables · yield · risks · missing data · actions",
-  "hero.trialNote": "7-day free trial on paid plans · no credit card required",
+  "hero.trialNote": "1 free analysis · no credit card required",
   "hero.demoLink": "See a sample analysis before you sign up →",
 
   "cap.rendement": "Real net yield & cash-flow",
@@ -338,7 +345,7 @@ const en: Dict = {
 
   "pricing.intro.eyebrow": "Pricing",
   "pricing.intro.title": "A plan for every level of investor.",
-  "pricing.intro.sub": "From the individual checking a first purchase to the agency handling dozens of files a month: each tier is built for a specific use — individual, sole trader, independent professional, investor or agency. Start with a free analysis, then enjoy a 7-day free trial on paid tiers, no credit card required.",
+  "pricing.intro.sub": "From the individual checking a first purchase to the agency handling dozens of files a month: each tier is built for a specific use — individual, sole trader, independent professional, investor or agency. Start with one free analysis, no credit card required. Only looking at one or two properties? The 3-analysis pack is enough, no subscription.",
   "pricing.intro.note": "No commitment, cancel anytime on all paid tiers.",
   "pricing.loadError": "We couldn't load pricing right now. Please refresh the page or try again shortly.",
 
@@ -351,6 +358,13 @@ const en: Dict = {
   "pricing.perMonth": "/mo",
   "pricing.perYear": "/yr",
   "pricing.or": "or",
+  "pricing.pack.eyebrow": "Buying just one home?",
+  "pricing.pack.title": "3-analysis pack",
+  "pricing.pack.price": "€12",
+  "pricing.pack.unit": "that's €4 per analysis",
+  "pricing.pack.desc": "For first-time buyers comparing a few homes: 3 full analyses with PDF report, valid for 6 months.",
+  "pricing.pack.note": "One-time payment · no subscription",
+  "pricing.pack.cta": "Get the pack →",
   "pricing.daily.unit": "per day",
   "pricing.daily.coffee": "Less than a coffee",
   "pricing.daily.team": "For the whole team",
@@ -381,8 +395,8 @@ const en: Dict = {
 
   "pricing.cta.start": "Start for free",
   "pricing.cta.contact": "Contact us",
-  "pricing.cta.trial": "Free trial",
-  "pricing.cta.trialNote": "7 days free, no card required",
+  "pricing.cta.trial": "Choose this plan",
+  "pricing.cta.trialNote": "Try first with 1 free analysis",
   "pricing.cta.ctaShortStart": "Get started",
   "pricing.cta.ctaShortContact": "Contact us",
   "pricing.cta.ctaShortChoose": "Choose",
@@ -411,7 +425,7 @@ const en: Dict = {
 const zh: Dict = {
   "nav.pricing": "定价",
   "nav.login": "登录",
-  "nav.cta": "7天免费试用 →",
+  "nav.cta": "免费分析1次 →",
   "nav.menuOpen": "打开菜单",
   "nav.menuClose": "关闭菜单",
 
@@ -426,7 +440,7 @@ const zh: Dict = {
   "hero.inputAriaLabel": "房源链接",
   "hero.submit": "分析该房产",
   "hero.proof": "价格 · 市场比较 · 收益率 · 风险 · 缺失信息 · 行动建议",
-  "hero.trialNote": "付费方案享7天免费试用 · 无需信用卡",
+  "hero.trialNote": "免费分析1次 · 无需信用卡",
   "hero.demoLink": "注册前先查看分析示例 →",
 
   "cap.rendement": "真实净收益与现金流",
@@ -538,7 +552,7 @@ const zh: Dict = {
 
   "pricing.intro.eyebrow": "定价",
   "pricing.intro.title": "适合每一类投资者的订阅方案。",
-  "pricing.intro.sub": "从核实首次购房的个人,到每月处理数十个项目的中介机构:每个方案都针对特定需求设计——个人用户、个体经营者、独立从业者、投资者或中介机构。先从一次免费分析开始,随后可享受付费方案7天免费试用,无需信用卡。",
+  "pricing.intro.sub": "从核实首次购房的个人,到每月处理数十个项目的中介机构:每个方案都针对特定需求设计——个人用户、个体经营者、独立从业者、投资者或中介机构。先从一次免费分析开始,无需信用卡。只看一两套房？3次分析套餐即可,无需订阅。",
   "pricing.intro.note": "无长期合约,所有付费方案均可随时取消。",
   "pricing.loadError": "暂时无法加载价格信息,请刷新页面或稍后重试。",
 
@@ -551,6 +565,13 @@ const zh: Dict = {
   "pricing.perMonth": "欧元/月",
   "pricing.perYear": "欧元/年",
   "pricing.or": "或",
+  "pricing.pack.eyebrow": "只买一套房？",
+  "pricing.pack.title": "3次分析套餐",
+  "pricing.pack.price": "12 €",
+  "pricing.pack.unit": "每次分析仅 4 €",
+  "pricing.pack.desc": "适合首次购房者比较几套房源:3次完整分析,含PDF报告,6个月内有效。",
+  "pricing.pack.note": "一次性付款 · 无需订阅",
+  "pricing.pack.cta": "购买套餐 →",
   "pricing.daily.unit": "每天",
   "pricing.daily.coffee": "不到一杯咖啡",
   "pricing.daily.team": "整个团队共用",
@@ -581,8 +602,8 @@ const zh: Dict = {
 
   "pricing.cta.start": "免费开始使用",
   "pricing.cta.contact": "联系我们",
-  "pricing.cta.trial": "免费试用",
-  "pricing.cta.trialNote": "7天免费,无需信用卡",
+  "pricing.cta.trial": "选择此方案",
+  "pricing.cta.trialNote": "先免费试用1次分析",
   "pricing.cta.ctaShortStart": "立即开始",
   "pricing.cta.ctaShortContact": "联系我们",
   "pricing.cta.ctaShortChoose": "选择此方案",
