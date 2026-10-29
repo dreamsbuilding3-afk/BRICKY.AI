@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabase/client";
 
@@ -41,6 +41,102 @@ function Icon({ name }: { name: string }) {
     <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d={ICONS[name]} />
     </svg>
+  );
+}
+
+type Perk = { icon: string; title: string; fun: string };
+
+// « Ce que tu viens de débloquer » façon tableau d'enquête : pièces à conviction
+// épinglées, reliées par des fils rouges, tamponnées « Débloqué ».
+function PerksBoard({ perks }: { perks: Perk[] }) {
+  const boardRef = useRef<HTMLDivElement>(null);
+  const pinRefs = useRef<(HTMLSpanElement | null)[]>([]);
+  const [lines, setLines] = useState<string[]>([]);
+  const [pins, setPins] = useState<{ x: number; y: number }[]>([]);
+  const [size, setSize] = useState({ w: 0, h: 0 });
+
+  useEffect(() => {
+    const board = boardRef.current;
+    if (!board) return;
+    const measure = () => {
+      const base = board.getBoundingClientRect();
+      const pts = pinRefs.current.slice(0, perks.length).map((p) => {
+        if (!p) return { x: 0, y: 0 };
+        const r = p.getBoundingClientRect();
+        return { x: r.left + r.width / 2 - base.left, y: r.top + r.height / 2 - base.top };
+      });
+      // fils entre voisines de rangée, plus des liens verticaux (jamais en travers du texte)
+      const cols = window.innerWidth <= 860 ? 1 : 3;
+      const pairs: [number, number][] = [];
+      pts.forEach((_, i) => {
+        if (cols > 1 && i % cols !== cols - 1 && i + 1 < pts.length) pairs.push([i, i + 1]);
+        if (i + cols < pts.length && (cols === 1 || i % cols !== 0)) pairs.push([i, i + cols]);
+      });
+      setSize({ w: base.width, h: base.height });
+      setPins(pts);
+      setLines(
+        pairs.map(([a, b]) => {
+          const p = pts[a], q = pts[b];
+          const sag = Math.min(22, Math.hypot(q.x - p.x, q.y - p.y) * 0.06);
+          return `M${p.x.toFixed(1)},${p.y.toFixed(1)} Q${((p.x + q.x) / 2).toFixed(1)},${((p.y + q.y) / 2 + sag).toFixed(1)} ${q.x.toFixed(1)},${q.y.toFixed(1)}`;
+        }),
+      );
+    };
+    measure();
+    // les fiches arrivent en glissant : on remesure une fois l'animation finie
+    const t = window.setTimeout(measure, 1900);
+    const ro = new ResizeObserver(measure);
+    ro.observe(board);
+    window.addEventListener("resize", measure);
+    return () => {
+      window.clearTimeout(t);
+      ro.disconnect();
+      window.removeEventListener("resize", measure);
+    };
+  }, [perks.length]);
+
+  return (
+    <section className="ty-perks" aria-labelledby="ty-perks-title">
+      <h2 id="ty-perks-title">Ce que tu viens de débloquer</h2>
+      <div className="ty-board" ref={boardRef}>
+        <span className="ty-board-word" aria-hidden="true">DÉBLOQUÉ</span>
+        <svg className="ty-strings" width={size.w} height={size.h} viewBox={`0 0 ${size.w || 1} ${size.h || 1}`} aria-hidden="true">
+          {lines.map((d, i) => <path key={i} d={d} pathLength={1} style={{ animationDelay: `${1.1 + i * 0.12}s` }} />)}
+        </svg>
+        <svg className="ty-pins" width={size.w} height={size.h} viewBox={`0 0 ${size.w || 1} ${size.h || 1}`} aria-hidden="true">
+          <defs>
+            <radialGradient id="ty-pin-g" cx="35%" cy="30%" r="75%">
+              <stop offset="0" stopColor="#ff9a90" />
+              <stop offset=".4" stopColor="#e2372d" />
+              <stop offset="1" stopColor="#9e1611" />
+            </radialGradient>
+          </defs>
+          {pins.map((p, i) => (
+            <g key={i} className="ty-pin-dot" style={{ animationDelay: `${0.9 + i * 0.1}s` }}>
+              <ellipse cx={p.x + 2} cy={p.y + 5} rx={6} ry={3} fill="rgba(60,10,0,.28)" />
+              <circle cx={p.x} cy={p.y} r={7.5} fill="url(#ty-pin-g)" />
+            </g>
+          ))}
+        </svg>
+        {perks.map((p, i) => (
+          <article key={p.title} className={`ty-perk ty-perk-${i % 6}`} style={{ ["--i" as string]: i }}>
+            <span className="ty-pin" ref={(el) => { pinRefs.current[i] = el; }} aria-hidden="true" />
+            <div className="ty-perk-top">
+              <span className="ty-perk-file">Pièce n°{String(i + 1).padStart(2, "0")}</span>
+              <span className="ty-stamp">Débloqué</span>
+            </div>
+            <div className="ty-perk-main">
+              <span className="ty-perk-icon" aria-hidden="true"><Icon name={p.icon} /></span>
+              <div>
+                <b>{p.title}</b>
+                <small>{p.fun}</small>
+              </div>
+            </div>
+          </article>
+        ))}
+      </div>
+      <p className="ty-help">Une question, un souci ? <a href="/contact?sujet=autre">Écris-nous</a>, un humain te répond (la mascotte ne sait pas encore taper).</p>
+    </section>
   );
 }
 
@@ -123,21 +219,7 @@ function Merci() {
         </div>
       </section>
 
-      <section className="ty-perks" aria-labelledby="ty-perks-title">
-        <h2 id="ty-perks-title">Ce que tu viens de débloquer</h2>
-        <div className="ty-grid">
-          {perks.map((p, i) => (
-            <article key={p.title} className="ty-perk" style={{ ["--i" as string]: i }}>
-              <span className="ty-lock" aria-hidden="true"><span className="ty-shackle" /><span className="ty-body"><Icon name={p.icon} /></span></span>
-              <div>
-                <b>{p.title}</b>
-                <small>{p.fun}</small>
-              </div>
-            </article>
-          ))}
-        </div>
-        <p className="ty-help">Une question, un souci ? <a href="/contact?sujet=autre">Écris-nous</a>, un humain te répond (la mascotte ne sait pas encore taper).</p>
-      </section>
+      <PerksBoard perks={perks} />
     </main>
   );
 }
