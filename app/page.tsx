@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { PROPERTY_TYPE_LABELS } from "../lib/data/propertyTypeClassifier";
 import { useLocale } from "../components/LocaleProvider";
 import { BrickyIsland } from "../components/BrickyIsland";
+import { ReviewsBoard } from "../components/ReviewsBoard";
 
 const CAPABILITY_ROW_1 = [
   { key: "cap.rendement", color: "accent" },
@@ -21,12 +22,6 @@ const CAPABILITY_ROW_2 = [
   { key: "cap.comparateur", color: "green" },
 ];
 
-const TESTIMONIALS = [
-  { quoteKey: "testimonials.1.quote", roleKey: "testimonials.1.role", name: "Thomas" },
-  { quoteKey: "testimonials.2.quote", roleKey: "testimonials.2.role", name: "Sarah" },
-  { quoteKey: "testimonials.3.quote", roleKey: "testimonials.3.role", name: "Julien" },
-  { quoteKey: "testimonials.4.quote", roleKey: "testimonials.4.role", name: "Nicolas" },
-];
 
 function CapabilityMarquee() {
   const { t } = useLocale();
@@ -49,71 +44,6 @@ function CapabilityMarquee() {
             </span>
           ))}
         </div>
-      </div>
-    </section>
-  );
-}
-
-function Stars() {
-  return (
-    <div className="testimonial-stars" aria-hidden="true">
-      {"★★★★★"}
-    </div>
-  );
-}
-
-function Testimonials() {
-  const { t } = useLocale();
-  return (
-    <section className="testimonials">
-      <div className="testimonials-intro">
-        <span className="eyebrow">{t("testimonials.eyebrow")}</span>
-        <h2>{t("testimonials.title")}</h2>
-      </div>
-      <div className="testimonials-track">
-        {TESTIMONIALS.map((item) => (
-          <figure className="testimonial-card" key={item.name}>
-            <Stars />
-            <blockquote>“{t(item.quoteKey)}”</blockquote>
-            <figcaption>
-              <span className="testimonial-name">{item.name}</span>
-              <span className="testimonial-role">{t(item.roleKey)}</span>
-            </figcaption>
-          </figure>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-const MOBILE_REVIEWS = [
-  { number: "01", quoteKey: "mreview.1.quote", roleKey: "mreview.1.role", name: "Thomas", tint: "peach", pin: "accent" },
-  { number: "02", quoteKey: "mreview.2.quote", roleKey: "mreview.2.role", name: "Sarah", tint: "lavender", pin: "blue" },
-  { number: "03", quoteKey: "mreview.3.quote", roleKey: "mreview.3.role", name: "Julien", tint: "peach", pin: "accent" },
-  { number: "04", quoteKey: "mreview.4.quote", roleKey: "mreview.4.role", name: "Nicolas", tint: "lavender", pin: "blue" },
-];
-
-function MobileReviewsShowcase() {
-  const { t } = useLocale();
-  return (
-    <section className="mobile-reviews">
-      <div className="mobile-reviews-intro">
-        <span className="eyebrow">{t("testimonials.eyebrow")}</span>
-        <h2>{t("testimonials.title")}</h2>
-      </div>
-      <div className="mobile-reviews-track">
-        {MOBILE_REVIEWS.map((r, i) => (
-          <div
-            className={`mreview-card mreview-${r.tint}` + (i % 2 === 1 ? " mreview-right" : "")}
-            key={r.name}
-          >
-            <span className={`mreview-pin mreview-pin-${r.pin}`} />
-            <span className="mreview-number">{r.number}</span>
-            <Stars />
-            <blockquote>“{t(r.quoteKey)}”</blockquote>
-            <div className="mreview-name">— {r.name}, {t(r.roleKey)}</div>
-          </div>
-        ))}
       </div>
     </section>
   );
@@ -279,9 +209,7 @@ export default function Home() {
 
       <IslandShowcase />
 
-      <Testimonials />
-
-      <MobileReviewsShowcase />
+      <ReviewsBoard />
 
       <PropertyCategoriesShowcase />
 
