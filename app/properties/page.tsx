@@ -6,6 +6,10 @@ import { supabase } from "../../lib/supabase/client";
 import { AppNav } from "../../components/AppNav";
 import { AnalysesCounter } from "../../components/AnalysesCounter";
 import { PropertyIllustration } from "../../components/PropertyIllustration";
+import { BrickyIsland } from "../../components/BrickyIsland";
+import { illustrationKind } from "../../lib/illustrations/propertyIllustrations";
+import type { IslandCounts, IslandKind } from "../../lib/islandScene";
+import { useLocale } from "../../components/LocaleProvider";
 
 type AnalysisRow = {
   id: string;
@@ -101,6 +105,34 @@ function CapabilityMarquee() {
   );
 }
 
+// Nombre de biens par parcelle de l'île (les parkings rejoignent les terrains).
+function islandCounts(rows: PropertyRow[]): IslandCounts {
+  const out: IslandCounts = {};
+  for (const row of rows) {
+    const kind = illustrationKind(row.property_type, row.title);
+    const k: IslandKind = kind === "parking" ? "terrain" : (kind as IslandKind);
+    out[k] = (out[k] ?? 0) + 1;
+  }
+  return out;
+}
+
+function MyIsland({ rows }: { rows: PropertyRow[] }) {
+  const { t } = useLocale();
+  const n = rows.length;
+  return (
+    <section className="island-mine" aria-labelledby="my-island-title">
+      <div className="island-mine-head">
+        <span className="eyebrow">{t("island.my.eyebrow")}</span>
+        <h2 id="my-island-title" className="island-title island-title-sm">
+          {n === 0 ? t("island.my.eyebrow") : t(n > 1 ? "island.my.title.many" : "island.my.title", { n })}
+        </h2>
+        <p className="sub">{n === 0 ? t("island.my.empty") : t("island.my.sub")}</p>
+      </div>
+      <BrickyIsland mode="user" counts={islandCounts(rows)} ariaLabel={t("island.aria")} className="island-stage-mine" />
+    </section>
+  );
+}
+
 export default function PropertiesPage() {
   const router = useRouter();
   const [userEmail, setUserEmail] = useState("");
@@ -172,6 +204,7 @@ export default function PropertiesPage() {
     <AppNav email={userEmail} active="properties" />
     <CapabilityMarquee />
     <section className="analysis-shell">
+      {rows && !error && <MyIsland rows={rows} />}
       <div className="analysis-intro"><span className="eyebrow">Bricky · Historique</span><h1>Mes biens <span className="accent">analysés</span></h1><p className="sub">Retrouvez ici chaque bien que vous avez soumis à Bricky, avec son verdict et ses métriques clés.{canCompare ? " Sélectionnez jusqu'à 3 biens pour les comparer." : null}</p></div>
 
       {totalAnalyses !== null && <AnalysesCounter value={totalAnalyses} />}
