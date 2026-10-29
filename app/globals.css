@@ -3478,3 +3478,24 @@ label.auto-filled input, label.auto-filled select { border-color: rgba(22,163,74
 [data-theme="dark"] .ty-mascot img { filter: drop-shadow(0 0 40px rgba(255,90,31,.25)) drop-shadow(0 26px 30px rgba(0,0,0,.5)); }
 @keyframes ty-lit-dark { to { background: rgba(255,90,31,.15); color: var(--accent); } }
 [data-theme="dark"] .ty-body { animation-name: ty-lit-dark; }
+
+/* Merci : un reflet de lumière discret sur les boutons (passe toutes les ~6 s, et au survol) */
+.ty-cta, .ty-ghost { position: relative; overflow: hidden; isolation: isolate; }
+.ty-cta::before, .ty-ghost::before {
+  content: ""; position: absolute; top: 0; bottom: 0; left: -60%; width: 45%; z-index: -1; pointer-events: none;
+  background: linear-gradient(105deg, transparent, rgba(255,255,255,.22) 45%, rgba(255,255,255,.05) 60%, transparent);
+  transform: skewX(-18deg); animation: ty-sheen 6s ease-in-out 2.2s infinite;
+}
+.ty-ghost::before { background: linear-gradient(105deg, transparent, rgba(255,255,255,.9) 45%, transparent); animation-delay: 2.6s; }
+.ty-cta::after { /* liseré lumineux en haut du bouton */
+  content: ""; position: absolute; left: 14%; right: 14%; top: 0; height: 1px; z-index: -1;
+  background: linear-gradient(90deg, transparent, rgba(255,170,120,.85), transparent); opacity: .7;
+}
+.ty-cta:hover::before, .ty-ghost:hover::before { animation: ty-sheen-fast .8s ease-out; }
+.ty-cta:hover { box-shadow: inset 0 1px 0 rgba(255,255,255,.16), 0 0 0 1px rgba(255,138,77,.18), 0 2px 4px rgba(0,0,0,.25), 0 16px 34px -14px rgba(255,90,31,.45); }
+@keyframes ty-sheen { 0%, 78% { left: -60%; } 100% { left: 130%; } }
+@keyframes ty-sheen-fast { from { left: -60%; } to { left: 130%; } }
+[data-theme="dark"] .ty-cta::before { background: linear-gradient(105deg, transparent, rgba(255,255,255,.9) 45%, transparent); }
+[data-theme="dark"] .ty-cta::after { background: linear-gradient(90deg, transparent, rgba(255,90,31,.6), transparent); }
+[data-theme="dark"] .ty-ghost::before { background: linear-gradient(105deg, transparent, rgba(255,255,255,.08) 45%, transparent); }
+@media (prefers-reduced-motion: reduce) { .ty-cta::before, .ty-ghost::before { animation: none !important; display: none; } }
