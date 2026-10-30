@@ -2680,9 +2680,6 @@ label.auto-filled input, label.auto-filled select { border-color: rgba(22,163,74
 [data-theme="dark"] .espace-file-ghost { background: #1f1f1f; border-color: #333; color: #8d8a7c; }
 [data-theme="dark"] .espace-file-ghost::before { background: #333; }
 
-/* ---- Barre du haut : laisser la place aux boutons langue / thème (fixes en haut à droite) ---- */
-.nav { padding-right: 184px; }
-@media (max-width: 720px) { .nav { padding-right: 150px; } }
 
 /* ---- Barre de comparaison « brique » : compacte, une seule ligne, pouce-friendly ---- */
 .compare-brick {
