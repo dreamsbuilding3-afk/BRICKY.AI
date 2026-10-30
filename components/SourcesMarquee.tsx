@@ -35,8 +35,7 @@ export function SourcesMarquee() {
     <section className="lm-section" aria-label={t("sources.title")}>
       <p className="lm-title">{t("sources.title")}</p>
       <div className="lm-rows">
-        <Track items={ROW_1} />
-        <Track items={ROW_2} reverse />
+        <Track items={[...ROW_1, ...ROW_2]} />
       </div>
     </section>
   );
