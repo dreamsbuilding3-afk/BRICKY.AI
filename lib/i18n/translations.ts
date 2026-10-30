@@ -41,6 +41,9 @@ const fr: Dict = {
   "cap.comparateur": "Comparateur de biens",
 
   "steps.eyebrow": "Comment ça marche",
+  "sources.title": "Bricky lit les annonces de tous les grands sites, et vos dossiers aussi",
+  "sources.pdf": "PDF d'agence",
+  "sources.screenshot": "Capture d'écran",
   "steps.title": "Trois étapes, zéro devinette.",
   "steps.1.title": "Collez ou déposez",
   "steps.1.desc": "Un lien d’annonce ou un PDF (annonce, dossier). Bricky en extrait automatiquement prix, surface, pièces, DPE, GES et adresse.",
@@ -309,6 +312,9 @@ const en: Dict = {
   "cap.comparateur": "Property comparison tool",
 
   "steps.eyebrow": "How it works",
+  "sources.title": "Bricky reads listings from every major site, and your own files too",
+  "sources.pdf": "Agency PDF",
+  "sources.screenshot": "Screenshot",
   "steps.title": "Three steps, zero guesswork.",
   "steps.1.title": "Paste or drop",
   "steps.1.desc": "A listing link or a PDF (listing, dossier). Bricky automatically extracts price, floor area, rooms, energy rating and address.",
@@ -577,6 +583,9 @@ const zh: Dict = {
   "cap.comparateur": "房产对比工具",
 
   "steps.eyebrow": "使用流程",
+  "sources.title": "Bricky 可读取各大网站的房源,也能读取你的资料文件",
+  "sources.pdf": "中介 PDF",
+  "sources.screenshot": "截图",
   "steps.title": "三个步骤,无需猜测。",
   "steps.1.title": "粘贴或上传",
   "steps.1.desc": "提供房源链接或PDF文件(广告、资料)。Bricky自动提取价格、面积、房间数、能耗等级(DPE)、温室气体排放等级(GES)及地址。",
