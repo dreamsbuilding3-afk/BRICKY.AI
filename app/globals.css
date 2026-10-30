@@ -2680,9 +2680,6 @@ label.auto-filled input, label.auto-filled select { border-color: rgba(22,163,74
 [data-theme="dark"] .espace-file-ghost { background: #1f1f1f; border-color: #333; color: #8d8a7c; }
 [data-theme="dark"] .espace-file-ghost::before { background: #333; }
 
-/* ---- Barre du haut : laisser la place aux boutons langue / thème (fixes en haut à droite) ---- */
-.nav { padding-right: 184px; }
-@media (max-width: 720px) { .nav { padding-right: 150px; } }
 
 /* ---- Barre de comparaison « brique » : compacte, une seule ligne, pouce-friendly ---- */
 .compare-brick {
@@ -3552,3 +3549,38 @@ label.auto-filled input, label.auto-filled select { border-color: rgba(22,163,74
 [data-theme="dark"] .ty-board .ty-perk small, [data-theme="dark"] .ty-perk-file { color: var(--text-muted); }
 [data-theme="dark"] .ty-perk-icon { background: rgba(255,90,31,.14); }
 [data-theme="dark"] .ty-stamp { color: #6fdc9d; }
+
+/* =====================================================================
+   Bande des sources sous le texte d'accueil (noms en texte, pas de logos)
+   ===================================================================== */
+.lm-section { position: relative; width: 100%; max-width: 900px; margin: 10px auto 56px; padding: 0; }
+.lm-title { margin: 0 0 18px; padding: 0 20px; text-align: center; font-size: 13.5px; font-weight: 500; color: #8d897f; }
+.lm-rows {
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent);
+}
+.lm-track { display: flex; width: max-content; animation: lm-scroll 60s linear infinite; }
+.lm-rows:hover .lm-track { animation-play-state: paused; }
+.lm-group { display: flex; align-items: center; flex: none; }
+.lm-item {
+  display: inline-flex; align-items: center; gap: 8px; padding: 0 26px; white-space: nowrap;
+  font-family: var(--font-display), Arial, sans-serif; font-weight: 700; font-size: 21px; letter-spacing: -0.02em;
+  color: #a9a59c; transition: color .25s ease;
+}
+.lm-item:hover { color: var(--ink); }
+.lm-item-file { font-family: inherit; font-size: 15.5px; font-weight: 600; letter-spacing: 0; }
+.lm-item-file svg { color: var(--accent); }
+@keyframes lm-scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+@media (max-width: 640px) {
+  .lm-section { margin: 0 auto 40px; }
+  .lm-item { padding: 0 18px; font-size: 17px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lm-track { animation: none; width: auto; }
+  .lm-group[aria-hidden="true"] { display: none; }
+  .lm-group { flex-wrap: wrap; justify-content: center; row-gap: 10px; }
+}
+[data-theme="dark"] .lm-title { color: var(--text-muted); }
+[data-theme="dark"] .lm-item { color: #77736b; }
+[data-theme="dark"] .lm-item:hover { color: var(--ink); }
