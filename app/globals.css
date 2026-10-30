@@ -3556,7 +3556,7 @@ label.auto-filled input, label.auto-filled select { border-color: rgba(22,163,74
 /* =====================================================================
    Bande des sources sous le texte d'accueil (noms en texte, pas de logos)
    ===================================================================== */
-.lm-section { position: relative; width: 100%; max-width: 900px; margin: clamp(70px, 11vh, 120px) auto 0; padding: 0; }
+.lm-section { position: relative; width: 100%; max-width: 900px; margin: 10px auto 56px; padding: 0; }
 .lm-title { margin: 0 0 18px; padding: 0 20px; text-align: center; font-size: 13.5px; font-weight: 500; color: #8d897f; }
 .lm-rows {
   overflow: hidden;
@@ -3576,7 +3576,7 @@ label.auto-filled input, label.auto-filled select { border-color: rgba(22,163,74
 .lm-item-file svg { color: var(--accent); }
 @keyframes lm-scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
 @media (max-width: 640px) {
-  .lm-section { margin-top: 56px; }
+  .lm-section { margin: 0 auto 40px; }
   .lm-item { padding: 0 18px; font-size: 17px; }
 }
 @media (prefers-reduced-motion: reduce) {

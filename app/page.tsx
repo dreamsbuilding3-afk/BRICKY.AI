@@ -164,8 +164,9 @@ export default function Home() {
         <div className="proof">{t("hero.proof")}</div>
         <div className="trial-note">{t("hero.trialNote")}</div>
         <a className="trial-note" href="/demo" style={{ display: "block", textDecoration: "underline" }}>{t("hero.demoLink")}</a>
-        <SourcesMarquee />
       </section>
+
+      <SourcesMarquee />
 
       <CapabilityMarquee />
 
