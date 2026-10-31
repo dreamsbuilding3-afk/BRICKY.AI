@@ -169,6 +169,7 @@ export default function EspacePage() {
         </div>
 
         <div className="espace-chips">
+          <Link className="espace-chip" href="/projet"><span className="espace-chip-dot" />Mon projet</Link>
           <Link className="espace-chip" href="/account"><span className="espace-chip-dot" />Mon compte</Link>
           <Link className="espace-chip" href="/pricing"><span className="espace-chip-dot" />{sub?.name ? `Abonnement : ${sub.name}` : "Abonnements"}</Link>
           <Link className="espace-chip" href="/bouton"><span className="espace-chip-dot" />Bouton « Envoyer à Bricky »</Link>
