@@ -17,7 +17,7 @@ export default function MentionsLegalesPage() {
           <p>
             Éditeur : [à compléter — nom et statut juridique de l'exploitant]<br />
             Adresse : [à compléter]<br />
-            Email de contact : [à compléter]<br />
+            Email de contact : <a href="mailto:bricky.everithing@gmail.com">bricky.everithing@gmail.com</a><br />
             Numéro SIRET : [à compléter, non applicable tant que l'activité n'est pas immatriculée]
           </p>
 
@@ -45,7 +45,7 @@ export default function MentionsLegalesPage() {
           </p>
 
           <h2>Contact</h2>
-          <p>Pour toute question relative au site, à vos données personnelles ou à ces mentions légales : [email à compléter]</p>
+          <p>Pour toute question relative au site, à vos données personnelles ou à ces mentions légales : <a href="mailto:bricky.everithing@gmail.com">bricky.everithing@gmail.com</a></p>
         </div>
       </div>
     </main>

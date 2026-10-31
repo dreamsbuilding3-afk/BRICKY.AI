@@ -58,7 +58,7 @@ export default function CGUPage() {
           <p>Les présentes conditions sont régies par le droit français. Tout litige relève, à défaut de résolution amiable, des juridictions compétentes.</p>
 
           <h2>9. Contact</h2>
-          <p>Pour toute question sur ces conditions : [email à compléter]</p>
+          <p>Pour toute question sur ces conditions : <a href="mailto:bricky.everithing@gmail.com">bricky.everithing@gmail.com</a></p>
         </div>
       </div>
     </main>
