@@ -65,11 +65,31 @@ export default function AccountPage() {
     router.replace("/login");
   }
 
+  // Les photos du mode visite sont des fichiers (stockage), pas des lignes de la base :
+  // on les efface avant le compte, sinon elles resteraient orphelines. Rangement : <user>/<bien>/<photo>.
+  async function deleteVisitPhotos() {
+    try {
+      const { data } = await supabase.auth.getSession();
+      const uid = data.session?.user.id;
+      if (!uid) return;
+      const bucket = supabase.storage.from("visit-photos");
+      const { data: folders } = await bucket.list(uid, { limit: 1000 });
+      for (const folder of folders ?? []) {
+        const { data: files } = await bucket.list(`${uid}/${folder.name}`, { limit: 1000 });
+        const paths = (files ?? []).map((f) => `${uid}/${folder.name}/${f.name}`);
+        if (paths.length) await bucket.remove(paths);
+      }
+    } catch {
+      // Stockage indisponible : on supprime quand même le compte.
+    }
+  }
+
   async function handleDeleteAccount() {
     if (deleteConfirm.trim().toUpperCase() !== "SUPPRIMER") return;
     setDeleting(true);
     setDeleteError("");
     try {
+      await deleteVisitPhotos();
       const { error } = await supabase.rpc("delete_my_account");
       if (error) throw error;
       await supabase.auth.signOut();
