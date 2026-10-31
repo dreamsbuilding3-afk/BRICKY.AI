@@ -12,7 +12,9 @@ export const IMPORT_HASH_KEY = "bricky-import";
 export const IMPORT_STORAGE_KEY = "bricky_pending_import_v1";
 const MAX_TEXT_CHARS = 30_000;
 
-export type PendingImport = { url: string; text: string };
+// `shot` : capture d'écran de l'annonce (JPEG), envoyée par l'extension Chrome.
+export type PendingImport = { url: string; text: string; shot?: string };
+const MAX_SHOT_CHARS = 1_500_000;
 
 /** Code du favori, pour l'instance Bricky servie depuis `origin`. */
 export function buildBookmarklet(origin: string): string {
@@ -59,11 +61,12 @@ export function takePendingImportFromLocation(): PendingImport | null {
   }
   if (!raw) return null;
   try {
-    const parsed = JSON.parse(raw) as { u?: unknown; t?: unknown };
+    const parsed = JSON.parse(raw) as { u?: unknown; t?: unknown; s?: unknown };
     const text = typeof parsed.t === "string" ? parsed.t : "";
     const url = typeof parsed.u === "string" && /^https?:\/\//.test(parsed.u) ? parsed.u : "";
     if (text.length < 50) return null;
-    return { url, text: text.slice(0, MAX_TEXT_CHARS) };
+    const shot = typeof parsed.s === "string" && parsed.s.startsWith("data:image/jpeg;base64,") && parsed.s.length < MAX_SHOT_CHARS ? parsed.s : undefined;
+    return { url, text: text.slice(0, MAX_TEXT_CHARS), ...(shot ? { shot } : {}) };
   } catch {
     return null;
   }
