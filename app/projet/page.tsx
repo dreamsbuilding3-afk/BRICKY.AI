@@ -130,6 +130,7 @@ function Projet() {
           <div className="pj-actions">
             <button className="pj-save" disabled={saving}>{saving ? "Enregistrement…" : saved ? "Projet enregistré ✓" : "Enregistrer mon projet"}</button>
             {fromOnboarding && <a className="pj-skip" href="/properties">Passer pour l'instant</a>}
+            {saved && project.cities.length > 0 && process.env.NEXT_PUBLIC_RADAR_ENABLED === "1" && <a className="pj-skip" href="/radar">Voir mon radar →</a>}
           </div>
         </form>
       </section>
