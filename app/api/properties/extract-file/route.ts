@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { extractText, getDocumentProxy } from "unpdf";
 import { classifyPropertyType } from "@/lib/data/propertyTypeClassifier";
-import { AI_UNAVAILABLE_MESSAGE, extractListingWithAi, isAiExtractionEnabled } from "@/lib/ai/listingExtractor";
+import { AI_UNAVAILABLE_MESSAGE, askClaudeWithTool, extractListingWithAi, isAiExtractionEnabled } from "@/lib/ai/listingExtractor";
+import { COPRO_INSTRUCTION, COPRO_SYSTEM, COPRO_TOOL, coproFromAi, scanCoproText, type CoproFindings } from "@/lib/copro";
 import { enforceRateLimit } from "@/lib/rateLimit";
 import { requireUser } from "@/lib/auth/requireUser";
+import { detectDocumentKind, type DocKind } from "@/lib/dossier";
 
 export const maxDuration = 60;
 
@@ -11,8 +13,9 @@ const IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 const MAX_IMAGES = 5;
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 
-function aiJson(result: Awaited<ReturnType<typeof extractListingWithAi>>, sourceUrl: string, sourceDomain: string) {
+function aiJson(result: Awaited<ReturnType<typeof extractListingWithAi>>, sourceUrl: string, sourceDomain: string, documentKind: DocKind) {
   return NextResponse.json({
+    document_kind: documentKind,
     source_url: sourceUrl,
     source_domain: sourceDomain,
     extracted: result.extracted,
@@ -30,6 +33,25 @@ function aiJson(result: Awaited<ReturnType<typeof extractListingWithAi>>, source
   });
 }
 
+// PV d'AG / relevé de charges : travaux, impayés, procédures. IA si possible, sinon mots-clés.
+async function readCopro(kind: DocKind, text: string, bytes: Uint8Array): Promise<CoproFindings | null> {
+  if (kind !== "pv_ag" && kind !== "charges" && kind !== "reglement") return null;
+  if (isAiExtractionEnabled()) {
+    try {
+      const res = await askClaudeWithTool({
+        system: COPRO_SYSTEM,
+        tool: COPRO_TOOL,
+        instruction: COPRO_INSTRUCTION,
+        ...(text.length >= 200 ? { text } : { pdfBase64: Buffer.from(bytes).toString("base64") }),
+      });
+      return coproFromAi(res.raw);
+    } catch (error) {
+      console.error("[extract-file] AI copro reading failed", error);
+    }
+  }
+  return text.length >= 200 ? scanCoproText(text) : null;
+}
+
 const PRICE_RE = /(?:prix|price)[^\d]{0,40}([\d\s.,]+)\s*€?/i;
 const SURFACE_RE = /(?:surface|area)[^\d]{0,40}(\d+(?:[.,]\d+)?)\s*m(?:²|2)/i;
 const ROOMS_RE = /(?:pi[eè]ces?|rooms?)[^\d]{0,20}(\d+)/i;
@@ -37,6 +59,7 @@ const BEDROOMS_RE = /(?:chambres?)[^\d]{0,20}(\d+)/i;
 const RENT_RE = /(?:loyer|rent)[^\d]{0,40}([\d\s.,]+)\s*€?/i;
 const DPE_RE = /\bDPE\b[^A-G]{0,20}\b([A-G])\b/i;
 const GES_RE = /\bGES\b[^A-G]{0,20}\b([A-G])\b/i;
+const TAX_RE = /(?:montant (?:de (?:votre|la) )?(?:imp[oô]t|cotisation)|total (?:des )?cotisations|montant (?:net )?[àa] payer)[^\d]{0,40}([\d\s.,]+)\s*€?/i;
 const CITY_RE = /\b(\d{5})\s+([A-ZÀ-Ü][A-Za-zà-üÀ-Ü' -]{2,40})\b/;
 
 function cleanText(value: string) {
@@ -55,7 +78,7 @@ function firstMatch(text: string, regex: RegExp) {
 }
 
 export async function POST(request: NextRequest) {
-  const rateLimitResponse = await enforceRateLimit(request, { endpoint: "properties.extract_file", maxRequests: 10, windowSeconds: 60 });
+  const rateLimitResponse = await enforceRateLimit(request, { endpoint: "properties.extract_file", maxRequests: 30, windowSeconds: 60 });
   if (rateLimitResponse) return rateLimitResponse;
 
   const authResponse = await requireUser(request);
@@ -89,7 +112,7 @@ export async function POST(request: NextRequest) {
       );
       try {
         const result = await extractListingWithAi({ kind: "images", images: encoded }, "none");
-        return aiJson(result, images.map((i) => i.name).join(", "), images.length > 1 ? `${images.length} captures d'écran` : "capture d'écran");
+        return aiJson(result, images.map((i) => i.name).join(", "), images.length > 1 ? `${images.length} captures d'écran` : "capture d'écran", "capture");
       } catch (error) {
         console.error("[extract-file] AI image extraction failed", error);
         return NextResponse.json({ error: AI_UNAVAILABLE_MESSAGE, code: "ai_unavailable" }, { status: 503 });
@@ -121,6 +144,7 @@ export async function POST(request: NextRequest) {
     }
 
     const bodyText = cleanText(rawText || "");
+    const documentKind = detectDocumentKind(file.name, bodyText);
 
     if (isAiExtractionEnabled()) {
       // PDF avec du texte : on envoie le texte (moins cher). PDF scanné : on
@@ -130,7 +154,11 @@ export async function POST(request: NextRequest) {
           bodyText.length >= 200
             ? await extractListingWithAi({ kind: "text", text: bodyText }, "none")
             : await extractListingWithAi({ kind: "pdf", base64: Buffer.from(bytes).toString("base64") }, "none");
-        return aiJson(result, file.name, "fichier PDF");
+        const copro = await readCopro(documentKind, bodyText, bytes);
+        const res = aiJson(result, file.name, "fichier PDF", documentKind);
+        if (!copro) return res;
+        const body = await res.json();
+        return NextResponse.json({ ...body, copro, extracted: { ...body.extracted, condo_procedure: copro.procedures.length > 0 || body.extracted?.condo_procedure } });
       } catch (error) {
         // IA indisponible : on continue avec la lecture classique du texte du PDF.
         console.error("[extract-file] AI PDF extraction failed", error);
@@ -159,7 +187,10 @@ export async function POST(request: NextRequest) {
     const titleGuess = cleanText(bodyText.slice(0, 120));
     const propertyType = classifyPropertyType(titleGuess, bodyText.slice(0, 4000));
 
+    const copro = await readCopro(documentKind, bodyText, bytes);
     return NextResponse.json({
+      document_kind: documentKind,
+      copro,
       source_url: file.name,
       source_domain: "fichier PDF",
       extracted: {
@@ -172,10 +203,12 @@ export async function POST(request: NextRequest) {
         dpe_class: dpe ? dpe.toUpperCase() : null,
         ges_class: ges ? ges.toUpperCase() : null,
         city,
-        monthly_rent: monthlyRent,
+        monthly_rent: ["bail", "annonce", "autre"].includes(documentKind) ? monthlyRent : null,
+        annual_property_tax: documentKind === "taxe_fonciere" ? numberFrom(firstMatch(bodyText, TAX_RE)) : null,
         property_type: propertyType?.type ?? null,
         property_type_label: propertyType?.label ?? null,
         property_type_confidence: propertyType?.confidence ?? null,
+        condo_procedure: copro ? copro.procedures.length > 0 : null,
       },
       extraction: {
         status: "partial",
