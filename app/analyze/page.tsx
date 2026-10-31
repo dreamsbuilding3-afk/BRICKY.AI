@@ -334,7 +334,10 @@ useEffect(() => {
 if (!pendingImport || !sessionReady) return;
 setPendingImport(null);
 clearPendingImport();
-extractFromText(pendingImport.text, pendingImport.url, "l'annonce envoyée par le bouton Bricky");
+const { text, url, shot } = pendingImport;
+extractFromText(text, url, shot ? "l'annonce envoyée par l'extension Bricky" : "l'annonce envoyée par le bouton Bricky").then((data) => {
+  if (shot && data?.extraction?.method === "ai" && (data.extraction.fields_found ?? 0) < 4) extractFromShot(shot);
+});
 // eslint-disable-next-line react-hooks/exhaustive-deps
 }, [pendingImport, sessionReady]);
 
@@ -439,8 +442,18 @@ const response = await fetch("/api/properties/preview", { method: "POST", header
 const data = await response.json();
 if (!response.ok) throw new Error(data?.error || "Impossible de lire ce texte.");
 applyExtraction(data, sourceLabel);
-} catch (err) { setError(err instanceof Error ? err.message : "Extraction impossible."); }
+return data as { extraction?: { method?: string; fields_found?: number } };
+} catch (err) { setError(err instanceof Error ? err.message : "Extraction impossible."); return null; }
 finally { setExtractingText(false); }
+}
+
+// Capture d'écran envoyée par l'extension : lue par l'IA quand le texte de la
+// page n'a pas suffi (annonce surtout en images). Sans IA, on ne l'utilise pas.
+async function extractFromShot(shot: string) {
+try {
+  const blob = await (await fetch(shot)).blob();
+  await extractFromFile([new File([blob], "capture-annonce.jpg", { type: "image/jpeg" })]);
+} catch {}
 }
 
 async function extractListing() {

@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <title>Bricky</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <header>
+    <img src="icons/icon48.png" alt="" width="28" height="28" />
+    <div>
+      <strong>Bricky</strong>
+      <span>Analyse immobilière</span>
+    </div>
+  </header>
+
+  <section class="page" id="page">
+    <span class="label">Page ouverte</span>
+    <p class="title" id="pageTitle">…</p>
+    <p class="domain" id="pageDomain"></p>
+  </section>
+
+  <button id="send" class="send" type="button">
+    <span id="sendLabel">Envoyer à Bricky</span>
+    <kbd>↵</kbd>
+  </button>
+
+  <label class="option">
+    <input type="checkbox" id="withShot" checked />
+    <span>Joindre une capture de la page</span>
+  </label>
+
+  <p class="status" id="status" role="status" aria-live="polite"></p>
+
+  <p class="privacy">Bricky lit uniquement cette page, au moment où tu cliques.</p>
+
+  <details id="settings">
+    <summary>Réglages</summary>
+    <label class="field">
+      <span>Adresse de Bricky</span>
+      <input id="origin" type="url" spellcheck="false" />
+    </label>
+    <div class="row">
+      <button id="saveOrigin" type="button" class="ghost">Enregistrer</button>
+      <button id="resetOrigin" type="button" class="link">Par défaut</button>
+    </div>
+  </details>
+
+  <script src="popup.js"></script>
+</body>
+</html>

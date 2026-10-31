@@ -4,6 +4,7 @@ import { enforceRateLimit } from "@/lib/rateLimit";
 import { requireUser } from "@/lib/auth/requireUser";
 import dns from "node:dns/promises";
 import net from "node:net";
+import { extractFromListingText } from "@/lib/listingText";
 import { AI_UNAVAILABLE_MESSAGE, AiServiceError, extractListingWithAi, htmlToListingText, isAiExtractionEnabled, WebFetchFailed } from "@/lib/ai/listingExtractor";
 
 export const maxDuration = 60;
@@ -151,19 +152,24 @@ export async function POST(request: NextRequest) {
 
     // Cas 1 : texte de l'annonce collé par l'utilisateur.
     if (typeof text === "string" && text.trim()) {
-      if (!isAiExtractionEnabled()) {
-        return NextResponse.json({ error: "L'extraction automatique n'est pas encore activée sur ce serveur." }, { status: 503 });
-      }
       if (text.trim().length < 30) {
         return NextResponse.json({ error: "Le texte est trop court pour être une annonce." }, { status: 400 });
       }
-      try {
-        const result = await extractListingWithAi({ kind: "text", text: text.trim() }, "none");
-        return aiResponse(result, typeof url === "string" ? url.trim() : "", "texte collé");
-      } catch (error) {
-        console.error("[preview] AI text extraction failed", error);
-        return NextResponse.json({ error: AI_UNAVAILABLE_MESSAGE, code: "ai_unavailable" }, { status: 503 });
+      const sourceUrl = typeof url === "string" && /^https?:\/\//.test(url.trim()) ? url.trim() : "";
+      if (isAiExtractionEnabled()) {
+        try {
+          const result = await extractListingWithAi({ kind: "text", text: text.trim() }, "none");
+          return aiResponse(result, sourceUrl, "texte collé");
+        } catch (error) {
+          // IA indisponible : on lit le texte nous-mêmes (ci-dessous).
+          console.error("[preview] AI text extraction failed", error);
+        }
       }
+      const fallback = extractFromListingText(text, sourceUrl);
+      if (fallback.extraction.fields_found === 0) {
+        return NextResponse.json({ error: "Bricky n'a trouvé ni prix, ni surface, ni ville dans ce texte. Vérifie que c'est bien la page de l'annonce." }, { status: 422 });
+      }
+      return NextResponse.json(fallback);
     }
 
     if (typeof url !== "string" || !url.trim()) {

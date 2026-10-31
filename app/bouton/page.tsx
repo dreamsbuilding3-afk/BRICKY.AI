@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { supabase } from "../../lib/supabase/client";
 import { AppNav } from "../../components/AppNav";
 import { buildBookmarklet } from "../../lib/brickyImport";
+import "./extension.css";
 
 // Page d'installation du bouton « Envoyer à Bricky » (favori / bookmarklet).
 export default function BoutonPage() {
@@ -42,6 +43,34 @@ export default function BoutonPage() {
             navigateur et remplit l'analyse tout seul.
           </p>
         </div>
+
+        <div className="ext-card">
+          <div className="ext-head">
+            <img src="/icon-192.png" alt="" width="44" height="44" />
+            <div>
+              <span className="ext-tag">Recommandé sur ordinateur</span>
+              <h2>Extension Chrome</h2>
+            </div>
+          </div>
+          <ul className="ext-points">
+            <li>Un clic sur l'icône Bricky, ou <kbd>Alt</kbd> + <kbd>Maj</kbd> + <kbd>B</kbd>, depuis n'importe quelle annonce.</li>
+            <li>Bricky reçoit le texte de l'annonce et une capture de la page.</li>
+            <li>Marche aussi sur Edge, Brave et Opera.</li>
+          </ul>
+          <a className="ext-download" href="/bricky-extension.zip" download>
+            Télécharger l'extension
+            <span>.zip · 30 Ko</span>
+          </a>
+          <ol className="ext-steps">
+            <li>Décompresse le fichier téléchargé (double-clic).</li>
+            <li>Ouvre <code>chrome://extensions</code>, active le <strong>Mode développeur</strong> en haut à droite.</li>
+            <li>Clique sur <strong>Charger l'extension non empaquetée</strong> et choisis le dossier décompressé.</li>
+            <li>Épingle Bricky : icône puzzle à droite de la barre d'adresse, puis la punaise à côté de Bricky.</li>
+          </ol>
+          <p className="ext-soon">Bientôt sur le Chrome Web Store : l'installation se fera en un clic.</p>
+        </div>
+
+        <p className="ext-or">ou, sans rien installer</p>
 
         <div className="bouton-card">
           <a
