@@ -6,6 +6,10 @@ import { useLocale } from "./LocaleProvider";
 
 const CODES = ["hotel", "chateau", "immeuble", "penthouse", "loft", "duplex", "chalet", "local_commercial", "terrain", "parking", "studio", "maison", "appartement"];
 const START = CODES.indexOf("penthouse");
+// Sur téléphone, la scène 3D est remplacée par une image fixe (capturée depuis la scène elle-même) :
+// pas de moteur 3D à télécharger ni à calculer. L'image montre la pince qui soulève « Maison ».
+const STATIC_QUERY = "(max-width: 720px)";
+const STATIC_PICK = CODES.indexOf("maison");
 
 // Section « tous les types de biens » : pile de conteneurs 3D, la pince soulève le type choisi.
 export function ContainerShowcase() {
@@ -14,12 +18,15 @@ export function ContainerShowcase() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const handleRef = useRef<ContainerHandle | null>(null);
   const userPicked = useRef(false);
+  const staticRef = useRef(false);
   const activeRef = useRef(START);
   const [active, setActive] = useState(START);
   const [ready, setReady] = useState(false);
   const [failed, setFailed] = useState(false);
+  const [isStatic, setIsStatic] = useState(false);
 
   function pick(i: number, fromUser: boolean) {
+    if (staticRef.current) return;
     if (fromUser) userPicked.current = true;
     activeRef.current = i;
     setActive(i);
@@ -27,6 +34,12 @@ export function ContainerShowcase() {
   }
 
   useEffect(() => {
+    if (window.matchMedia(STATIC_QUERY).matches) {
+      staticRef.current = true;
+      setIsStatic(true);
+      setActive(STATIC_PICK);
+      return;
+    }
     const stage = stageRef.current;
     const canvas = canvasRef.current;
     if (!stage || !canvas) return;
@@ -114,7 +127,9 @@ export function ContainerShowcase() {
 
       <div ref={stageRef} className={"ct-stage" + (ready ? " is-ready" : "")}>
         <span className="ct-word" aria-hidden="true">{t("ct.backdrop")}</span>
-        {!failed && <canvas ref={canvasRef} className="ct-canvas" aria-label={t("ct.aria")} role="img" />}
+        {!failed && !isStatic && <canvas ref={canvasRef} className="ct-canvas" aria-label={t("ct.aria")} role="img" />}
+        <img className="ct-static ct-static-light" src="/img/conteneurs-light.webp" width={920} height={719} alt={t("ct.aria")} loading="lazy" decoding="async" />
+        <img className="ct-static ct-static-dark" src="/img/conteneurs-dark.webp" width={920} height={719} alt="" aria-hidden="true" loading="lazy" decoding="async" />
         <div className="ct-caption" aria-live="polite">
           <span className="ct-caption-k">{t("ct.selected")}</span>
           <b key={code}>{t(`ptype.${code}`)}</b>
@@ -123,7 +138,7 @@ export function ContainerShowcase() {
 
       <div className="ct-chips" role="group" aria-label={t("ct.choose")}>
         {CODES.map((c, i) => (
-          <button key={c} type="button" className={"ct-chip" + (i === active ? " is-active" : "")} aria-pressed={i === active} onClick={() => pick(i, true)}>
+          <button key={c} type="button" className={"ct-chip" + (i === active ? " is-active" : "") + (isStatic ? " is-static" : "")} aria-pressed={isStatic ? undefined : i === active} tabIndex={isStatic ? -1 : undefined} onClick={() => pick(i, true)}>
             <span className={`ct-chip-dot ct-chip-dot-${i % 8}`} />
             {t(`ptype.${c}`)}
           </button>
