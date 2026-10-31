@@ -8,6 +8,8 @@ import { ModeChooser } from "./ModeChooser";
 import { RentalAnalyzer } from "./RentalAnalyzer";
 import { PROPERTY_TYPE_LABELS } from "../../lib/data/propertyTypeClassifier";
 import { clearPendingImport, takePendingImportFromLocation, type PendingImport } from "../../lib/brickyImport";
+import { DOC_LABELS, agencyRequestText, mergeDossier, missingDocuments, type DocKind, type DossierPiece } from "../../lib/dossier";
+import { mergeCopro, type CoproFindings } from "../../lib/copro";
 
 type AnalysisResult = { property_id?: string; analysis_id?: string; [key: string]: unknown };
 type Payload = { title: string; city: string; address: string; price: string; surface_m2: string; rooms: string; bedrooms: string; property_type: string; dpe_class: string; ges_class: string; monthly_rent: string; down_payment: string; loan_rate_pct: string; loan_duration_years: string; renovation_budget: string; source_url: string; annual_property_tax: string; annual_insurance: string; annual_maintenance: string; annual_management_fees: string; other_annual_charges: string; vacancy_rate: string };
@@ -115,6 +117,43 @@ function ExtraFieldsSection({ fields, extra, onChange, autoFields }: { fields: E
   </div>;
 }
 
+const EUR = (n: number) => `${n.toLocaleString("fr-FR")} €`;
+
+// Ce que disent les PV d'AG et relevés de charges : travaux, impayés, procédures.
+function CoproCard({ copro }: { copro: CoproFindings }) {
+  const verdict = copro.level === "alerte" ? "Points sérieux à vérifier" : copro.level === "attention" ? "À surveiller" : "Rien d'inquiétant repéré";
+  const voted = copro.works.filter((w) => w.status === "voté");
+  const votedTotal = voted.reduce((sum, w) => sum + (w.amount ?? 0), 0);
+  return (
+    <div className={`copro-card copro-${copro.level}`}>
+      <div className="copro-head">
+        <span className="dossier-k">Copropriété</span>
+        <span className="copro-badge">{verdict}</span>
+      </div>
+      {copro.procedures.length > 0 && (
+        <div className="copro-block"><b>Procédures et difficultés</b><ul>{copro.procedures.map((p, i) => <li key={i}>{p}</li>)}</ul></div>
+      )}
+      {copro.unpaid.found && (
+        <div className="copro-block"><b>Impayés de charges{copro.unpaid.amount ? ` : ${EUR(copro.unpaid.amount)}` : ""}</b>{copro.unpaid.detail && <p>{copro.unpaid.detail}</p>}</div>
+      )}
+      {copro.works.length > 0 && (
+        <div className="copro-block">
+          <b>Travaux{votedTotal ? ` · ${EUR(votedTotal)} votés pour l'immeuble` : ""}</b>
+          <ul className="copro-works">{copro.works.map((w, i) => (
+            <li key={i}><span className={`copro-st copro-st-${w.status === "voté" ? "vote" : w.status === "refusé" ? "refus" : "autre"}`}>{w.status}</span>{w.label}{w.amount ? ` · ${EUR(w.amount)}` : ""}{w.when ? ` · ${w.when}` : ""}</li>
+          ))}</ul>
+          {votedTotal > 0 && <p className="copro-note">Ta part dépend de tes tantièmes : demande au vendeur qui paie les appels de fonds déjà votés.</p>}
+        </div>
+      )}
+      {(copro.works_fund || copro.budget) && (
+        <p className="copro-note">{copro.budget ? `Budget annuel de la copro : ${EUR(copro.budget)}. ` : ""}{copro.works_fund ? `Fonds de travaux : ${EUR(copro.works_fund)}.` : ""}</p>
+      )}
+      {copro.level === "ok" && !copro.works.length && <p className="copro-note">Aucun travaux, impayé ni procédure repéré dans ces documents.</p>}
+      <p className="copro-src">{copro.method === "ai" ? "Lu par l'IA de Bricky." : "Lecture rapide par mots-clés : vérifie les passages concernés dans le document."}</p>
+    </div>
+  );
+}
+
 export default function AnalyzePage() {
 return <Suspense fallback={null}><AnalyzeEntry /></Suspense>;
 }
@@ -151,6 +190,8 @@ const [extracting, setExtracting] = useState(false);
 const [extractingFile, setExtractingFile] = useState(false);
 const [error, setError] = useState("");
 const [extractNote, setExtractNote] = useState("");
+const [dossier, setDossier] = useState<{ pieces: { name: string; kind: DocKind; fields: number }[]; failed: string[]; missing: DocKind[]; copro: CoproFindings | null } | null>(null);
+const [requestCopied, setRequestCopied] = useState(false);
 const [result, setResult] = useState<AnalysisResult | null>(null);
 const [userEmail, setUserEmail] = useState("");
 const [loadingExisting, setLoadingExisting] = useState(false);
@@ -372,20 +413,60 @@ applyExtraction(data, "l'annonce");
 finally { setExtracting(false); }
 }
 
+// Dossier complet : chaque PDF est lu séparément, les captures par lots de 5,
+// puis tout est fusionné en une seule fiche (la pièce la plus fiable l'emporte).
 async function extractFromFile(files: File[]) {
-setExtractingFile(true); setError(""); setExtractNote("");
+setExtractingFile(true); setError(""); setExtractNote(""); setRequestCopied(false);
 try {
 const { data: sessionData } = await supabase.auth.getSession();
 const token = sessionData.session?.access_token;
 if (!token) { setError("Session expirée."); return; }
-const formData = new FormData();
-files.forEach((f) => formData.append("file", f));
-const response = await fetch("/api/properties/extract-file", { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: formData });
-const data = await response.json();
-if (!response.ok) throw new Error(data?.error || "Impossible de lire ce fichier.");
-applyExtraction(data, "le fichier");
+const MAX_BYTES = 4.3 * 1024 * 1024; // limite d'envoi du serveur
+const images = files.filter((f) => f.type.startsWith("image/"));
+const pdfs = files.filter((f) => !f.type.startsWith("image/"));
+const batches: File[][] = [];
+for (let i = 0; i < images.length; i += 5) batches.push(images.slice(i, i + 5));
+pdfs.forEach((f) => batches.push([f]));
+const pieces: DossierPiece[] = [];
+const failed: string[] = [];
+let lastError = "";
+for (const batch of batches) {
+  const label = batch.map((f) => f.name).join(", ");
+  if (batch.some((f) => f.size > MAX_BYTES)) { failed.push(`${label} (trop lourd, 4 Mo max)`); continue; }
+  const formData = new FormData();
+  batch.forEach((f) => formData.append("file", f));
+  try {
+    const response = await fetch("/api/properties/extract-file", { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: formData });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data?.error || "Impossible de lire ce fichier.");
+    pieces.push({ name: label, kind: (data.document_kind as DocKind) || "autre", data, fields: data.extraction?.fields_found ?? 0 });
+  } catch (err) {
+    lastError = err instanceof Error ? err.message : "lecture impossible";
+    failed.push(label);
+  }
+}
+if (!pieces.length) throw new Error(lastError || "Aucun fichier n'a pu être lu.");
+const merged = mergeDossier(pieces);
+const ex = merged.extracted as Record<string, unknown>;
+applyExtraction(merged, pieces.length > 1 ? `ton dossier (${pieces.length} pièces)` : "le fichier");
+const propertyType = (ex.property_type as string | null) ?? payload.property_type ?? null;
+const rented = ex.monthly_rent != null && pieces.some((p) => p.kind === "bail");
+setDossier({
+  pieces: pieces.map((p) => ({ name: p.name, kind: p.kind, fields: p.fields })),
+  failed,
+  missing: missingDocuments(pieces.map((p) => p.kind), { propertyType, rented: rented || payload.monthly_rent !== "" }),
+  copro: mergeCopro(pieces.map((p) => (p.data as { copro?: CoproFindings | null }).copro).filter((c): c is CoproFindings => !!c)),
+});
 } catch (err) { setError(err instanceof Error ? err.message : "Extraction du fichier impossible."); }
 finally { setExtractingFile(false); }
+}
+
+async function copyAgencyRequest() {
+if (!dossier) return;
+try {
+  await navigator.clipboard.writeText(agencyRequestText(dossier.missing, payload.title));
+  setRequestCopied(true);
+} catch { setRequestCopied(false); }
 }
 
 async function handleSubmit(event: FormEvent) {
@@ -417,7 +498,26 @@ return <main className="page">
 <div className="url-import"><label>Lien de l'annonce<input value={payload.source_url} onChange={(e) => update("source_url", e.target.value)} placeholder="Colle le lien : Bricky remplit tout" /></label><button type="button" className="primary-extract-button secondary-button" onClick={extractListing} disabled={extracting || !payload.source_url.trim()}>{extracting ? "Bricky lit l'annonce…" : "Remplir automatiquement"}</button></div>
 <p className="bookmarklet-tip">Leboncoin, PAP ou SeLoger refusent les liens ? <a href="/bouton">Installe le bouton « Envoyer à Bricky »</a> : un clic depuis l'annonce suffit.</p>
 <div className="url-import text-import"><label>Lien illisible ? Colle le texte de l'annonce<textarea value={pastedText} onChange={(e) => setPastedText(e.target.value)} rows={4} placeholder="Sélectionne tout le texte de l'annonce (Ctrl+A / Cmd+A), copie-le et colle-le ici." /></label><button type="button" className="secondary-button" onClick={() => extractFromText()} disabled={extractingText || pastedText.trim().length < 30}>{extractingText ? "Lecture…" : "Analyser le texte"}</button></div>
-<div className="url-import file-import"><label>Ou envoie des captures d'écran (jusqu'à 5) ou le PDF de l'annonce<input type="file" accept="application/pdf,image/jpeg,image/png,image/webp" multiple onChange={(e) => { const list = Array.from(e.target.files ?? []); if (list.length) extractFromFile(list); e.target.value = ""; }} disabled={extractingFile} /></label>{extractingFile && <span className="extract-note">Bricky lit le fichier…</span>}</div>
+<div className="url-import file-import"><label>Ou dépose tout le dossier d'un coup : annonce, captures, DPE, taxe foncière, PV d'AG, bail…<input type="file" accept="application/pdf,image/jpeg,image/png,image/webp" multiple onChange={(e) => { const list = Array.from(e.target.files ?? []); if (list.length) extractFromFile(list); e.target.value = ""; }} disabled={extractingFile} /></label>{extractingFile && <span className="extract-note">Bricky lit le dossier, pièce par pièce…</span>}</div>
+{dossier && (
+  <div className="dossier-panel">
+    <div className="dossier-col">
+      <span className="dossier-k">Pièces lues</span>
+      <ul>{dossier.pieces.map((p, i) => <li key={i} className="dossier-ok"><b>{DOC_LABELS[p.kind]}</b><small>{p.name}{p.fields ? ` · ${p.fields} données` : ""}</small></li>)}</ul>
+      {dossier.failed.length > 0 && <ul>{dossier.failed.map((f, i) => <li key={i} className="dossier-ko"><b>Illisible</b><small>{f}</small></li>)}</ul>}
+    </div>
+    <div className="dossier-col">
+      <span className="dossier-k">À demander à l'agence</span>
+      {dossier.missing.length ? (
+        <>
+          <ul>{dossier.missing.map((k) => <li key={k} className="dossier-todo"><b>{DOC_LABELS[k]}</b></li>)}</ul>
+          <button type="button" className="dossier-copy" onClick={copyAgencyRequest}>{requestCopied ? "E-mail copié ✓" : "Copier l'e-mail pour l'agence"}</button>
+        </>
+      ) : <p className="dossier-done">Dossier complet, rien à réclamer.</p>}
+    </div>
+    {dossier.copro && <CoproCard copro={dossier.copro} />}
+  </div>
+)}
 {extractingText && <div className="extract-note">Bricky lit l'annonce…</div>}
 {extractNote && <div className="extract-note">✓ {extractNote}</div>}
 <form className="property-form" onSubmit={handleSubmit}><div className="form-grid">
