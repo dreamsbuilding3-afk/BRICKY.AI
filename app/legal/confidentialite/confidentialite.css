@@ -1,0 +1,28 @@
+.privacy { border-radius: 20px; box-shadow: 0 24px 50px -40px rgba(17,17,17,.4); }
+.privacy h1 { letter-spacing: -.025em; }
+.privacy h2 { scroll-margin-top: 90px; letter-spacing: -.01em; }
+.privacy h3 { margin: 18px 0 4px; font-size: 15px; }
+.privacy ul { margin: 0 0 12px; padding-left: 20px; }
+.privacy li { margin-bottom: 6px; font-size: 15px; color: #333; }
+.privacy a { color: #ff5a1f; }
+
+.privacy-brief { margin: 4px 0 20px; padding: 18px 22px; border-radius: 14px; background: #fbfaf7; border: 1px solid #ece7dd; position: relative; overflow: hidden; }
+.privacy-brief::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 3px; background: #ff5a1f; }
+.privacy-brief h2 { margin: 0 0 8px; font-size: 13px; text-transform: uppercase; letter-spacing: .08em; color: #8a8478; }
+.privacy-brief ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; }
+.privacy-brief li { margin: 0; padding-left: 18px; position: relative; }
+.privacy-brief li::before { content: ""; position: absolute; left: 2px; top: .62em; width: 6px; height: 6px; border-radius: 2px; background: #1f8a4c; }
+
+.privacy-toc { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 24px; }
+.privacy-toc a { padding: 5px 11px; border-radius: 999px; border: 1px solid #e5e1d8; color: #4a463e !important; font-size: 12.5px; font-weight: 600; text-decoration: none; }
+.privacy-toc a:hover { border-color: #ff5a1f; color: #ff5a1f !important; }
+
+[data-theme="dark"] .privacy { background: #1d1c16; border-color: rgba(255,255,255,.1); box-shadow: none; }
+[data-theme="dark"] .privacy p, [data-theme="dark"] .privacy li { color: #d6d0c3; }
+[data-theme="dark"] .privacy-brief { background: rgba(255,255,255,.04); border-color: rgba(255,255,255,.1); }
+[data-theme="dark"] .privacy-toc a { border-color: rgba(255,255,255,.14); color: #d6d0c3 !important; }
+[data-theme="dark"] .privacy .legal-notice { background: rgba(240,220,160,.08); border-color: rgba(240,220,160,.25); color: #e8d9a8; }
+
+@media (max-width: 640px) {
+  .privacy { padding: 28px 20px; }
+}
