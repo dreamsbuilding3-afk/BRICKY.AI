@@ -214,6 +214,8 @@ function AnalyzePageInner() {
 const router = useRouter();
 const searchParams = useSearchParams();
 const propertyIdParam = searchParams.get("property_id");
+// Retour du mode visite avec des travaux repérés : ajoutés au budget travaux.
+const visitWorks = Number(searchParams.get("travaux")) || 0;
 const [payload, setPayload] = useState<Payload>({ title: "", city: "", address: "", price: "", surface_m2: "", rooms: "", bedrooms: "", property_type: "", dpe_class: "", ges_class: "", monthly_rent: "", down_payment: "", loan_rate_pct: "", loan_duration_years: "", renovation_budget: "", source_url: "", annual_property_tax: "", annual_insurance: "", annual_maintenance: "", annual_management_fees: "", other_annual_charges: "", vacancy_rate: "" });
 const [showCharges, setShowCharges] = useState(false);
 const [extra, setExtra] = useState<Record<string, string>>({});
@@ -271,6 +273,7 @@ address: propertyRow.address || "",
 price: propertyRow.price != null ? String(propertyRow.price) : "",
 surface_m2: propertyRow.surface_m2 != null ? String(propertyRow.surface_m2) : "",
 property_type: propertyRow.property_type || "",
+...(visitWorks > 0 ? { renovation_budget: String(visitWorks) } : {}),
 }));
 if (analysisRow) {
 setResult({
@@ -728,7 +731,7 @@ setDossierError(err?.message || "Erreur inattendue lors de la génération du do
 setDownloadingDossier(false);
 }
 }
-return <section className="result-panel decision-dashboard"><div className="result-head"><div><span className="eyebrow">Analyse terminée</span><h2>Voici ce que Bricky en pense.</h2></div><div className="result-head-actions">{propertyId && <button type="button" className="secondary-button" onClick={downloadDossier} disabled={downloadingDossier}>{downloadingDossier ? "Génération…" : "Télécharger le dossier complet (PDF) →"}</button>}<span className="status-dot">● Décision</span></div></div>
+return <section className="result-panel decision-dashboard"><div className="result-head"><div><span className="eyebrow">Analyse terminée</span><h2>Voici ce que Bricky en pense.</h2></div><div className="result-head-actions">{propertyId && <a className="secondary-button visit-link" href={`/visite?property_id=${propertyId}`}>Mode visite</a>}{propertyId && <button type="button" className="secondary-button" onClick={downloadDossier} disabled={downloadingDossier}>{downloadingDossier ? "Génération…" : "Télécharger le dossier complet (PDF) →"}</button>}<span className="status-dot">● Décision</span></div></div>
 {dossierError ? <p className="share-error" style={{ marginTop: 4 }}>{dossierError}</p> : null}
 <div className="decision-hero"><div><span className="decision-label">Verdict</span><strong>{label}</strong></div><div className="score-block"><span>Score</span><b>{score ?? "—"}<small>/100</small></b></div><div className="score-block"><span>Confiance</span><b>{confidence ?? "—"}<small>%</small></b>{confidenceLabel ? <em className="confidence-tag">{confidenceLabel}</em> : null}</div></div>{missingCount > 0 ? <p className="confidence-note">Score basé sur {missingCount} donnée{missingCount > 1 ? "s" : ""} manquante{missingCount > 1 ? "s" : ""} — plus vous complétez le bien, plus l'estimation est fiable.</p> : null}
 <div className="share-row"><button type="button" className="share-button" onClick={handleShare} disabled={shareStatus.loading}>{shareStatus.loading ? "Generation du lien..." : shareStatus.url ? "Lien actif" : "Partager cette analyse"}</button>{shareStatus.url ? <div className="share-link"><input type="text" readOnly value={shareStatus.url} onFocus={(e) => e.target.select()} /><button type="button" onClick={() => navigator.clipboard.writeText(shareStatus.url || "")}>Copier</button></div> : null}{shareStatus.error ? <p className="share-error">{shareStatus.error}</p> : null}</div>
