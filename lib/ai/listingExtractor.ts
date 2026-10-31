@@ -391,6 +391,35 @@ export async function extractListingWithAi(input: AiInput, fetchedBy: AiExtracti
 
 export { WebFetchFailed };
 
+/**
+ * Appel générique : Claude remplit un outil (schéma JSON) à partir d'un texte ou
+ * d'un PDF. Sert aux lectures spécialisées (PV d'AG de copropriété…).
+ */
+export async function askClaudeWithTool(opts: {
+  system: string;
+  tool: { name: string; description: string; input_schema: Record<string, unknown> };
+  instruction: string;
+  text?: string;
+  pdfBase64?: string;
+  maxTokens?: number;
+}): Promise<{ raw: Record<string, unknown>; cost_usd: number; model: string }> {
+  const content: ContentBlock[] = opts.pdfBase64
+    ? [{ type: "document", source: { type: "base64", media_type: "application/pdf", data: opts.pdfBase64 } }, { type: "text", text: opts.instruction }]
+    : [{ type: "text", text: `${opts.instruction}\n\n<document>\n${(opts.text ?? "").slice(0, MAX_TEXT_CHARS)}\n</document>` }];
+  const res = await callClaude({
+    model: PRIMARY_MODEL,
+    max_tokens: opts.maxTokens ?? 1500,
+    system: opts.system,
+    tools: [opts.tool],
+    tool_choice: { type: "tool", name: opts.tool.name },
+    messages: [{ role: "user", content }],
+  });
+  const toolUse = res.content.find((b) => b.type === "tool_use" && b.name === opts.tool.name);
+  if (!toolUse) throw new Error("L'IA n'a pas renvoyé de données exploitables.");
+  const inputTokens = (res.usage?.input_tokens ?? 0) + (res.usage?.cache_read_input_tokens ?? 0) + (res.usage?.cache_creation_input_tokens ?? 0);
+  return { raw: (toolUse.input ?? {}) as Record<string, unknown>, cost_usd: costUsd(PRIMARY_MODEL, inputTokens, res.usage?.output_tokens ?? 0), model: PRIMARY_MODEL };
+}
+
 /** Transforme une page HTML en texte lisible pour l'IA (JSON-LD conservé). */
 export function htmlToListingText(html: string): string {
   const jsonLd = [...html.matchAll(/<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)]
