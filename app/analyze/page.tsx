@@ -10,6 +10,7 @@ import { PROPERTY_TYPE_LABELS } from "../../lib/data/propertyTypeClassifier";
 import { clearPendingImport, takePendingImportFromLocation, type PendingImport } from "../../lib/brickyImport";
 import { DOC_LABELS, agencyRequestText, mergeDossier, missingDocuments, type DocKind, type DossierPiece } from "../../lib/dossier";
 import { mergeCopro, type CoproFindings } from "../../lib/copro";
+import { computeOffer, type OfferInput, type OfferResult } from "../../lib/negotiation";
 
 type AnalysisResult = { property_id?: string; analysis_id?: string; [key: string]: unknown };
 type Payload = { title: string; city: string; address: string; price: string; surface_m2: string; rooms: string; bedrooms: string; property_type: string; dpe_class: string; ges_class: string; monthly_rent: string; down_payment: string; loan_rate_pct: string; loan_duration_years: string; renovation_budget: string; source_url: string; annual_property_tax: string; annual_insurance: string; annual_maintenance: string; annual_management_fees: string; other_annual_charges: string; vacancy_rate: string };
@@ -150,6 +151,47 @@ function CoproCard({ copro }: { copro: CoproFindings }) {
       )}
       {copro.level === "ok" && !copro.works.length && <p className="copro-note">Aucun travaux, impayé ni procédure repéré dans ces documents.</p>}
       <p className="copro-src">{copro.method === "ai" ? "Lu par l'IA de Bricky." : "Lecture rapide par mots-clés : vérifie les passages concernés dans le document."}</p>
+    </div>
+  );
+}
+
+const fmtEur = (n: number) => `${Math.round(n).toLocaleString("fr-FR")} €`;
+
+// « Prix à proposer » : offre d'ouverture, prix visé, plafond et arguments chiffrés.
+function OfferCard({ offer, price }: { offer: OfferResult; price: number }) {
+  const [copied, setCopied] = useState(false);
+  const pos = (v: number) => `${Math.max(2, Math.min(98, ((v - offer.opening * 0.97) / (price - offer.opening * 0.97 || 1)) * 100))}%`;
+  async function copyArgs() {
+    const lines = [
+      `Offre : ${fmtEur(offer.opening)} (prix demandé ${fmtEur(price)})`,
+      ...offer.arguments.map((a) => `- ${a.label} : ${a.detail}`),
+    ];
+    try { await navigator.clipboard.writeText(lines.join("\n")); setCopied(true); } catch { setCopied(false); }
+  }
+  return (
+    <div className="dashboard-section offer-card">
+      <div className="section-heading"><div><h3>Prix à proposer</h3><small>Estimation indicative · {offer.basis === "marché" ? "basée sur les ventes réelles du secteur" : "basée sur le prix demandé"}</small></div>{offer.marginPct > 0 && <span className="market-badge">Marge estimée : {offer.marginPct.toLocaleString("fr-FR")} %</span>}</div>
+      <div className="offer-scale" aria-hidden="true">
+        <span className="offer-bar" />
+        <span className="offer-dot offer-dot-open" style={{ left: pos(offer.opening) }} />
+        <span className="offer-dot offer-dot-target" style={{ left: pos(offer.target) }} />
+        <span className="offer-dot offer-dot-ask" style={{ left: pos(price) }} />
+      </div>
+      <div className="offer-grid">
+        <div><small>Offre d'ouverture</small><b>{fmtEur(offer.opening)}</b></div>
+        <div className="offer-main"><small>Prix visé</small><b>{fmtEur(offer.target)}</b></div>
+        <div><small>À ne pas dépasser</small><b>{fmtEur(offer.ceiling)}</b></div>
+        <div className="offer-ask"><small>Prix demandé</small><b>{fmtEur(price)}</b></div>
+      </div>
+      {offer.arguments.length > 0 ? (
+        <ul className="offer-args">
+          {offer.arguments.map((a, i) => <li key={i}><b>{a.label}{a.amount ? ` · −${fmtEur(a.amount)}` : ""}</b><span>{a.detail}</span></li>)}
+        </ul>
+      ) : <p className="empty-note">Pas d'argument chiffré particulier : la négociation d'usage tourne autour de 3 %. Les visites et le temps de mise en vente peuvent t'en donner d'autres.</p>}
+      <div className="offer-foot">
+        <button type="button" className="dossier-copy" onClick={copyArgs}>{copied ? "Arguments copiés ✓" : "Copier mes arguments"}</button>
+        <small>Bricky ne connaît ni l'urgence du vendeur ni la concurrence sur le bien : ajuste selon la visite.</small>
+      </div>
     </div>
   );
 }
@@ -554,7 +596,7 @@ return <main className="page">
 {openExtraSection === "rental_works" && <ExtraFieldsSection fields={RENTAL_WORKS_FIELDS} extra={extra} onChange={updateExtra} autoFields={autoFields} />}
 <button className="primary-button" disabled={loading}>{loading ? "Analyse en cours…" : "Lancer l’analyse Bricky →"}</button>{error && <div className="error-box">{error}</div>}</form>
 </>}
-{result && <AnalysisDashboard result={result} address={payload.address} onResultRefresh={refreshAnalysisFromDb} />}
+{result && <AnalysisDashboard result={result} address={payload.address} onResultRefresh={refreshAnalysisFromDb} offerInput={{ price: Number(payload.price) || 0, dpe: payload.dpe_class || null, renovation: Number(payload.renovation_budget) || null, condition: extra.overall_condition || null, coproWorksVoted: dossier?.copro ? dossier.copro.works.filter((w) => w.status === "voté").reduce((s, w) => s + (w.amount ?? 0), 0) || null : null }} />}
 </section>
 </main>;
 }
@@ -584,7 +626,7 @@ return <button type="button" key={opt.code || "none"} className={`type-scroller-
 </div></div>;
 }
 
-function AnalysisDashboard({ result, address, onResultRefresh }: { result: AnalysisResult; address?: string; onResultRefresh?: (propertyId: string) => void }) {
+function AnalysisDashboard({ result, address, onResultRefresh, offerInput }: { result: AnalysisResult; address?: string; onResultRefresh?: (propertyId: string) => void; offerInput?: Pick<OfferInput, "price" | "dpe" | "renovation" | "condition" | "coproWorksVoted"> }) {
 const [shareStatus, setShareStatus] = useState<{ loading: boolean; url: string | null; error: string | null }>({ loading: false, url: null, error: null });
 async function handleShare() {
 if (!result?.analysis_id) return;
@@ -649,6 +691,13 @@ const historyReady = priceHistory.status === "ready" && historyYears.length >= 2
 const historyMax = historyYears.length ? Math.max(...historyYears.map((y: any) => Number(y.median_price_m2) || 0), 1) : 1;
 const historyMin = historyYears.length ? Math.min(...historyYears.map((y: any) => Number(y.median_price_m2) || 0)) : 0;
 const historyRange = historyMax - historyMin || historyMax || 1;
+const offer = offerInput ? computeOffer({
+  ...offerInput,
+  renovation: offerInput.renovation ?? (Number(acquisition.renovation_budget) || null),
+  marketValue: marketReady && market.market_value_estimate != null ? Number(market.market_value_estimate) : null,
+  marketConfidence: market.confidence_score != null ? Number(market.confidence_score) : null,
+  trendAnnualPct: priceHistory.trend_pct_annualized != null ? Number(priceHistory.trend_pct_annualized) : null,
+}) : null;
 const propertyId = typeof result.property_id === "string" ? result.property_id : typeof analysis.property_id === "string" ? analysis.property_id : "";
 const [downloadingDossier, setDownloadingDossier] = useState(false);
 const [dossierError, setDossierError] = useState<string | null>(null);
@@ -694,6 +743,7 @@ return <section className="result-panel decision-dashboard"><div className="resu
 </div>
 
 <div className="dashboard-section market-card"><div className="section-heading"><div><h3>Valeur marché</h3><small>Transactions comparables · données disponibles</small></div><span className="market-badge">{marketReady ? `${market.confidence_score ?? 0}% confiance` : "Données insuffisantes"}</span></div>{marketReady ? <div className="market-grid"><Metric label="Prix du bien" value={market.property_price_m2} suffix=" €/m²" /><Metric label="Marché médian" value={market.market_price_m2_median} suffix=" €/m²" /><Metric label="Valeur estimée" value={market.market_value_estimate} suffix=" €" /><Metric label="Écart au marché" value={market.market_gap_pct} suffix=" %" /></div> : <p className="empty-note">Bricky ne dispose pas encore de suffisamment de transactions comparables pour produire une estimation fiable. Aucune valeur n'est inventée.</p>}</div><div className="dashboard-section price-history-card"><div className="section-heading"><div><h3>Évolution des prix (DVF)</h3><small>Prix médian au m² par année de transaction · biens comparables dans la commune</small></div>{historyReady && priceHistory.trend_pct_total != null ? <span className="market-badge">{priceHistory.trend_pct_total >= 0 ? "+" : ""}{priceHistory.trend_pct_total}% sur {historyYears.length} ans</span> : null}</div>{historyReady ? <><BarChart items={historyYears.map((y: any) => { const val = Number(y.median_price_m2) || 0; const pct = Math.max(8, Math.round(((val - historyMin) / historyRange) * 100)); return { key: String(y.year), label: String(y.year), display: `${Math.round(val).toLocaleString("fr-FR")} €`, pct }; })} />{priceHistory.trend_pct_annualized != null && <p className="extract-note">Soit environ {priceHistory.trend_pct_annualized >= 0 ? "+" : ""}{priceHistory.trend_pct_annualized}%/an en moyenne entre {priceHistory.first_year} et {priceHistory.last_year}, sur les transactions DVF comparables (même commune, surface proche).</p>}</> : <p className="empty-note">Pas encore assez de transactions DVF réparties sur plusieurs années pour tracer une tendance ici. Cela s'enrichit automatiquement à mesure que la base de comparables grandit.</p>}</div>
+{offer && offerInput && <OfferCard offer={offer} price={offerInput.price} />}
 {rows.length > 0 && <div className="dashboard-section"><h3>Scénarios</h3><div className="scenario-grid">{rows.map((key) => <div className="scenario" key={key}><span>{key === "base" ? "Base" : key === "conservative" ? "Conservateur" : "Optimiste"}</span><b>{scenarios[key].net_yield ?? "—"} %</b><small>rendement net (sur prix)</small></div>)}</div></div>}
 {verdict && <div className="dashboard-section"><h3>Pourquoi ce verdict ?</h3><p className="empty-note" style={{fontSize:14, lineHeight:1.6}}>
 Bricky a classé ce bien comme <b>« {label} »</b>{score != null ? <> avec un score de <b>{score}/100</b></> : null}{confidenceLabel ? <> (confiance {confidenceLabel.toLowerCase()})</> : null}.{" "}

@@ -3625,3 +3625,28 @@ label.auto-filled input, label.auto-filled select { border-color: rgba(22,163,74
 [data-theme="dark"] .copro-card { background: #1c1c1c; border-color: rgba(255,255,255,.07); }
 [data-theme="dark"] .copro-block ul, [data-theme="dark"] .copro-block p, [data-theme="dark"] .copro-note { color: var(--text-muted); }
 [data-theme="dark"] .copro-st { background: #262626; color: var(--text-muted); }
+
+/* ---- Prix à proposer ---- */
+.offer-card .offer-scale { position: relative; height: 22px; margin: 6px 4px 14px; }
+.offer-bar { position: absolute; left: 0; right: 0; top: 9px; height: 4px; border-radius: 4px; background: linear-gradient(90deg, #1f9d55, #e8a317 70%, #d6322a); opacity: .35; }
+.offer-dot { position: absolute; top: 4px; width: 14px; height: 14px; margin-left: -7px; border-radius: 50%; border: 3px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,.25); }
+.offer-dot-open { background: #1f9d55; }
+.offer-dot-target { background: var(--accent); width: 18px; height: 18px; top: 2px; margin-left: -9px; }
+.offer-dot-ask { background: #6b6860; }
+.offer-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.offer-grid > div { padding: 10px 12px; border-radius: 12px; background: #faf9f6; border: 1px solid #efede8; }
+.offer-grid small { display: block; font-size: 11.5px; color: #8d897f; }
+.offer-grid b { font-size: 17px; font-variant-numeric: tabular-nums; }
+.offer-grid .offer-main { background: #fff1ea; border-color: #ffd2bd; }
+.offer-grid .offer-main b { color: var(--accent-dark); font-size: 19px; }
+.offer-grid .offer-ask b { color: #6b6860; font-weight: 600; }
+.offer-args { list-style: none; margin: 14px 0 0; padding: 0; display: grid; gap: 8px; }
+.offer-args li { display: grid; gap: 2px; padding-left: 14px; border-left: 2px solid var(--accent); font-size: 13.5px; }
+.offer-args li span { color: #6b6860; }
+.offer-foot { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-top: 14px; }
+.offer-foot small { color: #8d897f; font-size: 12px; flex: 1; min-width: 220px; }
+@media (max-width: 640px) { .offer-grid { grid-template-columns: 1fr 1fr; } }
+[data-theme="dark"] .offer-grid > div { background: #1a1a1a; border-color: rgba(255,255,255,.07); }
+[data-theme="dark"] .offer-grid .offer-main { background: rgba(255,90,31,.12); border-color: rgba(255,90,31,.35); }
+[data-theme="dark"] .offer-args li span, [data-theme="dark"] .offer-foot small { color: var(--text-muted); }
+[data-theme="dark"] .offer-dot { border-color: #1a1a1a; }
