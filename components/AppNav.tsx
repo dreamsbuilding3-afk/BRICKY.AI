@@ -8,8 +8,11 @@ import { AgeGate } from "./AgeGate";
 
 type AppNavProps = {
   email?: string | null;
-  active?: "analyze" | "properties" | "account" | "alerts" | "team" | "export" | "progress" | "space";
+  active?: "analyze" | "properties" | "account" | "alerts" | "team" | "export" | "progress" | "space" | "radar";
 };
+
+// Radar des bonnes affaires : caché tant qu'il n'est pas activé (NEXT_PUBLIC_RADAR_ENABLED=1 dans Vercel).
+const RADAR_ENABLED = process.env.NEXT_PUBLIC_RADAR_ENABLED === "1";
 
 export function AppNav({ email, active }: AppNavProps) {
   const router = useRouter();
@@ -78,6 +81,15 @@ export function AppNav({ email, active }: AppNavProps) {
         >
           Nouvelle analyse
         </Link>
+        {RADAR_ENABLED && (
+          <Link
+            className={"navlink" + (active === "radar" ? " navlink-active" : "")}
+            href="/radar"
+            onClick={closeMenu}
+          >
+            Radar
+          </Link>
+        )}
         <Link
           className={"navlink" + (active === "space" || active === "progress" || active === "alerts" || active === "team" || active === "export" ? " navlink-active" : "")}
           href="/espace"
