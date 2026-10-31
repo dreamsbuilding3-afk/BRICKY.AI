@@ -3066,6 +3066,8 @@ label.auto-filled input, label.auto-filled select { border-color: rgba(22,163,74
 .ct-chip-dot-4 { background: #16a085; } .ct-chip-dot-5 { background: #8f9aa6; } .ct-chip-dot-6 { background: #d93a2b; } .ct-chip-dot-7 { background: #6cb8ff; }
 .ct-chip.is-active .ct-chip-dot-3 { background: #fff; }
 
+.ct-static { display: none; }
+
 @media (max-width: 720px) {
   .ct-section { padding: 10px 16px 0; margin-top: 36px; }
   .ct-stage { height: 420px; }
@@ -3075,6 +3077,20 @@ label.auto-filled input, label.auto-filled select { border-color: rgba(22,163,74
   .ct-chips { flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; scroll-snap-type: x proximity; margin: 0 -16px; padding: 4px 16px 10px; scrollbar-width: none; }
   .ct-chips::-webkit-scrollbar { display: none; }
   .ct-chip { flex: none; scroll-snap-align: start; }
+  /* Téléphone : image fixe à la place de la 3D */
+  .ct-stage { height: auto; margin-top: 0; padding-bottom: 46px; }
+  .ct-canvas, .ct-word { display: none; }
+  .ct-static-light { display: block; }
+  .ct-static {
+    width: 100%; height: auto; margin: 0 auto;
+    -webkit-mask-image: linear-gradient(to right, transparent 0, #000 10%, #000 90%, transparent 100%), linear-gradient(to bottom, transparent 0, #000 14%);
+    -webkit-mask-composite: source-in;
+    mask-image: linear-gradient(to right, transparent 0, #000 10%, #000 90%, transparent 100%), linear-gradient(to bottom, transparent 0, #000 14%);
+    mask-composite: intersect;
+  }
+  .ct-chip.is-static { pointer-events: none; }
+  [data-theme="dark"] .ct-static-light { display: none; }
+  [data-theme="dark"] .ct-static-dark { display: block; }
 }
 
 [data-theme="dark"] .ct-word { color: #1f1f1f; }
