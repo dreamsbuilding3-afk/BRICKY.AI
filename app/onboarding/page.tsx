@@ -33,5 +33,6 @@ export default function OnboardingPage() {
 
   if (!ready) return null;
 
-  return <OnboardingQuestionnaire onDone={() => router.replace("/properties")} />;
+  // Après le questionnaire : « Mon projet » (ville, budget, type), qu'on peut passer.
+  return <OnboardingQuestionnaire onDone={() => router.replace("/projet?suite=1")} />;
 }
