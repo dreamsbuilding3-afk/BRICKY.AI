@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bricky · Dossier de lancement</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+/* Layout : un dossier d'enquête en 18 pièces, qui défile à l'horizontale (scroll-snap), chaque pièce numérotée comme une pièce à conviction. */
+:root {
+  --bg: #f4f3ef;
+  --surface: #ffffff;
+  --ink: #141310;
+  --muted: #6b6860;
+  --line: #e3e1da;
+  --accent: #ff5a1f;
+  --accent-soft: #ffe7dc;
+  --green: #17824a;
+  --amber: #b97400;
+  --blue: #2f5bea;
+  --tag: #efe4cf;
+  --tag-ink: #5a4a2c;
+  --shadow: 0 1px 1px rgba(20,19,16,.04), 0 18px 40px -18px rgba(20,19,16,.28);
+  --f-display: "Bricolage Grotesque", "Arial Narrow", Arial, sans-serif;
+  --f-body: "Hanken Grotesk", "Helvetica Neue", Arial, sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12110e; --surface: #1c1a16; --ink: #f3f0e9; --muted: #a39e92; --line: #2e2b25;
+    --accent: #ff6a33; --accent-soft: #3a2117; --green: #3fbf78; --amber: #e0a43a; --blue: #7c9bff;
+    --tag: #2c2619; --tag-ink: #e4cf9f; --shadow: 0 1px 1px rgba(0,0,0,.3), 0 22px 44px -18px rgba(0,0,0,.7);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12110e; --surface: #1c1a16; --ink: #f3f0e9; --muted: #a39e92; --line: #2e2b25;
+  --accent: #ff6a33; --accent-soft: #3a2117; --green: #3fbf78; --amber: #e0a43a; --blue: #7c9bff;
+  --tag: #2c2619; --tag-ink: #e4cf9f; --shadow: 0 1px 1px rgba(0,0,0,.3), 0 22px 44px -18px rgba(0,0,0,.7);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body { overflow: hidden; }
+#stage { position: fixed; left: 0; top: 0; width: 1440px; height: 900px; transform-origin: 0 0; overflow: hidden; background: var(--bg); transform: translateZ(0); }
+#rotate-hint { position: fixed; left: 0; right: 0; bottom: 18px; text-align: center; font-family: var(--f-mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); display: none; }
+#rotate-hint span { display: inline-block; animation: tilt 2.4s ease-in-out infinite; margin-right: 8px; }
+@keyframes tilt { 0%, 30% { transform: rotate(0); } 60%, 100% { transform: rotate(-90deg); } }
+.timer { position: absolute; left: 0; bottom: -1px; height: 2px; width: 0; background: color-mix(in srgb, var(--ink) 35%, transparent); }
+.slide { overflow: hidden !important; }
+#play svg { display: block; }
+body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 16px; line-height: 1.5; overflow: hidden; -webkit-font-smoothing: antialiased; }
+img { max-width: 100%; display: block; }
+a { color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 6px; }
+h1, h2, h3 { font-family: var(--f-display); text-wrap: balance; margin: 0; letter-spacing: -.035em; line-height: .98; }
+p { margin: 0; }
+.num { font-variant-numeric: tabular-nums; }
+
+/* ---------- Chrome fixe ---------- */
+.topbar { position: fixed; inset: 0 0 auto 0; z-index: 20; height: 60px; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 0 clamp(16px, 3vw, 36px); background: color-mix(in srgb, var(--bg) 82%, transparent); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-bottom: 1px solid var(--line); }
+.brand { display: flex; align-items: center; gap: 10px; font-family: var(--f-display); font-weight: 800; font-size: 20px; letter-spacing: -.04em; }
+.mark { width: 30px; height: 30px; border-radius: 9px; background: var(--accent); color: #fff; display: grid; place-items: center; font-size: 15px; }
+.brand small { font-family: var(--f-mono); font-weight: 500; font-size: 11px; letter-spacing: .06em; color: var(--muted); text-transform: uppercase; margin-left: 6px; }
+.counter { font-family: var(--f-mono); font-size: 12px; letter-spacing: .08em; color: var(--muted); white-space: nowrap; }
+.counter b { color: var(--ink); }
+.progress { position: absolute; left: 0; bottom: -1px; height: 2px; background: var(--accent); width: 0; transition: width .45s cubic-bezier(.2,.7,.2,1); }
+
+.navbar { position: fixed; z-index: 20; left: 50%; bottom: 16px; transform: translateX(-50%); display: flex; align-items: center; gap: 6px; padding: 6px; border-radius: 999px; background: color-mix(in srgb, var(--surface) 88%, transparent); border: 1px solid var(--line); box-shadow: var(--shadow); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); max-width: calc(100% - 32px); }
+.navbtn { width: 40px; height: 40px; border-radius: 50%; border: 0; background: var(--ink); color: var(--bg); display: grid; place-items: center; cursor: pointer; flex: none; }
+.navbtn:disabled { opacity: .25; cursor: default; }
+.dots { display: flex; gap: 5px; padding: 0 8px; overflow: hidden; }
+.dot { width: 8px; height: 8px; border-radius: 99px; border: 0; padding: 0; background: var(--line); cursor: pointer; transition: width .3s, background .3s; flex: none; }
+.dot[aria-current="true"] { width: 26px; background: var(--accent); }
+
+/* ---------- Deck ---------- */
+.deck { position: fixed; inset: 0; display: flex; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; scroll-behavior: smooth; scrollbar-width: none; overscroll-behavior-x: contain; }
+.deck::-webkit-scrollbar { display: none; }
+.slide { position: relative; flex: 0 0 100%; width: 100%; height: 100%; overflow-y: auto; overflow-x: hidden; scroll-snap-align: start; scroll-snap-stop: always; padding: 92px clamp(16px, 5vw, 72px) 104px; }
+.slide-inner { max-width: 1180px; margin: 0 auto; min-height: 100%; display: flex; flex-direction: column; justify-content: center; gap: 28px; position: relative; z-index: 1; }
+.ghost-num { position: absolute; right: clamp(-20px, 1vw, 40px); bottom: 40px; font-family: var(--f-display); font-weight: 800; font-size: clamp(160px, 26vw, 360px); line-height: .8; letter-spacing: -.06em; color: transparent; -webkit-text-stroke: 1.5px var(--line); pointer-events: none; user-select: none; z-index: 0; height: .8em; overflow: hidden; }
+
+/* Étiquette de pièce à conviction */
+.tag { align-self: flex-start; justify-self: start; width: fit-content; display: inline-flex; align-items: center; gap: 10px; padding: 6px 14px 6px 10px; border-radius: 4px 14px 14px 4px; background: var(--tag); color: var(--tag-ink); font-family: var(--f-mono); font-size: 11.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+.tag::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--bg); box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--tag-ink) 45%, transparent); }
+.title { font-size: clamp(38px, 5.4vw, 72px); font-weight: 800; max-width: 17ch; }
+.title .stroke { color: transparent; -webkit-text-stroke: 1.6px var(--ink); }
+.title .accent, .accent-txt { color: var(--accent); }
+.lede { font-size: clamp(17px, 1.5vw, 20px); color: var(--muted); max-width: 62ch; line-height: 1.55; }
+.eyebrow { font-family: var(--f-mono); font-size: 11.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+
+.grid { display: grid; gap: 14px; }
+.g2 { grid-template-columns: repeat(2, minmax(0,1fr)); }
+.g3 { grid-template-columns: repeat(3, minmax(0,1fr)); }
+.g4 { grid-template-columns: repeat(4, minmax(0,1fr)); }
+.split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: clamp(24px, 4vw, 56px); align-items: center; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 20px; display: flex; flex-direction: column; gap: 8px; }
+.card h3 { font-size: 21px; letter-spacing: -.025em; line-height: 1.1; }
+.card p, .card li { color: var(--muted); font-size: 14.5px; line-height: 1.5; }
+.card ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
+.card .k { font-family: var(--f-mono); font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+.pill { display: inline-flex; align-items: center; gap: 7px; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); font-size: 13.5px; font-weight: 600; white-space: nowrap; }
+.pill i { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); flex: none; }
+.pill i.g { background: var(--green); } .pill i.b { background: var(--blue); } .pill i.a { background: var(--amber); }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.note { font-size: 12.5px; color: var(--muted); }
+.note a { color: var(--muted); }
+
+/* ---------- Cadres d'appareils ---------- */
+.browser { border-radius: 14px; overflow: hidden; background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow); }
+.browser-bar { height: 34px; display: flex; align-items: center; gap: 6px; padding: 0 12px; border-bottom: 1px solid var(--line); background: color-mix(in srgb, var(--surface) 92%, var(--ink)); }
+.browser-bar span { width: 9px; height: 9px; border-radius: 50%; background: var(--line); }
+.browser-bar em { margin-left: 10px; flex: 1; font-style: normal; font-family: var(--f-mono); font-size: 10.5px; color: var(--muted); background: var(--bg); border-radius: 6px; padding: 3px 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.browser img { width: 100%; height: auto; }
+.phone { --fh: 560px; width: 270px; height: calc(var(--fh) + 24px); border-radius: 40px; padding: 12px; background: #0d0c0a; box-shadow: var(--shadow), inset 0 0 0 2px #2a2824; position: relative; flex: none; }
+.phone::before { content: ""; position: absolute; top: 20px; left: 50%; transform: translateX(-50%); width: 76px; height: 20px; border-radius: 20px; background: #0d0c0a; z-index: 2; }
+.phone-screen { height: var(--fh); border-radius: 30px; overflow: hidden; background: #f7f7f5; }
+.phone-screen img { width: 100%; height: auto; animation: phone-scroll 16s ease-in-out infinite alternate; }
+@keyframes phone-scroll { 0%, 12% { transform: translateY(0); } 88%, 100% { transform: translateY(calc(-100% + var(--fh))); } }
+
+/* ---------- Mouvement ---------- */
+@keyframes rise { from { transform: translateY(26px); opacity: 0; } to { transform: none; opacity: 1; } }
+.slide.is-active .rv { animation: rise .8s cubic-bezier(.2,.75,.2,1) both; }
+.slide.is-active .rv:nth-child(2) { animation-delay: .08s; } .slide.is-active .rv:nth-child(3) { animation-delay: .16s; }
+.slide.is-active .rv:nth-child(4) { animation-delay: .24s; } .slide.is-active .rv:nth-child(5) { animation-delay: .32s; }
+.slide.is-active .rv:nth-child(6) { animation-delay: .40s; }
+.slide.is-active .stagger > * { animation: rise .7s cubic-bezier(.2,.75,.2,1) both; }
+.slide.is-active .stagger > *:nth-child(2) { animation-delay: .06s; } .slide.is-active .stagger > *:nth-child(3) { animation-delay: .12s; }
+.slide.is-active .stagger > *:nth-child(4) { animation-delay: .18s; } .slide.is-active .stagger > *:nth-child(5) { animation-delay: .24s; }
+.slide.is-active .stagger > *:nth-child(6) { animation-delay: .30s; } .slide.is-active .stagger > *:nth-child(7) { animation-delay: .36s; }
+.slide.is-active .stagger > *:nth-child(8) { animation-delay: .42s; } .slide.is-active .stagger > *:nth-child(n+9) { animation-delay: .48s; }
+
+.marquee { overflow: hidden; -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); }
+.marquee-track { display: flex; gap: 10px; width: max-content; animation: marquee 38s linear infinite; }
+.marquee-track.rev { animation-direction: reverse; animation-duration: 44s; }
+.marquee:hover .marquee-track { animation-play-state: paused; }
+@keyframes marquee { to { transform: translateX(-50%); } }
+
+/* ---------- 01 Couverture ---------- */
+.cover { display: grid; grid-template-columns: minmax(0,1.25fr) minmax(0,.75fr); gap: 32px; align-items: center; }
+.cover h1 { font-size: clamp(52px, 8.4vw, 128px); font-weight: 800; letter-spacing: -.06em; line-height: .9; }
+.cover h1 .stroke { color: transparent; -webkit-text-stroke: 2px var(--ink); }
+.cover h1 .accent { color: var(--accent); }
+.cover-meta { display: grid; grid-template-columns: repeat(3, auto); gap: 8px 28px; justify-content: start; margin-top: 8px; }
+.cover-meta div { display: grid; gap: 2px; }
+.cover-meta b { font-family: var(--f-display); font-size: 22px; letter-spacing: -.03em; }
+.mascot-wrap { position: relative; justify-self: center; width: min(100%, 380px); }
+.mascot-wrap img.m { width: 100%; height: auto; filter: drop-shadow(0 30px 40px rgba(0,0,0,.22)); animation: bob 5.5s ease-in-out infinite; }
+@keyframes bob { 0%,100% { transform: translateY(0) rotate(-1deg); } 50% { transform: translateY(-14px) rotate(1.5deg); } }
+.floater { position: absolute; padding: 9px 14px; border-radius: 12px; font-weight: 700; font-size: 14px; background: color-mix(in srgb, var(--surface) 80%, transparent); border: 1px solid var(--line); box-shadow: var(--shadow); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); display: flex; align-items: center; gap: 8px; animation: float 7s ease-in-out infinite; }
+.floater i { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
+.floater.f1 { top: 8%; left: -8%; transform: rotate(-6deg); }
+.floater.f2 { top: 30%; right: -10%; animation-delay: -2s; } .floater.f2 i { background: var(--amber); }
+.floater.f3 { bottom: 26%; left: -14%; animation-delay: -4s; } .floater.f3 i { background: var(--green); }
+.floater.f4 { bottom: 6%; right: -4%; animation-delay: -5.5s; } .floater.f4 i { background: var(--blue); }
+@keyframes float { 0%,100% { translate: 0 0; } 50% { translate: 0 -10px; } }
+.hint { display: inline-flex; align-items: center; gap: 8px; font-family: var(--f-mono); font-size: 12px; color: var(--muted); letter-spacing: .04em; }
+.hint span { display: inline-block; animation: nudge 1.6s ease-in-out infinite; }
+@keyframes nudge { 0%,100% { transform: translateX(0); } 50% { transform: translateX(6px); } }
+
+/* ---------- Pièces récurrentes ---------- */
+.bigstat { font-family: var(--f-display); font-weight: 800; font-size: clamp(64px, 9vw, 132px); letter-spacing: -.06em; line-height: .85; }
+.bigstat small { font-size: .32em; letter-spacing: -.02em; color: var(--muted); font-weight: 700; margin-left: 6px; }
+.scatter { display: flex; flex-wrap: wrap; gap: 8px; }
+.scatter .pill { background: var(--bg); }
+.pain { display: grid; gap: 10px; }
+.pain .row { display: grid; grid-template-columns: 44px 1fr; gap: 14px; align-items: start; padding: 14px 16px; border-radius: 14px; background: var(--surface); border: 1px solid var(--line); }
+.pain .row b { font-family: var(--f-mono); font-size: 12px; color: var(--accent); padding-top: 3px; }
+.pain .row p { color: var(--muted); font-size: 15px; } .pain .row p strong { color: var(--ink); }
+
+.steps { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 12px; }
+.step { position: relative; padding: 18px; border-radius: 16px; background: var(--surface); border: 1px solid var(--line); }
+.step .n { width: 30px; height: 30px; border-radius: 50%; background: var(--ink); color: var(--bg); display: grid; place-items: center; font-family: var(--f-mono); font-weight: 700; font-size: 13px; margin-bottom: 10px; }
+.step h3 { font-size: 19px; margin-bottom: 6px; } .step p { color: var(--muted); font-size: 14px; }
+
+.sources { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 10px; }
+.src { padding: 14px 16px; border-radius: 14px; border: 1px dashed color-mix(in srgb, var(--ink) 22%, transparent); display: grid; gap: 4px; background: var(--surface); }
+.src b { font-size: 15px; } .src span { font-size: 13px; color: var(--muted); line-height: 1.4; } .src code { font-family: var(--f-mono); font-size: 10.5px; color: var(--accent); }
+.know { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 12px; }
+.know .card { border-top: 4px solid var(--green); }
+.know .card:nth-child(2) { border-top-color: var(--amber); } .know .card:nth-child(3) { border-top-color: var(--accent); }
+
+.feat { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 10px; }
+.feat .card { padding: 16px; gap: 6px; }
+.feat .card h3 { font-size: 17px; }
+.feat .card p { font-size: 13.5px; }
+.plan { font-family: var(--f-mono); font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; padding: 2px 8px; border-radius: 99px; align-self: flex-start; background: var(--bg); color: var(--muted); border: 1px solid var(--line); }
+.plan.pro { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 40%, transparent); }
+.plan.ag { color: var(--blue); border-color: color-mix(in srgb, var(--blue) 40%, transparent); }
+
+/* Galerie */
+.film { overflow: hidden; margin: 0 calc(-1 * clamp(16px, 5vw, 72px)); -webkit-mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent); mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent); }
+.film-track { display: flex; gap: 22px; width: max-content; padding: 10px 0 24px; animation: marquee 70s linear infinite; }
+.film:hover .film-track { animation-play-state: paused; }
+.shot { width: clamp(300px, 34vw, 470px); flex: none; display: grid; gap: 10px; }
+.shot .browser { height: clamp(240px, 30vw, 360px); }
+.shot .browser img { height: calc(100% - 34px); object-fit: cover; object-position: top center; }
+.shot figcaption { display: grid; gap: 2px; }
+.shot figcaption b { font-size: 15px; } .shot figcaption span { font-size: 13px; color: var(--muted); }
+
+.duo { display: flex; gap: 22px; justify-content: center; align-items: flex-end; flex-wrap: wrap; }
+.duo .phone:nth-child(2) { margin-bottom: 30px; }
+
+/* Tarifs */
+.plans { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 12px; }
+.plancard { padding: 20px; border-radius: 18px; background: var(--surface); border: 1px solid var(--line); display: flex; flex-direction: column; gap: 10px; }
+.plancard.hl { border: 2px solid var(--accent); box-shadow: var(--shadow); }
+.plancard h3 { font-size: 22px; }
+.plancard .price { font-family: var(--f-display); font-weight: 800; font-size: 40px; letter-spacing: -.05em; line-height: 1; }
+.plancard .price small { font-size: 15px; color: var(--muted); letter-spacing: 0; font-weight: 600; }
+.plancard .day { font-family: var(--f-mono); font-size: 12px; color: var(--accent); }
+.plancard .who { font-size: 13px; color: var(--muted); min-height: 2.8em; }
+.plancard ul { margin: 0; padding-left: 17px; font-size: 13.5px; color: var(--muted); display: grid; gap: 3px; }
+.econ { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 12px; }
+.econ .card b { font-family: var(--f-display); font-size: 30px; letter-spacing: -.04em; line-height: 1; }
+
+/* Personas */
+.persona { gap: 10px; }
+.persona .who { display: flex; align-items: center; gap: 10px; }
+.persona .av { width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center; font-family: var(--f-display); font-weight: 800; font-size: 18px; color: #fff; background: var(--accent); flex: none; }
+.persona dl { margin: 0; display: grid; gap: 6px; }
+.persona dt { font-family: var(--f-mono); font-size: 10.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.persona dd { margin: 0; font-size: 14px; line-height: 1.45; }
+
+/* Positionnement */
+.manifesto { font-family: var(--f-display); font-weight: 800; font-size: clamp(34px, 5vw, 66px); letter-spacing: -.05em; line-height: .98; max-width: 18ch; }
+.manifesto em { font-style: normal; color: var(--accent); }
+.pillars { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 12px; }
+.pillars .card { border-left: 3px solid var(--accent); border-radius: 6px 18px 18px 6px; }
+.vs { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.vs .card:first-child { opacity: .8; }
+.vs .card:first-child li { text-decoration: line-through; text-decoration-color: color-mix(in srgb, var(--accent) 60%, transparent); }
+
+/* Vidéos */
+.reels { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 12px; }
+.reel { position: relative; border-radius: 20px; padding: 16px; min-height: 250px; display: flex; flex-direction: column; gap: 8px; background: var(--ink); color: var(--bg); overflow: hidden; }
+.reel::after { content: ""; position: absolute; inset: auto 16px 12px 16px; height: 3px; border-radius: 3px; background: linear-gradient(90deg, var(--accent) var(--p, 40%), color-mix(in srgb, var(--bg) 25%, transparent) 0); }
+.reel .fmt { font-family: var(--f-mono); font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; opacity: .7; display: flex; justify-content: space-between; gap: 8px; }
+.reel h3 { font-size: 21px; line-height: 1.05; color: var(--bg); }
+.reel .hook { font-size: 14px; line-height: 1.4; padding: 10px 12px; border-radius: 12px; background: color-mix(in srgb, var(--bg) 12%, transparent); }
+.reel .hook b { color: var(--accent); }
+.reel p { font-size: 13px; opacity: .78; line-height: 1.45; }
+.reel .cta { margin-top: auto; margin-bottom: 10px; font-family: var(--f-mono); font-size: 11px; color: var(--accent); }
+
+/* Tableaux */
+.table-wrap { overflow-x: auto; border-radius: 16px; border: 1px solid var(--line); background: var(--surface); }
+table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 640px; }
+th, td { text-align: left; padding: 11px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-family: var(--f-mono); font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 700; background: var(--bg); }
+tr:last-child td { border-bottom: 0; }
+td b { font-weight: 700; }
+td .note { display: block; margin-top: 2px; }
+
+/* Funnel ads */
+.funnel { display: grid; gap: 10px; }
+.stage { display: grid; grid-template-columns: 120px 1fr 1fr 1fr; gap: 14px; align-items: start; padding: 16px; border-radius: 16px; background: var(--surface); border: 1px solid var(--line); }
+.stage:nth-child(2) { margin: 0 3%; } .stage:nth-child(3) { margin: 0 6%; }
+.stage .lv { font-family: var(--f-display); font-weight: 800; font-size: 22px; letter-spacing: -.03em; line-height: 1; }
+.stage .lv small { display: block; font-family: var(--f-mono); font-size: 10.5px; font-weight: 700; letter-spacing: .08em; color: var(--muted); margin-top: 6px; text-transform: uppercase; }
+.stage div > span { display: block; font-family: var(--f-mono); font-size: 10.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
+.stage div { font-size: 14px; line-height: 1.45; }
+.budget { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 12px; }
+.bar { height: 10px; border-radius: 10px; overflow: hidden; display: flex; background: var(--bg); }
+.bar span { height: 100%; }
+
+/* CRM */
+.timeline { position: relative; display: grid; grid-template-columns: repeat(7, minmax(0,1fr)); gap: 10px; }
+.timeline::before { content: ""; position: absolute; left: 0; right: 0; top: 15px; height: 2px; background: var(--line); }
+.tl { position: relative; display: grid; gap: 6px; align-content: start; }
+.tl .d { width: 32px; height: 32px; border-radius: 50%; background: var(--surface); border: 2px solid var(--accent); display: grid; place-items: center; font-family: var(--f-mono); font-size: 10px; font-weight: 700; color: var(--accent); position: relative; }
+.tl b { font-size: 14px; line-height: 1.25; } .tl p { font-size: 12.5px; color: var(--muted); line-height: 1.4; }
+
+/* Roadmap */
+.road { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 12px; }
+.road .card { position: relative; padding-top: 18px; }
+.road .when { font-family: var(--f-mono); font-size: 11px; font-weight: 700; letter-spacing: .06em; color: var(--accent); }
+.road .card.now { border: 2px solid var(--accent); }
+.check li { list-style: none; position: relative; padding-left: 4px; }
+.check { padding-left: 16px !important; }
+.check li::before { content: ""; position: absolute; left: -14px; top: .5em; width: 7px; height: 7px; border-radius: 2px; border: 1.5px solid var(--muted); }
+
+/* KPIs */
+.kpis { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 12px; }
+.kpi { padding: 18px; border-radius: 18px; background: var(--surface); border: 1px solid var(--line); display: grid; gap: 6px; }
+.kpi b { font-family: var(--f-display); font-weight: 800; font-size: 40px; letter-spacing: -.05em; line-height: 1; }
+.kpi span { font-size: 13.5px; color: var(--muted); line-height: 1.4; }
+.ns { padding: 22px; border-radius: 20px; background: var(--ink); color: var(--bg); display: grid; grid-template-columns: auto 1fr; gap: 6px 22px; align-items: center; }
+.ns b { font-family: var(--f-display); font-size: clamp(48px, 6vw, 80px); font-weight: 800; letter-spacing: -.05em; line-height: .9; color: var(--accent); grid-row: span 2; }
+.ns h3 { font-size: 24px; color: var(--bg); }
+.ns p { opacity: .75; font-size: 14.5px; }
+
+.end { text-align: center; align-items: center; }
+.end .title { max-width: 16ch; margin: 0 auto; }
+.end .mascot-wrap { width: 190px; }
+.btn { display: inline-flex; align-items: center; gap: 8px; height: 50px; padding: 0 24px; border-radius: 999px; background: var(--accent); color: #fff; font-weight: 700; text-decoration: none; border: 0; cursor: pointer; font-size: 15px; }
+.btn.ghost { background: transparent; color: var(--ink); border: 2px solid var(--ink); }
+
+@media (max-width: 1px) {
+  .feat, .reels, .plans, .econ, .kpis, .pillars, .road { grid-template-columns: repeat(2, minmax(0,1fr)); }
+  .sources { grid-template-columns: repeat(2, minmax(0,1fr)); }
+  .timeline { grid-template-columns: repeat(4, minmax(0,1fr)); row-gap: 22px; }
+  .timeline::before { display: none; }
+  .stage { grid-template-columns: 1fr 1fr; } .stage .lv { grid-column: 1 / -1; }
+  .stage:nth-child(n) { margin: 0; }
+}
+@media (max-width: 1px) {
+  .slide { padding: 80px 16px 100px; }
+  .slide-inner { justify-content: flex-start; gap: 22px; }
+  .cover, .split, .g2, .g3, .know, .steps, .vs, .budget { grid-template-columns: minmax(0,1fr); }
+  .cover .mascot-wrap { width: 150px; order: -1; margin-top: 4px; }
+  .floater { font-size: 12px; padding: 7px 10px; }
+  .floater.f1 { left: -22%; } .floater.f3 { left: -26%; } .floater.f2 { right: -24%; } .floater.f4 { right: -18%; }
+  .cover-meta { grid-template-columns: repeat(3, auto); gap: 8px 16px; }
+  .cover-meta b { font-size: 18px; }
+  .brand small { display: none; }
+  .timeline { grid-template-columns: repeat(2, minmax(0,1fr)); }
+  .ghost-num { font-size: 150px; bottom: 90px; }
+  .dots { display: none; }
+  .ns { grid-template-columns: 1fr; } .ns b { grid-row: auto; }
+}
+@media (max-width: 1px) {
+  .feat, .reels, .plans, .econ, .kpis, .pillars, .road, .sources { grid-template-columns: minmax(0,1fr); }
+  .phone { --fh: 500px; width: 244px; }
+  .duo .phone:nth-child(2) { margin-bottom: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+  .deck { scroll-behavior: auto; }
+}
+</style>
+</head>
+<body>
+<div id="stage">
+
+<header class="topbar">
+  <div class="brand"><span class="mark">B</span>Bricky <small>Dossier de lancement · nov. 2026</small></div>
+  <div class="counter" aria-live="polite">PIÈCE <b id="cur">01</b> / <span id="tot">18</span></div>
+  <div class="progress" id="progress"></div><div class="timer" id="timer"></div>
+</header>
+
+<main class="deck" id="deck">
+
+<!-- 01 COUVERTURE -->
+<section class="slide" id="couverture" data-title="Couverture">
+  <div class="slide-inner">
+    <div class="cover">
+      <div style="display:grid; gap:24px">
+        <span class="tag rv">Pièce n°01 · Couverture</span>
+        <h1 class="rv">Vérifions si ce <span class="stroke">bien</span> vous <span class="accent">aime.</span></h1>
+        <p class="lede rv">Bricky est l'inspecteur de poche de l'investisseur immobilier. On colle une annonce, il croise le marché, les risques, le cadastre et l'environnement, puis rend un verdict clair avec la liste de ce qu'il reste à vérifier. Ce dossier raconte le produit, puis la façon dont on va le lancer.</p>
+        <div class="cover-meta rv">
+          <div><span class="eyebrow">Produit</span><b>App web + extension</b></div>
+          <div><span class="eyebrow">Marché</span><b>France</b></div>
+          <div><span class="eyebrow">Langues</span><b>FR · EN · 中文</b></div>
+        </div>
+        <span class="hint rv">Faites défiler <span>→</span></span>
+      </div>
+      <div class="mascot-wrap">
+        <img class="m" src="img/mascot.webp" alt="Bricky, la mascotte : un petit inspecteur en chapeau et trench, une loupe à la main" width="441" height="560">
+        <div class="floater f1"><i></i>Rendement</div>
+        <div class="floater f2"><i></i>Risques</div>
+        <div class="floater f3"><i></i>Marché</div>
+        <div class="floater f4"><i></i>Dossier</div>
+      </div>
+    </div>
+  </div>
+  <div class="ghost-num">01</div>
+</section>
+
+<!-- 02 PROBLÈME -->
+<section class="slide" id="probleme" data-title="Le problème">
+  <div class="slide-inner">
+    <span class="tag rv">Pièce n°02 · Le problème</span>
+    <div class="split">
+      <div style="display:grid; gap:20px">
+        <h2 class="title rv">La plus grosse dépense d'une vie, décidée <span class="accent">à l'instinct.</span></h2>
+        <div class="rv">
+          <div class="bigstat num" data-count="958000">958 000</div>
+          <p class="lede" style="margin-top:10px">ventes de logements anciens sur les 12 mois à fin juin 2026. Chacune s'est jouée sur une annonce, une visite de vingt minutes et un tableur bricolé.</p>
+          <p class="note" style="margin-top:6px">Source : <a href="https://www.insee.fr/fr/statistiques/fichier/version-html/9040119/IR216_IPLA_2T2026.pdf">Insee, indices Notaires-Insee, 2ᵉ trimestre 2026</a></p>
+        </div>
+      </div>
+      <div class="pain stagger">
+        <div class="row"><b>01</b><p><strong>L'info est éparpillée.</strong> Prix réels sur DVF, risques sur Géorisques, parcelle sur le cadastre, zonage sur le Géoportail, DPE à l'ADEME. Cinq sites pour un seul bien.</p></div>
+        <div class="row"><b>02</b><p><strong>Les calculs se font à la main.</strong> Rendement net, cash-flow, frais de notaire, charges : des heures sur Excel avant même de savoir si le bien vaut une visite.</p></div>
+        <div class="row"><b>03</b><p><strong>Les pièges sont cachés.</strong> Travaux votés en AG, impayés de copropriété, retrait-gonflement des argiles, DPE G interdit à la location : on les découvre après la signature.</p></div>
+        <div class="row"><b>04</b><p><strong>Personne ne dit ce qui manque.</strong> Les simulateurs devinent les chiffres absents au lieu de signaler qu'il faut les demander.</p></div>
+      </div>
+    </div>
+  </div>
+  <div class="ghost-num">02</div>
+</section>
+
+<!-- 03 SOLUTION -->
+<section class="slide" id="solution" data-title="La solution">
+  <div class="slide-inner">
+    <span class="tag rv">Pièce n°03 · La solution</span>
+    <div class="split">
+      <div style="display:grid; gap:20px">
+        <h2 class="title rv">Une annonce. <span class="accent">Un verdict.</span></h2>
+        <p class="lede rv">Lien Leboncoin, SeLoger ou PAP, PDF d'agence, capture d'écran ou simple texte : Bricky extrait prix, surface, pièces, DPE et adresse, puis lance l'enquête.</p>
+        <div class="steps stagger">
+          <div class="step"><div class="n">1</div><h3>Collez ou déposez</h3><p>URL, PDF, captures ou dossier complet. L'IA remplit le formulaire, sans inventer un champ absent.</p></div>
+          <div class="step"><div class="n">2</div><h3>Bricky enquête</h3><p>Comparables DVF, rendement, risques, cadastre, PLU, quartier.</p></div>
+          <div class="step"><div class="n">3</div><h3>Vous décidez</h3><p>Verdict, points de vigilance, pièces à demander, dossier PDF.</p></div>
+        </div>
+      </div>
+      <figure class="browser rv" style="margin:0">
+        <div class="browser-bar"><span></span><span></span><span></span><em>bricky-ai-three.vercel.app</em></div>
+        <img src="img/hero-dark.webp" alt="Page d'accueil de Bricky en thème sombre : « Vérifions si ce bien vous aime. » avec le champ pour coller une annonce" width="1440" height="900" loading="lazy">
+      </figure>
+    </div>
+    <div class="marquee rv" aria-hidden="true">
+      <div class="marquee-track">
+        <span class="pill"><i></i>Leboncoin</span><span class="pill"><i class="b"></i>SeLoger</span><span class="pill"><i class="g"></i>PAP</span><span class="pill"><i class="a"></i>Bien'ici</span><span class="pill"><i></i>Logic-Immo</span><span class="pill"><i class="b"></i>Figaro Immobilier</span><span class="pill"><i class="g"></i>PDF d'agence</span><span class="pill"><i class="a"></i>Capture d'écran</span><span class="pill"><i></i>Texte copié-collé</span><span class="pill"><i class="b"></i>Dossier multi-pièces</span>
+        <span class="pill"><i></i>Leboncoin</span><span class="pill"><i class="b"></i>SeLoger</span><span class="pill"><i class="g"></i>PAP</span><span class="pill"><i class="a"></i>Bien'ici</span><span class="pill"><i></i>Logic-Immo</span><span class="pill"><i class="b"></i>Figaro Immobilier</span><span class="pill"><i class="g"></i>PDF d'agence</span><span class="pill"><i class="a"></i>Capture d'écran</span><span class="pill"><i></i>Texte copié-collé</span><span class="pill"><i class="b"></i>Dossier multi-pièces</span>
+      </div>
+    </div>
+  </div>
+  <div class="ghost-num">03</div>
+</section>
+
+<!-- 04 MOTEUR -->
+<section class="slide" id="moteur" data-title="Le moteur de données">
+  <div class="slide-inner">
+    <span class="tag rv">Pièce n°04 · Le moteur</span>
+    <h2 class="title rv">Des sources officielles, <span class="stroke">zéro</span> <span class="accent">supposition.</span></h2>
+    <p class="lede rv">Chaque chiffre affiché remonte à sa source et porte un niveau de confiance. Quand une donnée manque, Bricky la signale comme lacune au lieu de la deviner. C'est la promesse centrale de la marque.</p>
+    <div class="sources stagger">
+      <div class="src"><code>DVF</code><b>Ventes réelles</b><span>Comparables du secteur, prix au m², écart au marché.</span></div>
+      <div class="src"><code>GÉORISQUES</code><b>Risques naturels</b><span>Argiles, inondation, séisme, radon : 300+ points croisés.</span></div>
+      <div class="src"><code>CADASTRE · IGN</code><b>Parcelle</b><span>Référence cadastrale, plan, surface de terrain.</span></div>
+      <div class="src"><code>GPU · PLU</code><b>Urbanisme</b><span>Zone U, AU, A ou N et ce qu'elle permet.</span></div>
+      <div class="src"><code>ADEME</code><b>DPE</b><span>Étiquette énergie et GES, risque d'interdiction de louer.</span></div>
+      <div class="src"><code>BD TOPO</code><b>Bâti</b><span>Hauteur, usage, année du bâtiment recensé.</span></div>
+      <div class="src"><code>GÉOCODAGE</code><b>Quartier</b><span>Transports, commerces, écoles à proximité.</span></div>
+      <div class="src"><code>IA · CLAUDE</code><b>Lecture d'annonce</b><span>Extraction des champs, lecture des PV d'AG de copropriété.</span></div>
+    </div>
+    <div class="know stagger">
+      <div class="card"><span class="k" style="color:var(--green)">Ce qu'on sait</span><p>Prix affiché, surface Carrez, étage, DPE, année de construction, prix au m² comparé au marché, chaque donnée avec sa source.</p></div>
+      <div class="card"><span class="k" style="color:var(--amber)">Ce qu'on ne sait pas</span><p>Travaux réalisés, charges exactes, procédures, sinistres : signalés comme lacunes, jamais inventés.</p></div>
+      <div class="card"><span class="k">Ce qu'il faut faire</span><p>Diagnostics à réclamer, PV d'AG à demander, questions au vendeur, points de négociation avant l'offre.</p></div>
+    </div>
+  </div>
+  <div class="ghost-num">04</div>
+</section>
+
+<!-- 05 CAPACITÉS -->
+<section class="slide" id="capacites" data-title="Les capacités">
+  <div class="slide-inner">
+    <span class="tag rv">Pièce n°05 · Les capacités</span>
+    <h2 class="title rv" style="max-width:22ch">Tout ce que l'app sait faire <span class="accent">aujourd'hui.</span></h2>
+    <div class="feat stagger">
+      <div class="card"><span class="plan">Tous</span><h3>Analyse achat</h3><p>Rendement brut et net, cash-flow réel, scénarios conservateur et optimiste.</p></div>
+      <div class="card"><span class="plan">Tous</span><h3>Analyse location</h3><p>Le loyer est-il juste ? Encadrement, dépôt de garantie, honoraires plafonnés, DPE.</p></div>
+      <div class="card"><span class="plan">Tous</span><h3>Prix à proposer</h3><p>Offre d'ouverture, prix cible et plafond, chacun justifié par DVF, DPE et travaux.</p></div>
+      <div class="card"><span class="plan">Tous</span><h3>Dossier multi-pièces</h3><p>Annonce, DPE, taxe foncière, PV d'AG fusionnés, et le mail à l'agence pour les pièces manquantes.</p></div>
+      <div class="card"><span class="plan">Tous</span><h3>Lecture de copropriété</h3><p>Travaux votés, impayés, procédures repérés dans les PV d'assemblée générale.</p></div>
+      <div class="card"><span class="plan">Tous</span><h3>Mode visite</h3><p>Checklist pièce par pièce sur téléphone, photos, questions à l'agent, travaux chiffrés.</p></div>
+      <div class="card"><span class="plan">Essentiel</span><h3>Dossier PDF</h3><p>Synthèse, finances, risques, cadastre et quartier dans un PDF prêt à partager.</p></div>
+      <div class="card"><span class="plan">Essentiel</span><h3>Simulateur de financement</h3><p>Apport, taux, durée : la mensualité et son effet sur le cash-flow.</p></div>
+      <div class="card"><span class="plan pro">Pro</span><h3>Comparateur</h3><p>Jusqu'à trois biens côte à côte, le meilleur rendement mis en avant.</p></div>
+      <div class="card"><span class="plan pro">Pro</span><h3>Alertes et partage</h3><p>Alertes sur les nouvelles annonces, lien en lecture seule pour clients et associés.</p></div>
+      <div class="card"><span class="plan ag">Agence</span><h3>Marque blanche et équipe</h3><p>Dossier aux couleurs de l'agence, comptes multi-utilisateurs, export API et CSV.</p></div>
+      <div class="card"><span class="plan">Tous</span><h3>Bouton « Envoyer à Bricky »</h3><p>Extension Chrome (Alt + Maj + B) et favori pour envoyer l'annonce ouverte en un clic.</p></div>
+    </div>
+    <div class="chips rv">
+      <span class="pill"><i class="g"></i>12 types de biens, de la place de parking à l'hôtel</span>
+      <span class="pill"><i class="b"></i>Île 3D qui grandit à chaque analyse</span>
+      <span class="pill"><i class="a"></i>Mon projet : villes, budget, rendement visé</span>
+      <span class="pill"><i></i>Thème clair et sombre</span>
+    </div>
+  </div>
+  <div class="ghost-num">05</div>
+</section>
+
+<!-- 06 ÉCRANS -->
+<section class="slide" id="ecrans" data-title="Les écrans">
+  <div class="slide-inner">
+    <span class="tag rv">Pièce n°06 · Les écrans</span>
+    <h2 class="title rv" style="max-width:22ch">L'app, <span class="accent">écran par écran.</span></h2>
+    <p class="note rv">Rendus depuis le code de l'application, avec des données d'exemple. Survolez pour mettre en pause.</p>
+    <div class="film rv">
+      <div class="film-track" id="film"></div>
+    </div>
+  </div>
+  <div class="ghost-num">06</div>
+</section>
+
+<!-- 07 MOBILE -->
+<section class="slide" id="terrain" data-title="Sur le terrain">
+  <div class="slide-inner">
+    <span class="tag rv">Pièce n°07 · Sur le terrain</span>
+    <div class="split">
+      <div style="display:grid; gap:20px">
+        <h2 class="title rv">Le téléphone devient <span class="accent">l'outil de visite.</span></h2>
+        <p class="lede rv">Pendant la visite, Bricky déroule la checklist adaptée au bien : façade, humidité, électricité, bruit. Chaque point est noté OK, à surveiller ou problème, avec photo. Les travaux repérés repartent directement dans le calcul de rentabilité.</p>
+        <div class="grid g2 stagger">
+          <div class="card"><span class="k">Mode visite</span><p>19 points de contrôle, 6 questions clés à l'agent, notes dictées, bilan copiable.</p></div>
+          <div class="card"><span class="k">Mode location</span><p>Pour les locataires : loyer comparé au secteur, honoraires et dépôt vérifiés. Une porte d'entrée gratuite et très virale.</p></div>
+        </div>
+      </div>
+      <div class="duo">
+        <div class="phone"><div class="phone-screen"><img src="img/visite.webp" alt="Mode visite sur téléphone : checklist par pièce avec boutons OK, À surveiller, Problème" width="780" height="1690" loading="lazy"></div></div>
+        <div class="phone"><div class="phone-screen"><img src="img/demo-m.webp" alt="Résultat d'analyse sur téléphone : prix, loyer estimé, rendement et valeur de marché" width="804" height="1690" loading="lazy" style="animation-delay:-5s"></div></div>
+      </div>
+    </div>
+  </div>
+  <div class="ghost-num">07</div>
+</section>
+
+<!-- 08 MODÈLE ÉCONOMIQUE -->
+<section class="slide" id="modele" data-title="Le modèle économique">
+  <div class="slide-inner">
+    <span class="tag rv">Pièce n°08 · Le modèle</span>
+    <h2 class="title rv" style="max-width:22ch">Freemium, puis <span class="accent">moins qu'un café</span> par jour.</h2>
+    <div class="plans stagger">
+      <div class="plancard"><span class="eyebrow">Découverte</span><div class="price">0 €</div><div class="who">Particuliers : un premier avis avant d'acheter</div><ul><li>1 analyse offerte, sans carte</li><li>PDF non téléchargeable</li></ul></div>
+      <div class="plancard"><span class="eyebrow">Essentiel</span><div class="price num">19 €<small>/mois</small></div><div class="day num">0,62 € par jour · 190 €/an</div><div class="who">Investisseurs particuliers actifs</div><ul><li>5 analyses par mois</li><li>Dossier PDF</li><li>Simulateur de financement</li></ul></div>
+      <div class="plancard hl"><span class="eyebrow" style="color:var(--accent)">Pro · cœur de cible</span><div class="price num">34 €<small>/mois</small></div><div class="day num">1,12 € par jour · 340 €/an</div><div class="who">Indépendants et auto-entrepreneurs de l'immobilier</div><ul><li>25 analyses par mois</li><li>Comparateur, alertes</li><li>Lien de partage client</li></ul></div>
+      <div class="plancard"><span class="eyebrow">Agence</span><div class="price num">129 €<small>/mois</small></div><div class="day num">4,24 € par jour · 1 290 €/an</div><div class="who">Agences et équipes</div><ul><li>150 analyses par mois</li><li>Marque blanche, multi-comptes</li><li>Export API et CSV, Réseau Privé</li></ul></div>
+    </div>
+    <div class="econ stagger">
+      <div class="card"><span class="k">Pack sans abonnement</span><b class="num">12 €</b><p>3 analyses valables 6 mois, pour le primo-accédant qui achète une fois.</p></div>
+      <div class="card"><span class="k">Panier moyen visé</span><b class="num">≈ 23,50 €</b><p>Hypothèse : 70 % Essentiel, 30 % Pro parmi les abonnés.</p></div>
+      <div class="card"><span class="k">Valeur client visée</span><b class="num">≈ 135 €</b><p>Hypothèse : 4 mois d'abonnement en Essentiel, 8 mois en Pro.</p></div>
+      <div class="card"><span class="k">Coût d'acquisition max.</span><b class="num">45 €</b><p>Pour garder un ratio valeur client / acquisition de 3.</p></div>
+    </div>
+  </div>
+  <div class="ghost-num">08</div>
+</section>
+
+<!-- 09 CIBLES -->
+<section class="slide" id="cibles" data-title="Les cibles">
+  <div class="slide-inner">
+    <span class="tag rv">Pièce n°09 · Les cibles</span>
+    <h2 class="title rv" style="max-width:22ch">Cinq profils, <span class="accent">une même peur :</span> se tromper.</h2>
+    <div class="grid g3 stagger" style="grid-template-columns:repeat(auto-fit, minmax(210px, 1fr))">
+      <div class="card persona"><div class="who"><span class="av">P</span><h3>Primo-accédant</h3></div><dl><dt>Sa peur</dt><dd>Acheter trop cher ou rater un vice caché.</dd><dt>Promesse</dt><dd>« Je comprends enfin ce que je regarde. »</dd><dt>Offre</dt><dd>Analyse offerte, puis pack 3 analyses.</dd></dl></div>
+      <div class="card persona"><div class="who"><span class="av" style="background:var(--green)">I</span><h3>Investisseur particulier</h3></div><dl><dt>Sa peur</dt><dd>Un cash-flow négatif qu'il n'avait pas vu venir.</dd><dt>Promesse</dt><dd>Trier dix annonces avant le café.</dd><dt>Offre</dt><dd>Essentiel, puis Pro pour comparer.</dd></dl></div>
+      <div class="card persona"><div class="who"><span class="av" style="background:var(--blue)">M</span><h3>Micro-entrepreneurs de l'immo</h3></div><dl><dt>Qui</dt><dd>Mandataires, chasseurs, marchands de biens, home stagers.</dd><dt>Promesse</dt><dd>Un dossier pro à envoyer au client en 30 secondes.</dd><dt>Offre</dt><dd>Pro, programme Ambassadeur.</dd></dl></div>
+      <div class="card persona"><div class="who"><span class="av" style="background:var(--amber)">A</span><h3>Agences</h3></div><dl><dt>Sa peur</dt><dd>Perdre du temps sur des dossiers qui ne signeront pas.</dd><dt>Promesse</dt><dd>Des dossiers à leurs couleurs, pour toute l'équipe.</dd><dt>Offre</dt><dd>Agence, démo en visio.</dd></dl></div>
+      <div class="card persona"><div class="who"><span class="av" style="background:var(--ink); color:var(--bg)">L</span><h3>Locataires</h3></div><dl><dt>Sa peur</dt><dd>Payer un loyer ou des frais illégaux.</dd><dt>Promesse</dt><dd>« Ton loyer est-il juste ? »</dd><dt>Rôle</dt><dd>Audience gratuite, futurs acheteurs.</dd></dl></div>
+    </div>
+    <p class="note rv">Le questionnaire d'inscription classe déjà chaque compte selon ces profils (primo-investisseur, investisseur expérimenté, résidence principale, professionnel) et son avancement (recherche, compromis en cours, achat récent, gestion).</p>
+  </div>
+  <div class="ghost-num">09</div>
+</section>
+
+<!-- 10 POSITIONNEMENT -->
+<section class="slide" id="positionnement" data-title="Positionnement">
+  <div class="slide-inner">
+    <span class="tag rv">Pièce n°10 · L'angle marketing</span>
+    <p class="manifesto rv">Avant de signer, <em>Bricky enquête.</em></p>
+    <p class="lede rv">Le grand angle de marque : Bricky est un détective, pas un simulateur. La mascotte en trench et loupe porte toutes les prises de parole. On ne vend pas des calculs, on vend la tranquillité d'avoir tout vérifié.</p>
+    <div class="pillars stagger">
+      <div class="card"><span class="k">Vérité</span><h3>Rien d'inventé</h3><p>Données officielles, sources citées, lacunes signalées.</p></div>
+      <div class="card"><span class="k">Vitesse</span><h3>Quelques secondes</h3><p>Une annonce triée avant même de prendre rendez-vous.</p></div>
+      <div class="card"><span class="k">Clarté</span><h3>Un verdict</h3><p>Intéressant, à vérifier ou peu intéressant, et pourquoi.</p></div>
+      <div class="card"><span class="k">Accessible</span><h3>0,62 € par jour</h3><p>Moins qu'un café pour éviter une erreur à 200 000 €.</p></div>
+    </div>
+    <div class="vs stagger">
+      <div class="card"><span class="k" style="color:var(--muted)">L'ennemi commun</span><ul><li>Le coup de cœur aveugle</li><li>Le tableur à 14 onglets</li><li>« L'agent m'a dit que c'était un bon placement »</li></ul></div>
+      <div class="card"><span class="k">Ce que Bricky remplace</span><ul><li>Cinq sites officiels consultés en un geste</li><li>Un verdict et une checklist</li><li>Les questions précises à poser au vendeur</li></ul></div>
+    </div>
+  </div>
+  <div class="ghost-num">10</div>
+</section>
+
+<!-- 11 VIDÉOS -->
+<section class="slide" id="videos" data-title="Angles vidéo">
+  <div class="slide-inner">
+    <span class="tag rv">Pièce n°11 · Angles vidéo</span>
+    <h2 class="title rv" style="max-width:24ch">Huit formats courts pour <span class="accent">TikTok, Reels et Shorts.</span></h2>
+    <div class="reels stagger">
+      <article class="reel" style="--p:30%"><div class="fmt"><span>Écran + voix</span><span>25 s</span></div><h3>L'enquête express</h3><div class="hook">« Je colle cette annonce Leboncoin à <b>149 000 €</b>. Regardez ce que Bricky trouve. »</div><p>Enregistrement d'écran, révélation du verdict, zoom sur un risque.</p><span class="cta">→ 1 analyse offerte</span></article>
+      <article class="reel" style="--p:55%"><div class="fmt"><span>Mascotte narratrice</span><span>30 s</span></div><h3>Ce T2 cache quelque chose</h3><div class="hook">« Il a l'air parfait. Sauf qu'en page 12 du PV d'AG, il y a <b>18 000 € de travaux votés</b>. »</div><p>Série récurrente « Les dossiers de Bricky ».</p><span class="cta">→ Analyse ton PV d'AG</span></article>
+      <article class="reel" style="--p:70%"><div class="fmt"><span>Face caméra</span><span>20 s</span></div><h3>Ton loyer est-il légal ?</h3><div class="hook">« Ton loyer dépasse peut-être <b>le plafond légal</b> de ta ville. Vérifie en 10 secondes. »</div><p>Cible locataires, réponses vidéo aux commentaires.</p><span class="cta">→ Mode location</span></article>
+      <article class="reel" style="--p:45%"><div class="fmt"><span>Écran scindé</span><span>30 s</span></div><h3>Le prix que je propose vraiment</h3><div class="hook">« Affiché 189 000 €. Mon offre d'ouverture : <b>172 000 €</b>. Voici les arguments. »</div><p>Montre l'offre, la cible et le plafond chiffrés.</p><span class="cta">→ Prix à proposer</span></article>
+      <article class="reel" style="--p:25%"><div class="fmt"><span>Vlog POV</span><span>45 s</span></div><h3>Visite avec moi</h3><div class="hook">« Je visite ce studio avec <b>19 points</b> à vérifier. Le n°7, personne n'y pense. »</div><p>Téléphone en main, mode visite à l'écran.</p><span class="cta">→ Mode visite</span></article>
+      <article class="reel" style="--p:80%"><div class="fmt"><span>Satisfaisant</span><span>15 s</span></div><h3>Mon île Bricky</h3><div class="hook">« Analyse n°1… n°10… <b>n°50</b>. Mon île a maintenant un hôtel. »</div><p>Time-lapse de l'île 3D qui se construit.</p><span class="cta">→ Pose ta première pierre</span></article>
+      <article class="reel" style="--p:60%"><div class="fmt"><span>Course chrono</span><span>30 s</span></div><h3>Excel contre Bricky</h3><div class="hook">« Moi sur Excel : <b>2 h 10</b>. Bricky : pendant que je bois mon café. »</div><p>Écran scindé, chronomètre, verdict final.</p><span class="cta">→ Essaie sur ton annonce</span></article>
+      <article class="reel" style="--p:40%"><div class="fmt"><span>Carrousel à sauvegarder</span><span>8 images</span></div><h3>6 questions à poser à l'agent</h3><div class="hook">« Pourquoi le vendeur vend-il ? » et cinq autres, tirées du mode visite.</div><p>Format à fort taux d'enregistrement sur Instagram.</p><span class="cta">→ Lien en bio</span></article>
+    </div>
+    <p class="note rv">Règle des 3 secondes : chaque vidéo s'ouvre sur un chiffre ou une annonce réelle à l'écran, jamais sur un logo. Les annonces montrées sont publiques et anonymisées (pas d'adresse exacte, pas de photo de personne).</p>
+  </div>
+  <div class="ghost-num">11</div>
+</section>
+
+<!-- 12 ORGANIQUE -->
+<section class="slide" id="organique" data-title="Plan organique">
+  <div class="slide-inner">
+    <span class="tag rv">Pièce n°12 · Plan organique</span>
+    <h2 class="title rv" style="max-width:22ch">Une machine à contenu <span class="accent">qui tourne seule.</span></h2>
+    <div class="split" style="align-items:start">
+      <div class="table-wrap rv">
+        <table>
+          <thead><tr><th>Canal</th><th>Rythme</th><th>Rôle</th></tr></thead>
+          <tbody>
+            <tr><td><b>TikTok · Reels · Shorts</b></td><td class="num">1 vidéo / jour</td><td>Même tournage décliné sur trois plateformes. Notoriété.</td></tr>
+            <tr><td><b>Instagram carrousels</b></td><td class="num">3 / semaine</td><td>Checklists et pièges, contenu à sauvegarder.</td></tr>
+            <tr><td><b>LinkedIn</b></td><td class="num">3 / semaine</td><td>Fondateur en build in public, cible pros et mandataires.</td></tr>
+            <tr><td><b>YouTube long</b></td><td class="num">1 / 2 semaines</td><td>« J'analyse vos annonces en direct », 15 à 20 min.</td></tr>
+            <tr><td><b>Blog SEO</b></td><td class="num">2 articles / semaine</td><td>5 articles en ligne. Ajouter des pages par ville : « rentabilité locative à Lille ».</td></tr>
+            <tr><td><b>Communautés</b></td><td class="num">Quotidien</td><td>Groupes Facebook d'investisseurs, Reddit, Discord : aider d'abord, citer ensuite.</td></tr>
+            <tr><td><b>Newsletter</b></td><td class="num">1 / semaine</td><td>« Le dossier de la semaine » : une annonce disséquée.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div style="display:grid; gap:12px">
+        <div class="card rv"><span class="k">Piliers éditoriaux</span>
+          <div class="bar" style="margin:6px 0 4px" aria-hidden="true"><span style="width:40%; background:var(--accent)"></span><span style="width:25%; background:var(--amber)"></span><span style="width:20%; background:var(--green)"></span><span style="width:15%; background:var(--blue)"></span></div>
+          <ul><li><b style="color:var(--ink)">40 % L'enquête</b> : une vraie annonce analysée.</li><li><b style="color:var(--ink)">25 % Les pièges</b> : DPE, copropriété, argiles.</li><li><b style="color:var(--ink)">20 % Les chiffres</b> : rendement, cash-flow, LMNP.</li><li><b style="color:var(--ink)">15 % Les coulisses</b> : on construit Bricky en public.</li></ul>
+        </div>
+        <div class="card rv" style="border:2px solid var(--accent)"><span class="k">La boucle virale</span><h3>« Mets ton annonce en commentaire, Bricky l'analyse. »</h3><p>Chaque commentaire devient une vidéo-réponse, chaque vidéo-réponse ramène de nouveaux commentaires. Le contenu se fournit tout seul.</p></div>
+      </div>
+    </div>
+  </div>
+  <div class="ghost-num">12</div>
+</section>
+
+<!-- 13 PROS -->
+<section class="slide" id="pros" data-title="Micro-entrepreneurs et partenaires">
+  <div class="slide-inner">
+    <span class="tag rv">Pièce n°13 · Micro-entrepreneurs et partenaires</span>
+    <div class="split" style="align-items:start">
+      <div style="display:grid; gap:20px">
+        <h2 class="title rv">Les indépendants de l'immo, <span class="accent">premiers ambassadeurs.</span></h2>
+        <div class="rv">
+          <div class="bigstat num">44 000</div>
+          <p class="lede" style="margin-top:10px">mandataires exerçant en réseau en France fin 2024, dont environ 15 000 chez iad. Ils travaillent seuls, sur téléphone, et doivent impressionner chaque client.</p>
+          <p class="note" style="margin-top:6px">Sources : <a href="https://www.immomatin.com/file/28e814674108b6f416a746805b9b8838/barometre-2024.pdf">Baromètre des réseaux de mandataires 2024</a> · <a href="https://www.mysweetimmo.com/2026/01/15/reseau-immobilier-iad-revendique-1-transaction-sur-10-en-france/">MySweetImmo, janv. 2026</a></p>
+        </div>
+      </div>
+      <div class="grid stagger">
+        <div class="card"><span class="k">Le partage qui recrute</span><h3>Chaque dossier envoyé est une publicité</h3><p>Le mandataire partage un lien en lecture seule ou un PDF à son client. Une mention « Analysé avec Bricky » et un bouton « Analyser mon propre bien » transforment chaque client en nouvel utilisateur.</p></div>
+        <div class="card"><span class="k">Programme Ambassadeur</span><h3>3 mois de Pro offerts</h3><p>Contre une vidéo par mois et des retours produit. Code promo personnel, 30 % de commission récurrente pendant 12 mois sur chaque abonné apporté.</p></div>
+        <div class="card"><span class="k">Partenariats</span><h3>Là où passent les acheteurs</h3><p>Courtiers en crédit (le simulateur parle leur langue), conseillers en gestion de patrimoine, formateurs en investissement, chasseurs immobiliers, et le Réseau Privé Bricky de 50+ agents partenaires.</p></div>
+        <div class="card"><span class="k">Micro-influence</span><h3>10 créateurs de 5 000 à 80 000 abonnés</h3><p>Immobilier et finances perso. Brief vidéo fourni, compte Pro offert, affiliation. Des créateurs UGC produisent en plus les variantes pour la publicité.</p></div>
+      </div>
+    </div>
+  </div>
+  <div class="ghost-num">13</div>
+</section>
+
+<!-- 14 ADS -->
+<section class="slide" id="publicite" data-title="Publicité payante">
+  <div class="slide-inner">
+    <span class="tag rv">Pièce n°14 · Publicité payante</span>
+    <h2 class="title rv" style="max-width:24ch">On paie seulement pour <span class="accent">amplifier ce qui marche</span> déjà.</h2>
+    <div class="funnel stagger">
+      <div class="stage"><div class="lv">Découvrir<small>Haut du tunnel</small></div><div><span>Canal</span>TikTok Spark Ads et Reels boostés : les vidéos organiques qui dépassent la moyenne.</div><div><span>Message</span>« Avant de signer, Bricky enquête. »</div><div><span>Appel à l'action</span>Voir un exemple d'analyse</div></div>
+      <div class="stage"><div class="lv">Considérer<small>Milieu</small></div><div><span>Canal</span>Google Search sur l'intention : « calcul rentabilité locative », « estimer loyer », « simulateur cash-flow ».</div><div><span>Message</span>Le calcul complet, sur votre annonce.</div><div><span>Appel à l'action</span>1 analyse offerte, sans carte</div></div>
+      <div class="stage"><div class="lv">Convertir<small>Bas du tunnel</small></div><div><span>Canal</span>Reciblage Meta des visiteurs de la démo et des inscrits sans analyse.</div><div><span>Message</span>Votre dossier PDF vous attend.</div><div><span>Appel à l'action</span>Pack 3 analyses à 12 €</div></div>
+    </div>
+    <div class="budget stagger">
+      <div class="card"><span class="k">Semaines −4 à 0</span><h3 class="num">0 €</h3><p>Stock de 30 vidéos, tests organiques, pixel Meta et TikTok installés, liens tracés.</p></div>
+      <div class="card"><span class="k">Semaines 1 à 4 · test</span><h3 class="num">≈ 600 € / mois</h3><div class="bar" aria-hidden="true"><span style="width:50%; background:var(--blue)"></span><span style="width:30%; background:var(--ink)"></span><span style="width:20%; background:var(--green)"></span></div><p>Meta 50 %, TikTok 30 %, Google 20 %. 3 angles × 3 accroches.</p></div>
+      <div class="card"><span class="k">Semaines 5 à 12 · accélérer</span><h3 class="num">1 500 à 3 000 € / mois</h3><p>Uniquement sur les gagnants, tant que l'acquisition d'un abonné reste sous 45 €.</p></div>
+    </div>
+    <p class="note rv">Budgets indicatifs à ajuster selon la trésorerie. Prérequis avant toute dépense : le paiement en ligne doit être branché (la page de paiement attend encore Stripe).</p>
+  </div>
+  <div class="ghost-num">14</div>
+</section>
+
+<!-- 15 CRM -->
+<section class="slide" id="crm" data-title="CRM et relances">
+  <div class="slide-inner">
+    <span class="tag rv">Pièce n°15 · CRM et relances</span>
+    <h2 class="title rv" style="max-width:24ch">De l'inscription à l'abonnement, <span class="accent">un fil continu.</span></h2>
+    <div class="timeline stagger">
+      <div class="tl"><span class="d">J0</span><b>Bienvenue</b><p>« Colle ta première annonce. » Lien direct vers l'analyse.</p></div>
+      <div class="tl"><span class="d">J1</span><b>Pas encore d'analyse ?</b><p>Envoi de l'exemple d'analyse et du bouton « Envoyer à Bricky ».</p></div>
+      <div class="tl"><span class="d">1ʳᵉ</span><b>Analyse terminée</b><p>« Ton dossier PDF est prêt. » Le déverrouiller passe par Essentiel ou le pack.</p></div>
+      <div class="tl"><span class="d">J3</span><b>Le piège du jour</b><p>Contenu éducatif lié à son profil d'inscription.</p></div>
+      <div class="tl"><span class="d">J7</span><b>Offre pack</b><p>3 analyses à 12 € pour comparer avant l'offre.</p></div>
+      <div class="tl"><span class="d">Quota</span><b>Limite atteinte</b><p>Passage à Pro : comparateur et alertes.</p></div>
+      <div class="tl"><span class="d">J21</span><b>Ton île t'attend</b><p>Relance des inactifs avec l'état de leur île.</p></div>
+    </div>
+    <div class="grid g3 stagger">
+      <div class="card"><span class="k">Segmenter</span><h3>Ce qu'on sait déjà</h3><p>Le questionnaire d'inscription donne le profil, l'objectif, l'avancement et le canal de découverte. « Compromis en cours » déclenche un parcours urgent : pack + mode visite.</p></div>
+      <div class="card"><span class="k">Outils suggérés</span><h3>Simple et gratuit au départ</h3><p>Brevo pour les e-mails et le CRM, PostHog pour suivre l'activation, des UTM sur chaque lien. HubSpot gratuit pour le suivi des agences en B2B.</p></div>
+      <div class="card"><span class="k">Rétention</span><h3>Revenir sans y penser</h3><p>Alertes sur les nouvelles annonces qui correspondent au projet, résumé mensuel de l'île, newsletter « le dossier de la semaine ».</p></div>
+    </div>
+  </div>
+  <div class="ghost-num">15</div>
+</section>
+
+<!-- 16 LANCEMENT -->
+<section class="slide" id="lancement" data-title="Lancement 90 jours">
+  <div class="slide-inner">
+    <span class="tag rv">Pièce n°16 · Plan de lancement</span>
+    <h2 class="title rv" style="max-width:22ch">90 jours, <span class="accent">quatre temps.</span></h2>
+    <div class="road stagger">
+      <div class="card now"><span class="when">S−4 → S0 · Préparer</span><h3>Fondations</h3><ul class="check"><li>Brancher Stripe et le pack 12 €</li><li>Publier l'extension sur le Chrome Web Store</li><li>Bêta privée : 50 investisseurs</li><li>Remplacer les avis d'exemple par de vrais avis bêta</li><li>Tourner 30 vidéos d'avance</li></ul></div>
+      <div class="card"><span class="when">S1 → S2 · Lancer</span><h3>Le bruit</h3><ul class="check"><li>Lancement Product Hunt et LinkedIn</li><li>Série « Les dossiers de Bricky »</li><li>Opération « analyse ton annonce en commentaire »</li><li>Premiers tests publicitaires</li></ul></div>
+      <div class="card"><span class="when">S3 → S8 · Apprendre</span><h3>Le tri</h3><ul class="check"><li>10 ambassadeurs mandataires</li><li>5 micro-influenceurs</li><li>Pages SEO par ville</li><li>Couper les angles qui ne convertissent pas</li></ul></div>
+      <div class="card"><span class="when">S9 → S12 · Accélérer</span><h3>L'échelle</h3><ul class="check"><li>Budget sur les 2 meilleures accroches</li><li>Démos agences, offre marque blanche</li><li>Partenariats courtiers</li><li>Bilan et plan du trimestre suivant</li></ul></div>
+    </div>
+  </div>
+  <div class="ghost-num">16</div>
+</section>
+
+<!-- 17 KPIs -->
+<section class="slide" id="indicateurs" data-title="Indicateurs">
+  <div class="slide-inner">
+    <span class="tag rv">Pièce n°17 · Indicateurs</span>
+    <h2 class="title rv" style="max-width:22ch">Ce qu'on mesure <span class="accent">chaque lundi.</span></h2>
+    <div class="ns rv"><b>★</b><h3>Étoile polaire : analyses lancées par semaine</h3><p>Une analyse, c'est un bien réel examiné, donc de la valeur livrée. Tout le reste en découle.</p></div>
+    <div class="kpis stagger">
+      <div class="kpi"><span class="eyebrow">Inscrits</span><b class="num" data-count="3000">3 000</b><span>Comptes créés à J90.</span></div>
+      <div class="kpi"><span class="eyebrow">Activation</span><b class="num">40 %</b><span>Inscrits qui lancent au moins une analyse.</span></div>
+      <div class="kpi"><span class="eyebrow">Conversion</span><b class="num">6 %</b><span>Inscrits qui deviennent payants, soit environ 180 abonnés.</span></div>
+      <div class="kpi"><span class="eyebrow">Revenu mensuel</span><b class="num">≈ 4 200 €</b><span>180 abonnés × 23,50 € de panier moyen.</span></div>
+      <div class="kpi"><span class="eyebrow">Acquisition</span><b class="num">≤ 45 €</b><span>Coût publicitaire par abonné payant.</span></div>
+      <div class="kpi"><span class="eyebrow">Partage</span><b class="num">0,3</b><span>Nouveaux inscrits apportés par chaque utilisateur via liens et dossiers partagés.</span></div>
+      <div class="kpi"><span class="eyebrow">Extension</span><b class="num">500</b><span>Installations du bouton « Envoyer à Bricky ».</span></div>
+      <div class="kpi"><span class="eyebrow">Désabonnement</span><b class="num">&lt; 8 %</b><span>Par mois, sur les abonnés payants.</span></div>
+    </div>
+    <p class="note rv">Objectifs de départ, à recaler après les quatre premières semaines de données réelles.</p>
+  </div>
+  <div class="ghost-num">17</div>
+</section>
+
+<!-- 18 FIN -->
+<section class="slide" id="fin" data-title="Prochaine pièce">
+  <div class="slide-inner end">
+    <span class="tag rv" style="align-self:center">Pièce n°18 · Prochaine pièce</span>
+    <div class="mascot-wrap rv" style="width:170px"><img class="m" src="img/mascot.webp" alt="Bricky la mascotte" width="441" height="560" loading="lazy"></div>
+    <h2 class="title rv">Chaque analyse <span class="accent">bâtit ton île.</span></h2>
+    <p class="lede rv" style="margin:0 auto">La prochaine étape : brancher le paiement, publier l'extension et lancer les 30 premières vidéos. Le dossier reste ouvert.</p>
+    <div class="chips rv" style="justify-content:center">
+      <a class="btn" href="#couverture" data-go="0">Revoir le dossier</a>
+    </div>
+  </div>
+  <div class="ghost-num">18</div>
+</section>
+
+</main>
+
+<nav class="navbar" aria-label="Navigation entre les pièces">
+  <button class="navbtn" id="prev" type="button" aria-label="Pièce précédente"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3 5 8l5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+  <div class="dots" id="dots"></div>
+  <button class="navbtn" id="play" type="button" aria-label="Mettre en pause" style="background:var(--accent)"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><g id="icoPause"><rect x="4" y="3" width="3" height="10" rx="1" fill="currentColor"/><rect x="9" y="3" width="3" height="10" rx="1" fill="currentColor"/></g><path id="icoPlay" d="M5 3l8 5-8 5z" fill="currentColor" style="display:none"/></svg></button>
+  <button class="navbtn" id="next" type="button" aria-label="Pièce suivante"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+</nav>
+</div>
+<div id="rotate-hint"><span>📱</span>Tourne ton téléphone pour voir en grand</div>
+
+<script>
+function fit() {
+  var st = document.getElementById("stage"), W = window.innerWidth, H = window.innerHeight;
+  var k = Math.min(W / 1440, H / 900);
+  st.style.transform = "translate(" + ((W - 1440 * k) / 2) + "px," + ((H - 900 * k) / 2) + "px) scale(" + k + ")";
+  document.getElementById("rotate-hint").style.display = (H > W && k < .5) ? "block" : "none";
+}
+fit();
+(function () {
+  var shots = [
+    ["hero-light.webp", "Accueil", "La promesse, le champ d'annonce, les capacités qui défilent.", "/"],
+    ["achat.webp", "Nouvelle analyse · achat", "Lien, texte, dossier complet, formulaire pré-rempli par l'IA.", "/analyze?mode=achat"],
+    ["demo.webp", "Résultat d'analyse", "Verdict, valeur de marché, risques de sol, checklist.", "/demo"],
+    ["mode.webp", "Acheter ou louer", "Le premier choix, en deux cartes.", "/analyze"],
+    ["location.webp", "Analyse location", "Le loyer est-il juste ? Pour les locataires.", "/analyze?mode=location"],
+    ["properties.webp", "Mes biens", "L'historique, les verdicts, la sélection pour comparer.", "/properties"],
+    ["compare.webp", "Comparateur", "Trois biens côte à côte, le meilleur rendement en couleur.", "/compare"],
+    ["espace-dark.webp", "Mon espace", "Progression, alertes, équipe et export en grille.", "/espace"],
+    ["projet.webp", "Mon projet", "Villes, budget, types de biens, rendement visé.", "/projet"],
+    ["bouton.webp", "Envoyer à Bricky", "Extension Chrome et favori pour importer une annonce.", "/bouton"],
+    ["onboarding.webp", "Questionnaire d'accueil", "4 questions pour segmenter et attribuer.", "/onboarding"],
+    ["pricing.webp", "Tarifs", "Quatre paliers, le prix ramené à la journée.", "/pricing"],
+    ["home-highlights.webp", "Confiance", "Ce que contient chaque analyse, et la protection des données.", "/"]
+  ];
+  var film = document.getElementById("film");
+  var html = "";
+  for (var r = 0; r < 2; r++) {
+    shots.forEach(function (s) {
+      html += '<figure class="shot"' + (r ? ' aria-hidden="true"' : '') + '><div class="browser"><div class="browser-bar"><span></span><span></span><span></span><em>bricky-ai-three.vercel.app' + s[3] + '</em></div><img src="img/' + s[0] + '" alt="' + (r ? '' : 'Écran ' + s[1]) + '" loading="lazy"></div><figcaption><b>' + s[1] + '</b><span>' + s[2] + '</span></figcaption></figure>';
+    });
+  }
+  film.innerHTML = html;
+
+  var deck = document.getElementById("deck");
+  var slides = Array.prototype.slice.call(document.querySelectorAll(".slide"));
+  var dots = document.getElementById("dots");
+  var cur = document.getElementById("cur");
+  var bar = document.getElementById("progress");
+  var prev = document.getElementById("prev"), next = document.getElementById("next");
+  document.getElementById("tot").textContent = String(slides.length).padStart(2, "0");
+  var index = 0;
+
+  slides.forEach(function (s, i) {
+    var b = document.createElement("button");
+    b.className = "dot"; b.type = "button";
+    b.setAttribute("aria-label", (i + 1) + " · " + s.dataset.title);
+    b.title = s.dataset.title;
+    b.addEventListener("click", function () { go(i); });
+    dots.appendChild(b);
+  });
+
+  function go(i) {
+    i = Math.max(0, Math.min(slides.length - 1, i));
+    deck.scrollTo({ left: slides[i].offsetLeft, behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+  }
+
+  function countUp(el) {
+    var target = Number(el.dataset.count); if (!target) return;
+    var t0 = null, dur = 1400;
+    function step(t) {
+      if (!t0) t0 = t;
+      var p = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - p, 3);
+      el.textContent = Math.round(target * e).toLocaleString("fr-FR");
+      if (p < 1) requestAnimationFrame(step);
+    }
+    if (!matchMedia("(prefers-reduced-motion: reduce)").matches) requestAnimationFrame(step);
+  }
+
+  function setActive(i) {
+    if (slides[i].classList.contains("is-active")) return;
+    index = i;
+    slides.forEach(function (s, j) { s.classList.toggle("is-active", j === i); });
+    Array.prototype.forEach.call(dots.children, function (d, j) { d.setAttribute("aria-current", j === i ? "true" : "false"); });
+    cur.textContent = String(i + 1).padStart(2, "0");
+    bar.style.width = ((i + 1) / slides.length * 100) + "%";
+    prev.disabled = i === 0; next.disabled = i === slides.length - 1;
+    slides[i].querySelectorAll("[data-count]").forEach(countUp);
+    try { history.replaceState(null, "", "#" + slides[i].id); } catch (e) {}
+  }
+
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (en) { if (en.isIntersecting) setActive(slides.indexOf(en.target)); });
+  }, { root: deck, threshold: 0.6 });
+  slides.forEach(function (s) { io.observe(s); });
+
+  prev.addEventListener("click", function () { go(index - 1); });
+  next.addEventListener("click", function () { go(index + 1); });
+  document.querySelectorAll("[data-go]").forEach(function (a) {
+    a.addEventListener("click", function (e) { e.preventDefault(); go(Number(a.dataset.go)); });
+  });
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "ArrowRight" || e.key === "PageDown") { e.preventDefault(); go(index + 1); }
+    else if (e.key === "ArrowLeft" || e.key === "PageUp") { e.preventDefault(); go(index - 1); }
+    else if (e.key === "Home") { go(0); } else if (e.key === "End") { go(slides.length - 1); }
+  });
+  // Molette verticale sur desktop : passe à la pièce suivante quand la pièce est lue jusqu'au bout.
+  var wheelLock = false;
+  deck.addEventListener("wheel", function (e) {
+    if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
+    var s = slides[index];
+    var atEnd = s.scrollTop + s.clientHeight >= s.scrollHeight - 2;
+    var atStart = s.scrollTop <= 0;
+    if ((e.deltaY > 0 && atEnd) || (e.deltaY < 0 && atStart)) {
+      e.preventDefault();
+      if (wheelLock || Math.abs(e.deltaY) < 8) return;
+      wheelLock = true; go(index + (e.deltaY > 0 ? 1 : -1));
+      setTimeout(function () { wheelLock = false; }, 900);
+    }
+  }, { passive: false });
+
+  function fromHash() {
+    var id = (location.hash || "").slice(1);
+    var i = slides.findIndex(function (s) { return s.id === id; });
+    if (i > 0) { deck.style.scrollBehavior = "auto"; deck.scrollLeft = slides[i].offsetLeft; deck.style.scrollBehavior = ""; setActive(i); }
+    else setActive(0);
+  }
+  window.addEventListener("hashchange", function () {
+    var i = slides.findIndex(function (s) { return "#" + s.id === location.hash; });
+    if (i >= 0 && i !== index) go(i);
+  });
+  window.addEventListener("resize", function () { fit(); deck.style.scrollBehavior = "auto"; deck.scrollLeft = slides[index].offsetLeft; deck.style.scrollBehavior = ""; });
+
+  // Pièces un peu trop hautes : on réduit le contenu pour qu'il tienne dans l'écran, sans défilement.
+  function fitSlides() {
+    slides.forEach(function (s) {
+      var inner = s.querySelector(".slide-inner"), cs = getComputedStyle(s);
+      var avail = s.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+      inner.style.zoom = ""; inner.style.minHeight = "0px";
+      var h = inner.offsetHeight; inner.style.minHeight = "";
+      if (h > avail) { var k = Math.max(.6, avail / h); inner.style.zoom = k; inner.style.minHeight = (avail / k) + "px"; }
+    });
+  }
+  fitSlides();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitSlides);
+
+  // Lecture automatique : chaque pièce reste le temps de la lire, puis la suivante arrive. En boucle.
+  var playing = !matchMedia("(prefers-reduced-motion: reduce)").matches, tStart = performance.now(), pausedAt = 0;
+  var timer = document.getElementById("timer"), playBtn = document.getElementById("play");
+  function durationOf(i) { var n = (slides[i].innerText || "").length; return Math.min(13000, Math.max(6500, 4000 + n * 9)); }
+  function setPlaying(v) {
+    playing = v; document.getElementById("icoPause").style.display = v ? "" : "none"; document.getElementById("icoPlay").style.display = v ? "none" : "";
+    playBtn.setAttribute("aria-label", v ? "Mettre en pause" : "Lecture automatique");
+    if (v) tStart = performance.now() - pausedAt; else pausedAt = performance.now() - tStart;
+  }
+  playBtn.addEventListener("click", function () { setPlaying(!playing); });
+  var lastIndex = -1;
+  (function loop(now) {
+    if (index !== lastIndex) { lastIndex = index; tStart = now; pausedAt = 0; }
+    if (playing) {
+      var d = durationOf(index), p = Math.min(1, (now - tStart) / d);
+      timer.style.width = (p * 100) + "%";
+      if (p >= 1) { tStart = now; go(index + 1 >= slides.length ? 0 : index + 1); }
+    }
+    requestAnimationFrame(loop);
+  })(performance.now());
+  // un geste de l'utilisateur relance le minuteur de la pièce, sans arrêter la lecture
+  ["pointerdown", "wheel", "keydown", "touchstart"].forEach(function (ev) { deck.addEventListener(ev, function () { tStart = performance.now(); }, { passive: true }); });
+  setPlaying(playing);
+  fromHash();
+})();
+</script>
+</body>
+</html>
