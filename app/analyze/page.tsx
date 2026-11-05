@@ -7,7 +7,7 @@ import { AppNav } from "../../components/AppNav";
 import { ModeChooser } from "./ModeChooser";
 import { RentalAnalyzer } from "./RentalAnalyzer";
 import { PROPERTY_TYPE_LABELS } from "../../lib/data/propertyTypeClassifier";
-import { clearPendingImport, takePendingImportFromLocation, type PendingImport } from "../../lib/brickyImport";
+import { clearPendingImport, takePendingImportFromLocation, takePendingUrl, type PendingImport } from "../../lib/brickyImport";
 import { DOC_LABELS, agencyRequestText, mergeDossier, missingDocuments, type DocKind, type DossierPiece } from "../../lib/dossier";
 import { mergeCopro, type CoproFindings } from "../../lib/copro";
 import { computeOffer, type OfferInput, type OfferResult } from "../../lib/negotiation";
@@ -225,6 +225,7 @@ const [pastedText, setPastedText] = useState("");
 const [extractingText, setExtractingText] = useState(false);
 const [sessionReady, setSessionReady] = useState(false);
 const [pendingImport, setPendingImport] = useState<PendingImport | null>(null);
+const [pendingUrl, setPendingUrl] = useState<string | null>(null);
 const clearAuto = (key: string) => setAutoFields((cur) => { if (!cur.has(key)) return cur; const next = new Set(cur); next.delete(key); return next; });
 const updateExtra = (key: string, value: string) => { setExtra((cur) => ({ ...cur, [key]: value })); clearAuto(key); };
 // Classe CSS d'un champ pré-rempli par l'IA (badge "Auto").
@@ -329,6 +330,23 @@ setPastedText(imported.text);
 setPendingImport(imported);
 // eslint-disable-next-line react-hooks/exhaustive-deps
 }, []);
+
+// Lien collé sur la page d'accueil (gardé pendant l'inscription) : rempli et lu automatiquement.
+useEffect(() => {
+if (propertyIdParam) return;
+const url = takePendingUrl();
+if (!url) return;
+setPayload((current) => ({ ...current, source_url: url }));
+setPendingUrl(url);
+// eslint-disable-next-line react-hooks/exhaustive-deps
+}, []);
+
+useEffect(() => {
+if (!pendingUrl || !sessionReady) return;
+setPendingUrl(null);
+extractListing(pendingUrl);
+// eslint-disable-next-line react-hooks/exhaustive-deps
+}, [pendingUrl, sessionReady]);
 
 useEffect(() => {
 if (!pendingImport || !sessionReady) return;
@@ -456,14 +474,15 @@ try {
 } catch {}
 }
 
-async function extractListing() {
-if (!payload.source_url.trim()) return;
+async function extractListing(urlOverride?: string) {
+const listingUrl = (urlOverride ?? payload.source_url).trim();
+if (!listingUrl) return;
 setExtracting(true); setError(""); setExtractNote("");
 try {
 const { data: previewSession } = await supabase.auth.getSession();
 const previewToken = previewSession.session?.access_token;
 if (!previewToken) throw new Error("Session expiree, reconnecte-toi.");
-const response = await fetch("/api/properties/preview", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${previewToken}` }, body: JSON.stringify({ url: payload.source_url.trim() }) });
+const response = await fetch("/api/properties/preview", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${previewToken}` }, body: JSON.stringify({ url: listingUrl }) });
 const data = await response.json();
 if (!response.ok) throw new Error(data?.error || "Impossible de lire cette annonce.");
 applyExtraction(data, "l'annonce");
@@ -553,7 +572,7 @@ return <main className="page">
 {loadError && <div className="error-box">{loadError}</div>}
 {draftRestored && !propertyIdParam && <div className="draft-banner"><span>Brouillon restaure automatiquement, votre saisie precedente a ete recuperee.</span><button type="button" className="secondary-button" onClick={clearDraft}>Effacer</button></div>}
 {!propertyIdParam && <>
-<div className="url-import"><label>Lien de l'annonce<input value={payload.source_url} onChange={(e) => update("source_url", e.target.value)} placeholder="Colle le lien : Bricky remplit tout" /></label><button type="button" className="primary-extract-button secondary-button" onClick={extractListing} disabled={extracting || !payload.source_url.trim()}>{extracting ? "Bricky lit l'annonce…" : "Remplir automatiquement"}</button></div>
+<div className="url-import"><label>Lien de l'annonce<input value={payload.source_url} onChange={(e) => update("source_url", e.target.value)} placeholder="Colle le lien : Bricky remplit tout" /></label><button type="button" className="primary-extract-button secondary-button" onClick={() => extractListing()} disabled={extracting || !payload.source_url.trim()}>{extracting ? "Bricky lit l'annonce…" : "Remplir automatiquement"}</button></div>
 <p className="bookmarklet-tip">Leboncoin, PAP ou SeLoger refusent les liens ? <a href="/bouton">Installe le bouton « Envoyer à Bricky »</a> : un clic depuis l'annonce suffit.</p>
 <div className="url-import text-import"><label>Lien illisible ? Colle le texte de l'annonce<textarea value={pastedText} onChange={(e) => setPastedText(e.target.value)} rows={4} placeholder="Sélectionne tout le texte de l'annonce (Ctrl+A / Cmd+A), copie-le et colle-le ici." /></label><button type="button" className="secondary-button" onClick={() => extractFromText()} disabled={extractingText || pastedText.trim().length < 30}>{extractingText ? "Lecture…" : "Analyser le texte"}</button></div>
 <div className="url-import file-import"><label>Ou dépose tout le dossier d'un coup : annonce, captures, DPE, taxe foncière, PV d'AG, bail…<input type="file" accept="application/pdf,image/jpeg,image/png,image/webp" multiple onChange={(e) => { const list = Array.from(e.target.files ?? []); if (list.length) extractFromFile(list); e.target.value = ""; }} disabled={extractingFile} /></label>{extractingFile && <span className="extract-note">Bricky lit le dossier, pièce par pièce…</span>}</div>

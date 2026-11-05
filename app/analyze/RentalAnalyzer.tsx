@@ -4,7 +4,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase/client";
 import { AppNav } from "../../components/AppNav";
-import { clearPendingImport, takePendingImportFromLocation, type PendingImport } from "../../lib/brickyImport";
+import { clearPendingImport, takePendingImportFromLocation, takePendingUrl, type PendingImport } from "../../lib/brickyImport";
 import type { RentalAssessment } from "../../lib/rental/assess";
 
 type RentalForm = {
@@ -54,6 +54,7 @@ export function RentalAnalyzer() {
   const [showMore, setShowMore] = useState(false);
   const [result, setResult] = useState<RentalResult | null>(null);
   const [pendingImport, setPendingImport] = useState<PendingImport | null>(null);
+  const [pendingLink, setPendingLink] = useState<string | null>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -67,6 +68,11 @@ export function RentalAnalyzer() {
       const income = window.localStorage.getItem(INCOME_KEY);
       if (income) setForm((f) => ({ ...f, household_income: income }));
     } catch {}
+    const pastedUrl = takePendingUrl();
+    if (pastedUrl) {
+      setForm((f) => ({ ...f, source_url: pastedUrl }));
+      setPendingLink(pastedUrl);
+    }
     const imported = takePendingImportFromLocation();
     if (imported) {
       setForm((f) => ({ ...f, source_url: imported.url }));
@@ -74,6 +80,14 @@ export function RentalAnalyzer() {
       setPendingImport(imported);
     }
   }, [router]);
+
+  // Lien collé sur la page d'accueil : lu automatiquement une fois connecté.
+  useEffect(() => {
+    if (!pendingLink || !sessionReady) return;
+    setPendingLink(null);
+    extract({ url: pendingLink }, "link", "l'annonce");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingLink, sessionReady]);
 
   useEffect(() => {
     if (!pendingImport || !sessionReady) return;

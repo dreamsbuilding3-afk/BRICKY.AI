@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase/client";
 import { AppNav } from "../../components/AppNav";
-import { guessTransactionType, peekPendingImport } from "../../lib/brickyImport";
+import { guessTransactionType, peekPendingImport, savePendingUrl } from "../../lib/brickyImport";
 
 // Premier écran de « Nouvelle analyse » : on choisit simplement entre acheter et
 // louer. Si une annonce arrive du bouton « Envoyer à Bricky », on devine le type
@@ -15,9 +15,17 @@ export function ModeChooser() {
   const [importReceived, setImportReceived] = useState(false);
 
   useEffect(() => {
+    // Lien collé sur la page d'accueil (?url=…) : gardé pendant l'inscription, puis analysé.
+    const pastedUrl = savePendingUrl(new URLSearchParams(window.location.search).get("url") ?? "");
+    if (pastedUrl) window.history.replaceState(null, "", window.location.pathname);
     supabase.auth.getSession().then(({ data }) => {
-      if (!data.session) router.replace("/login");
-      else setUserEmail(data.session.user.email ?? "");
+      if (!data.session) { router.replace(pastedUrl ? "/login?mode=signup" : "/login"); return; }
+      setUserEmail(data.session.user.email ?? "");
+      if (pastedUrl) {
+        const guess = guessTransactionType(pastedUrl, "");
+        if (guess) router.replace(`/analyze?mode=${guess}`);
+        else setImportReceived(true);
+      }
     });
     const imported = peekPendingImport();
     if (imported) {
