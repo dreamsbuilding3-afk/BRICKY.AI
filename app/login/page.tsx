@@ -3,8 +3,12 @@
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase/client";
-import { hasPendingImport } from "@/lib/brickyImport";
+import { hasPendingImport, hasPendingUrl } from "@/lib/brickyImport";
 import { birthDateError, maxBirthDate, MIN_AGE } from "@/lib/age";
+
+// Connexion Google / Apple : affichée seulement quand le fournisseur est activé dans
+// Supabase (Authentication > Providers). Dans Vercel : NEXT_PUBLIC_OAUTH_PROVIDERS=google,apple
+const OAUTH_PROVIDERS = (process.env.NEXT_PUBLIC_OAUTH_PROVIDERS ?? "").split(",").map((p) => p.trim()).filter(Boolean);
 
 export default function LoginPage() {
   const router = useRouter();
@@ -31,7 +35,7 @@ export default function LoginPage() {
       if (!onboardingRow) destination = "/onboarding";
     }
     // Annonce envoyée par le bouton « Envoyer à Bricky » avant la connexion : on y retourne.
-    if (destination === "/properties" && hasPendingImport()) destination = "/analyze";
+    if (destination === "/properties" && (hasPendingImport() || hasPendingUrl())) destination = "/analyze";
     router.replace(destination);
     router.refresh();
   }
@@ -148,7 +152,9 @@ export default function LoginPage() {
             <h2>{signup ? "Créer un compte" : "Se connecter"}</h2>
             <p className="lg-lead">{signup ? "Ta première analyse est offerte, sans carte bancaire." : "Entre tes identifiants pour accéder à ton espace."}</p>
 
+            {OAUTH_PROVIDERS.length > 0 && (<>
             <div className="lg-social">
+              {OAUTH_PROVIDERS.includes("google") && (
               <button type="button" className="lg-social-btn" onClick={() => handleOAuth("google")} disabled={oauthLoading !== null}>
                 <svg viewBox="0 0 48 48" width="18" height="18" aria-hidden="true">
                   <path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 8 3l5.7-5.7C34 6.1 29.3 4 24 4 13 4 4 13 4 24s9 20 20 20 20-9 20-20c0-1.3-.1-2.6-.4-3.9z" />
@@ -158,14 +164,18 @@ export default function LoginPage() {
                 </svg>
                 <span>{oauthLoading === "google" ? "Redirection…" : "Google"}</span>
               </button>
+              )}
+              {OAUTH_PROVIDERS.includes("apple") && (
               <button type="button" className="lg-social-btn" onClick={() => handleOAuth("apple")} disabled={oauthLoading !== null}>
                 <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="currentColor">
                   <path d="M16.37 1.43c0 1.14-.49 2.27-1.18 3.08-.74.9-1.99 1.57-2.99 1.57-.12 0-.23-.02-.3-.03-.01-.06-.04-.22-.04-.39 0-1.15.57-2.27 1.21-2.98.8-.94 2.14-1.64 3.25-1.68.03.13.05.28.05.43zm4.56 15.71c-.03.07-.46 1.58-1.52 3.12-.94 1.34-1.94 2.71-3.43 2.71-1.52 0-1.9-.88-3.63-.88-1.7 0-2.3.91-3.67.91-1.38 0-2.33-1.26-3.43-2.8-1.29-1.82-2.32-4.63-2.32-7.28 0-4.28 2.8-6.55 5.55-6.55 1.45 0 2.68.95 3.6.95.87 0 2.22-1.01 3.9-1.01.61 0 2.89.06 4.37 2.19-.13.09-2.38 1.37-2.38 4.19 0 3.26 2.85 4.42 2.96 4.45z" />
                 </svg>
                 <span>{oauthLoading === "apple" ? "Redirection…" : "Apple"}</span>
               </button>
+              )}
             </div>
             <div className="lg-or"><span>ou</span></div>
+            </>)}
 
             <form className="lg-fields" onSubmit={handleSubmit}>
               <label className="lg-field">
@@ -175,7 +185,7 @@ export default function LoginPage() {
               <label className="lg-field">
                 <span>Mot de passe</span>
                 <span className="lg-pass">
-                  <input required type={showPassword ? "text" : "password"} minLength={6} autoComplete={signup ? "new-password" : "current-password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder={signup ? "Choisis un mot de passe" : "Ton mot de passe"} />
+                  <input required type={showPassword ? "text" : "password"} minLength={signup ? 8 : 6} autoComplete={signup ? "new-password" : "current-password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder={signup ? "Choisis un mot de passe" : "Ton mot de passe"} />
                   <button type="button" className="lg-eye" onClick={() => setShowPassword((v) => !v)} aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}>
                     {showPassword ? (
                       <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z" /><circle cx="12" cy="12" r="3" /></svg>
