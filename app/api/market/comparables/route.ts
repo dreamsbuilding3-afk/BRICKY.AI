@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { enforceRateLimit } from "@/lib/rateLimit";
+import { requireUser } from "@/lib/auth/requireUser";
 
 const DVF_API = "https://api.cquest.org/dvf";
 
@@ -20,10 +22,11 @@ function num(value: unknown) {
 }
 
 export async function POST(request: NextRequest) {
-  const authorization = request.headers.get("authorization");
-  if (!authorization?.startsWith("Bearer ")) {
-    return NextResponse.json({ error: "Authentication required." }, { status: 401 });
-  }
+  // Le simple en-tête « Bearer » ne suffisait pas : le jeton est maintenant vérifié auprès de Supabase.
+  const limited = await enforceRateLimit(request, { endpoint: "market.comparables", maxRequests: 20, windowSeconds: 60 });
+  if (limited) return limited;
+  const unauthorized = await requireUser(request);
+  if (unauthorized) return unauthorized;
 
   try {
     const body = await request.json();
