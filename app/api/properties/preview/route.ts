@@ -114,6 +114,42 @@ function regexExtract(html: string, parsedUrl: URL) {
     };
 }
 
+// Hôte autorisé : ni local, ni réseau privé (vérifié après résolution DNS).
+async function isPublicHost(hostname: string): Promise<boolean> {
+  const host = hostname.toLowerCase();
+  if (host === "localhost" || host === "0.0.0.0" || host.endsWith(".local") || host.endsWith(".internal")) return false;
+  try {
+    const resolved = await dns.lookup(host, { all: true });
+    return resolved.length > 0 && resolved.every((r) => !isPrivateOrLoopbackIp(r.address));
+  } catch {
+    return false;
+  }
+}
+
+// Lecture d'une page publique en suivant les redirections nous-mêmes : chaque étape
+// est revérifiée, pour qu'un lien ne puisse pas rebondir vers une adresse interne.
+async function fetchPublicUrl(start: URL): Promise<Response> {
+  let current = start;
+  for (let hop = 0; hop < 5; hop += 1) {
+    const response = await fetch(current.toString(), {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (compatible; BrickyBot/1.0; +https://bricky.ai)",
+        "Accept-Language": "fr-FR,fr;q=0.9",
+      },
+      redirect: "manual",
+      signal: AbortSignal.timeout(10000),
+    });
+    const location = response.headers.get("location");
+    if (response.status < 300 || response.status >= 400 || !location) return response;
+    const next = new URL(location, current);
+    if (!["http:", "https:"].includes(next.protocol) || !(await isPublicHost(next.hostname))) {
+      throw new Error("redirection refusée");
+    }
+    current = next;
+  }
+  throw new Error("trop de redirections");
+}
+
 // Signes qu'un site a renvoyé une page anti-robot au lieu de l'annonce.
 const BLOCKED_PAGE_RE = /captcha|access denied|acc[eè]s refus[ée]|are you a robot|just a moment|enable javascript|datadome|cf-chl|perimeterx/i;
 
@@ -181,31 +217,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "URL HTTP/HTTPS invalide." }, { status: 400 });
     }
 
-    const hostname = parsedUrl.hostname.toLowerCase();
-    if (hostname === "localhost" || hostname === "0.0.0.0" || hostname.endsWith(".local")) {
-      return NextResponse.json({ error: "Cette URL est refusee." }, { status: 400 });
-    }
-    try {
-      const resolved = await dns.lookup(hostname);
-      if (isPrivateOrLoopbackIp(resolved.address)) {
-        return NextResponse.json({ error: "Cette URL est refusee." }, { status: 400 });
-      }
-    } catch {
-      return NextResponse.json({ error: "Impossible de resoudre cette adresse." }, { status: 400 });
+    if (!(await isPublicHost(parsedUrl.hostname))) {
+      return NextResponse.json({ error: "Cette adresse n'est pas accessible." }, { status: 400 });
     }
 
     // Cas 2 : lien. On lit d'abord la page depuis notre serveur (gratuit et rapide).
     let html: string | null = null;
     let serverStatus = 0;
     try {
-      const response = await fetch(parsedUrl.toString(), {
-        headers: {
-          "User-Agent": "Mozilla/5.0 (compatible; BrickyBot/1.0; +https://bricky.ai)",
-          "Accept-Language": "fr-FR,fr;q=0.9",
-        },
-        redirect: "follow",
-        signal: AbortSignal.timeout(10000),
-      });
+      const response = await fetchPublicUrl(parsedUrl);
       serverStatus = response.status;
       if (response.ok) html = (await response.text()).slice(0, 3_000_000);
     } catch {
