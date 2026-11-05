@@ -10,6 +10,7 @@ import { BrickyIsland } from "../../components/BrickyIsland";
 import { illustrationKind } from "../../lib/illustrations/propertyIllustrations";
 import type { IslandCounts, IslandKind } from "../../lib/islandScene";
 import { useLocale } from "../../components/LocaleProvider";
+import { PromoSplash } from "../../components/PromoSplash";
 
 type AnalysisRow = {
   id: string;
@@ -316,5 +317,6 @@ export default function PropertiesPage() {
         </button>
       </div>
     )}
+    <PromoSplash />
   </main>;
 }
