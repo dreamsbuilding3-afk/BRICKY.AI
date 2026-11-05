@@ -1,9 +1,17 @@
 import { NextResponse } from "next/server";
 import { collectPropertyData } from "@/lib/data";
+import { enforceRateLimit } from "@/lib/rateLimit";
+import { requireUser } from "@/lib/auth/requireUser";
 
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
+  // Route réservée aux comptes connectés et limitée : sans ça, n'importe qui
+  // pourrait s'en servir comme relais gratuit vers les API publiques, à nos frais.
+  const limited = await enforceRateLimit(request, { endpoint: "data.lookup", maxRequests: 20, windowSeconds: 60 });
+  if (limited) return limited;
+  const unauthorized = await requireUser(request);
+  if (unauthorized) return unauthorized;
   try {
     const body = (await request.json()) as {
       address?: string;
