@@ -9,27 +9,11 @@ type RateLimitConfig = {
   windowSeconds: number;
 };
 
-function decodeJwtSub(token: string): string | null {
-  try {
-    const payload = token.split(".")[1];
-    if (!payload) return null;
-    const normalized = payload.replace(/-/g, "+").replace(/_/g, "/");
-    const pad = (4 - (normalized.length % 4)) % 4;
-    const padded = normalized + "=".repeat(pad);
-    const json = typeof atob === "function" ? atob(padded) : Buffer.from(padded, "base64").toString("utf-8");
-    const parsed = JSON.parse(json);
-    return typeof parsed.sub === "string" ? parsed.sub : null;
-  } catch {
-    return null;
-  }
-}
-
+// Identité du limiteur : l'adresse IP du visiteur, fournie par Vercel (qui écrase
+// x-forwarded-for côté serveur, le client ne peut pas la falsifier). On n'utilise plus
+// l'identifiant lu dans le jeton : il n'est pas vérifié à ce stade, un script pouvait
+// en inventer un nouveau à chaque requête pour contourner les limites.
 function getIdentity(request: Request): string {
-  const authorization = request.headers.get("authorization");
-  if (authorization?.startsWith("Bearer ")) {
-    const sub = decodeJwtSub(authorization.slice(7));
-    if (sub) return "user:" + sub;
-  }
   const forwardedFor = request.headers.get("x-forwarded-for");
   const ip = forwardedFor?.split(",")[0]?.trim() || request.headers.get("x-real-ip") || "unknown";
   return "ip:" + ip;
@@ -37,8 +21,7 @@ function getIdentity(request: Request): string {
 
 /**
  * Enforces a sliding-window rate limit backed by the check_rate_limit
- * Postgres function. Identity is the authenticated user id when a bearer
- * token is present, otherwise the caller's IP address.
+ * Postgres function. Identity is the caller's IP address (see getIdentity).
  *
  * Fails open: if Supabase env vars are missing or the check itself errors
  * out, the request is allowed through rather than breaking the product

@@ -131,3 +131,46 @@ export function guessTransactionType(url: string, text: string): "achat" | "loca
   if (saleSignals >= 2 && rentSignals <= 1) return "achat";
   return null;
 }
+
+// ———————————————————————— Lien collé sur l'accueil
+// Le visiteur colle le lien d'une annonce sur la page d'accueil (?url=…). On le garde
+// 24 h dans localStorage (le lien de confirmation d'e-mail s'ouvre dans un nouvel
+// onglet), puis l'analyse le lit au premier passage.
+
+export const PENDING_URL_KEY = "bricky_lien_en_attente_v1";
+const PENDING_URL_TTL = 24 * 3600 * 1000;
+
+export function savePendingUrl(raw: string): string | null {
+  const url = raw.trim();
+  if (!/^https?:\/\/[^\s]+$/i.test(url) || url.length > 2000) return null;
+  try { window.localStorage.setItem(PENDING_URL_KEY, JSON.stringify({ url, at: Date.now() })); } catch {}
+  return url;
+}
+
+function readPendingUrl(): string | null {
+  try {
+    const raw = window.localStorage.getItem(PENDING_URL_KEY);
+    if (!raw) return null;
+    const { url, at } = JSON.parse(raw) as { url?: unknown; at?: unknown };
+    if (typeof url !== "string" || !/^https?:\/\//i.test(url) || typeof at !== "number" || Date.now() - at > PENDING_URL_TTL) {
+      window.localStorage.removeItem(PENDING_URL_KEY);
+      return null;
+    }
+    return url;
+  } catch {
+    return null;
+  }
+}
+
+export function hasPendingUrl(): boolean {
+  if (typeof window === "undefined") return false;
+  return readPendingUrl() !== null;
+}
+
+/** Lit et efface le lien en attente. */
+export function takePendingUrl(): string | null {
+  if (typeof window === "undefined") return null;
+  const url = readPendingUrl();
+  try { window.localStorage.removeItem(PENDING_URL_KEY); } catch {}
+  return url;
+}
