@@ -177,8 +177,6 @@ export default function Home() {
 
       <ReviewsBoard />
 
-      <ContainerShowcase />
-
       <section className="highlight-band">
         <div className="highlight-intro">
           <span className="eyebrow">{t("highlight1.eyebrow")}</span>
@@ -211,6 +209,8 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      <ContainerShowcase />
 
       <section className="highlight-band">
         <div className="highlight-intro">
