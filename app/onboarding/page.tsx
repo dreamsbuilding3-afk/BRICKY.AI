@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase/client";
 import { OnboardingQuestionnaire } from "../../components/OnboardingQuestionnaire";
+import { hasPendingImport, hasPendingUrl } from "../../lib/brickyImport";
 
 // Page plein écran affichée une seule fois, immédiatement après la création d'un compte
 // (voir app/login/page.tsx), avant d'entrer sur /properties. Si l'utilisateur arrive ici sans
@@ -34,5 +35,5 @@ export default function OnboardingPage() {
   if (!ready) return null;
 
   // Après le questionnaire : « Mon projet » (ville, budget, type), qu'on peut passer.
-  return <OnboardingQuestionnaire onDone={() => router.replace("/projet?suite=1")} />;
+  return <OnboardingQuestionnaire onDone={() => router.replace(hasPendingUrl() || hasPendingImport() ? "/analyze" : "/projet?suite=1")} />;
 }
