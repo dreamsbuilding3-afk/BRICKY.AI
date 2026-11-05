@@ -61,6 +61,23 @@ export const PROMO_TEMPLATES: Record<PromoKind, PromoContent> = {
   },
 };
 
+/**
+ * Campagne de TEST (fictive) : jamais montrée aux utilisateurs. Elle s'affiche
+ * uniquement en ouvrant « Mes biens » avec ?promo=test dans l'adresse, pour voir le rendu.
+ */
+export const TEST_CAMPAIGN: PromoCampaign = {
+  id: "test-reduction-pro",
+  active: false,
+  kind: "reduction",
+  eyebrow: "Offre de lancement",
+  title: "Le Pro à prix doux",
+  subtitle: "−20 % sur le forfait Pro pendant 3 mois",
+  text: "Analyses illimitées, dossiers PDF et comparateur : investis avec un temps d'avance.",
+  cta: "Glisse pour en profiter",
+  href: "/pricing",
+  badge: "−20 %",
+};
+
 /** Campagnes réelles. Vide = aucune page promo. */
 export const CAMPAIGNS: PromoCampaign[] = [];
 
