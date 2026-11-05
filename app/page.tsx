@@ -6,6 +6,7 @@ import { BrickyIsland } from "../components/BrickyIsland";
 import { ReviewsBoard } from "../components/ReviewsBoard";
 import { ContainerShowcase } from "../components/ContainerShowcase";
 import { SourcesMarquee } from "../components/SourcesMarquee";
+import { PropertyFan } from "../components/PropertyFan";
 
 const CAPABILITY_ROW_1 = [
   { key: "cap.rendement", color: "accent" },
@@ -165,6 +166,8 @@ export default function Home() {
         <div className="trial-note">{t("hero.trialNote")}</div>
         <a className="trial-note" href="/demo" style={{ display: "block", textDecoration: "underline" }}>{t("hero.demoLink")}</a>
       </section>
+
+      <PropertyFan />
 
       <SourcesMarquee />
 
