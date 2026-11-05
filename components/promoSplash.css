@@ -76,3 +76,4 @@
 .ps-switch a { padding: 7px 14px; border-radius: 999px; color: rgba(255,255,255,.75); font-size: 13px; font-weight: 700; text-decoration: none; }
 .ps-switch a.is-on { background: #fff; color: #111; }
 @media (max-width: 720px) { .ps-switch { top: auto; bottom: calc(env(safe-area-inset-bottom) + 6px); transform: translateX(-50%) scale(.9); } }
+@media (min-width: 721px) { .ps-switch { top: 50%; left: 28px; transform: translateY(-50%); flex-direction: column; border-radius: 18px; } .ps-switch a { border-radius: 12px; } }
