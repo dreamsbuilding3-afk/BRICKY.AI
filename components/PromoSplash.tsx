@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Instrument_Serif } from "next/font/google";
-import { activeCampaign, promoSeenKey, type PromoContent } from "../lib/promo";
+import { activeCampaign, promoSeenKey, TEST_CAMPAIGN, type PromoContent } from "../lib/promo";
 import "./promoSplash.css";
 
 const serif = Instrument_Serif({ subsets: ["latin"], weight: "400", style: ["normal", "italic"], display: "swap" });
@@ -24,6 +24,11 @@ export function PromoSplash({ content, preview = false }: { content?: PromoConte
   // Campagne active : téléphone seulement, une fois par campagne, après un court délai.
   useEffect(() => {
     if (preview) return;
+    // Aperçu de test : « Mes biens » ouvert avec ?promo=test (n'importe quel appareil, à chaque fois).
+    if (new URLSearchParams(window.location.search).get("promo") === "test") {
+      const t = window.setTimeout(() => { setPromo(TEST_CAMPAIGN); setOpen(true); }, 900);
+      return () => window.clearTimeout(t);
+    }
     const c = content ?? activeCampaign();
     if (!c || !("id" in c) || !c.id) return;
     if (!window.matchMedia("(max-width: 720px)").matches) return;
@@ -33,7 +38,7 @@ export function PromoSplash({ content, preview = false }: { content?: PromoConte
   }, [content, preview]);
 
   const markSeen = useCallback(() => {
-    if (preview || !promo?.id) return;
+    if (preview || !promo?.id || promo.id === TEST_CAMPAIGN.id) return;
     try { window.localStorage.setItem(promoSeenKey(promo.id), new Date().toISOString()); } catch {}
   }, [preview, promo]);
 

@@ -1,0 +1,24 @@
+.sn { position: fixed; z-index: 900; right: 20px; bottom: 20px; width: 360px; display: flex; gap: 14px; align-items: flex-start; padding: 18px 18px 18px 16px; border-radius: 20px; background: rgba(255,255,255,.94); border: 1px solid rgba(17,17,17,.08); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); box-shadow: 0 30px 60px -30px rgba(17,17,17,.5), 0 2px 6px rgba(17,17,17,.06); animation: sn-in .5s cubic-bezier(.2,.8,.2,1) both; }
+.sn::before { content: ""; position: absolute; left: 0; top: 18px; bottom: 18px; width: 3px; border-radius: 0 3px 3px 0; background: #ff5a1f; }
+.sn-leaving { animation: sn-out .3s ease forwards; }
+@keyframes sn-in { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+@keyframes sn-out { to { opacity: 0; transform: translateY(14px); } }
+.sn-mascot { flex: none; width: 56px; height: 56px; object-fit: contain; animation: sn-bob 3.4s ease-in-out infinite; }
+@keyframes sn-bob { 50% { transform: translateY(-4px) rotate(-3deg); } }
+.sn-body { min-width: 0; padding-right: 18px; }
+.sn-body strong { display: block; font-size: 16px; letter-spacing: -.02em; line-height: 1.25; color: #111; }
+.sn-body p { margin: 5px 0 0; font-size: 13.5px; line-height: 1.45; color: #5f5a50; }
+.sn-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; margin-top: 12px; }
+.sn-cta { padding: 10px 16px; border-radius: 12px; background: #ff5a1f; color: #fff; font-size: 14px; font-weight: 700; text-decoration: none; box-shadow: 0 10px 20px -10px rgba(255,90,31,.8); }
+.sn-login { font-size: 13px; font-weight: 600; color: #5f5a50; text-decoration: underline; }
+.sn-x { position: absolute; top: 10px; right: 10px; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; border: 0; background: rgba(17,17,17,.06); color: #5f5a50; cursor: pointer; }
+
+@media (max-width: 720px) {
+  .sn { left: 10px; right: 10px; bottom: calc(10px + env(safe-area-inset-bottom)); width: auto; }
+}
+@media (prefers-reduced-motion: reduce) { .sn, .sn-mascot { animation: none; } }
+
+[data-theme="dark"] .sn { background: rgba(29,28,22,.94); border-color: rgba(255,255,255,.1); }
+[data-theme="dark"] .sn-body strong { color: #f1efe8; }
+[data-theme="dark"] .sn-body p, [data-theme="dark"] .sn-login { color: #bdb6a8; }
+[data-theme="dark"] .sn-x { background: rgba(255,255,255,.08); color: #bdb6a8; }
