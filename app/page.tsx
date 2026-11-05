@@ -7,6 +7,7 @@ import { ReviewsBoard } from "../components/ReviewsBoard";
 import { ContainerShowcase } from "../components/ContainerShowcase";
 import { SourcesMarquee } from "../components/SourcesMarquee";
 import { PropertyFan } from "../components/PropertyFan";
+import { SignupNudge } from "../components/SignupNudge";
 
 const CAPABILITY_ROW_1 = [
   { key: "cap.rendement", color: "accent" },
@@ -168,6 +169,8 @@ export default function Home() {
       </section>
 
       <PropertyFan />
+
+      <SignupNudge />
 
       <SourcesMarquee />
 
