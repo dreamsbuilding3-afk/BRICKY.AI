@@ -210,7 +210,7 @@ export default function PropertiesPage() {
 
       {totalAnalyses !== null && <AnalysesCounter value={totalAnalyses} />}
 
-      {loading && <div className="extract-note">Chargement de vos biens…</div>}
+      {loading && <div className="skeleton-list" role="status" aria-label="Chargement de vos biens"><div className="skeleton" /><div className="skeleton" /><div className="skeleton" /></div>}
       {error && <div className="error-box">{error}</div>}
 
       {!loading && !error && rows && rows.length === 0 && (
