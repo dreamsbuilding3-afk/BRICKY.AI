@@ -65,8 +65,8 @@ export default function SharedAnalysisPage() {
     <div className="page">
       <AppNav />
       <div className="share-page">
-        <div className="share-banner">Analyse partagee en lecture seule</div>
-        {loading ? <p>Chargement...</p> : null}
+        <div className="share-banner">Analyse partagée en lecture seule</div>
+        {loading ? <p>Chargement…</p> : null}
         {error ? <p className="share-error">{error}</p> : null}
         {!loading && !error && data ? (
           <>
@@ -95,7 +95,7 @@ export default function SharedAnalysisPage() {
               <div className="metric-grid">
                 <Metric label="Prix" value={property.price} suffix=" €" />
                 <Metric label="Surface" value={property.surface_m2} suffix=" m²" />
-                <Metric label="Pieces" value={property.rooms} />
+                <Metric label="Pièces" value={property.rooms} />
                 <Metric label="Chambres" value={property.bedrooms} />
                 <Metric label="DPE" value={property.dpe_class} />
                 <Metric label="GES" value={property.ges_class} />
@@ -103,12 +103,12 @@ export default function SharedAnalysisPage() {
             </div>
 
             <div className="dashboard-section">
-              <h3>Rentabilite</h3>
+              <h3>Rentabilité</h3>
               <div className="metric-grid">
                 <Metric label="Loyer mensuel" value={metrics.monthly_rent} suffix=" €" />
                 <Metric label={acquisition.net_yield_on_total_cost_pct != null ? "Rendement brut (sur coût total)" : "Rendement brut (sur prix)"} value={acquisition.net_yield_on_total_cost_pct != null ? acquisition.gross_yield_on_total_cost_pct : metrics.gross_yield_pct} suffix=" %" />
                 <Metric label={acquisition.net_yield_on_total_cost_pct != null ? "Rendement net (sur coût total)" : "Rendement net (sur prix)"} value={acquisition.net_yield_on_total_cost_pct ?? metrics.net_yield_pct} suffix=" %" />
-                <Metric label="Cashflow mensuel" value={metrics.monthly_cashflow ?? financing.monthly_cashflow} suffix=" €" />
+                <Metric label="Cash-flow mensuel" value={metrics.monthly_cashflow ?? financing.monthly_cashflow} suffix=" €" />
               </div>
             </div>
 
@@ -116,13 +116,13 @@ export default function SharedAnalysisPage() {
               <h3>Achat &amp; financement (estimation)</h3>
               <div className="metric-grid">
                 <Metric label="Frais de notaire" value={acquisition.notary_fees} suffix=" €" />
-                <Metric label="Cout total d'acquisition" value={acquisition.total_acquisition_cost} suffix=" €" />
-                <Metric label="Mensualite du pret" value={financing.monthly_loan_payment} suffix=" €" />
+                <Metric label="Coût total d'acquisition" value={acquisition.total_acquisition_cost} suffix=" €" />
+                <Metric label="Mensualité du prêt" value={financing.monthly_loan_payment} suffix=" €" />
               </div>
             </div>
 
             <p style={{ marginTop: 32, fontSize: 12, color: "#999" }}>
-              Analyse generee par Bricky.AI — estimation basee sur les donnees disponibles, ne constitue pas un conseil en investissement.
+              Analyse générée par Bricky.AI — estimation basée sur les données disponibles, ne constitue pas un conseil en investissement.
             </p>
           </>
         ) : null}
