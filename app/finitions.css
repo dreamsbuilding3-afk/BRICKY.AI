@@ -1,0 +1,110 @@
+/* ===== Finitions =====
+   Couche de polissage posée par-dessus globals.css (importée juste après dans app/layout.tsx).
+   Elle ne change ni la structure ni les couleurs de marque : typographie, chiffres, états
+   de focus, pressions de bouton, messages d'erreur et détails qui suivent le mode sombre.
+   Pour tout annuler d'un coup : retirer l'import de ce fichier dans app/layout.tsx. */
+
+/* --- Typographie : une vraie police d'interface à la place d'Arial --- */
+body {
+  font-family: var(--font-body), "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+h1, h2, h3 { text-wrap: balance; }
+h1 { letter-spacing: -.055em; }
+.sub, .card p, .empty-note, .risk-item p, .missing-list p, .confidence-note { text-wrap: pretty; }
+
+/* Sélection : lisible dans les deux thèmes (l'ancienne devenait blanc sur clair en mode sombre). */
+::selection { background: var(--accent); color: #fff; }
+
+/* Barres de défilement discrètes, aux couleurs du thème. */
+html { scrollbar-color: color-mix(in srgb, var(--ink) 26%, transparent) transparent; scrollbar-width: thin; }
+
+/* --- Chiffres : alignés et stables quand ils changent (curseurs du simulateur) --- */
+.metric b, .score-block b, .scenario b, .decision-hero strong, .property-row-metrics, .sim-grid label {
+  font-variant-numeric: tabular-nums;
+}
+.metric b { font-size: 22px; letter-spacing: -.035em; }
+.score-block b { letter-spacing: -.055em; }
+.decision-label, .score-block span, .metric span { letter-spacing: .08em; font-size: 11.5px; }
+
+/* --- Résultat d'analyse : le verdict d'abord --- */
+.decision-hero > div:first-child {
+  background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 10%, var(--surface-soft, #fafaf8)), var(--surface-soft, #fafaf8) 70%);
+  border-color: color-mix(in srgb, var(--accent) 34%, var(--line-soft, #e5e5e1));
+}
+.decision-hero > div:first-child .decision-label { color: var(--accent-dark); }
+.metric { transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease; }
+.metric:hover { border-color: color-mix(in srgb, var(--ink) 26%, transparent); box-shadow: 0 10px 24px -16px color-mix(in srgb, var(--ink) 60%, transparent); transform: translateY(-1px); }
+.dashboard-section h3 { display: flex; align-items: center; gap: 10px; }
+.dashboard-section h3::before { content: ""; flex: none; width: 8px; height: 8px; border-radius: 3px; background: var(--accent); }
+.scenario { background: var(--surface, #fff); transition: border-color .18s ease; }
+.scenario:hover { border-color: color-mix(in srgb, var(--accent) 45%, transparent); }
+.risk-item { background: var(--surface, #fff); }
+.risk-item span:not(:empty) {
+  align-self: start; padding: 4px 9px; border-radius: 999px; letter-spacing: .06em;
+  background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent-dark);
+}
+
+/* Curseurs du simulateur : plus faciles à attraper. */
+.sim-grid input[type="range"] { height: 22px; cursor: grab; }
+.sim-grid input[type="range"]:active { cursor: grabbing; }
+
+/* --- Boutons : un léger relief, une vraie pression --- */
+.primary-button, .nav-cta, .analyzer button {
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.28), 0 1px 2px rgba(0,0,0,.12), 0 10px 22px -12px color-mix(in srgb, var(--accent) 80%, transparent);
+  transition: background .15s ease, box-shadow .18s ease, transform .12s ease;
+}
+.primary-button:hover:not(:disabled), .nav-cta:hover, .analyzer button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.28), 0 2px 4px rgba(0,0,0,.14), 0 16px 28px -12px color-mix(in srgb, var(--accent) 90%, transparent);
+}
+.primary-button:active:not(:disabled), .nav-cta:active, .analyzer button:active:not(:disabled), .secondary-button:active:not(:disabled) {
+  transform: translateY(0) scale(.985);
+}
+.secondary-button { transition: background .15s ease, color .15s ease, transform .12s ease; }
+
+/* --- Focus : visible au clavier, doux à la souris --- */
+a:focus-visible, button:focus-visible, [role="button"]:focus-visible, summary:focus-visible {
+  outline: 2px solid var(--accent); outline-offset: 3px;
+}
+.property-form input:focus, .property-form select:focus, .url-import input:focus, .onb-detail-input:focus,
+.auth-form input:focus, textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 16%, transparent);
+}
+.analyzer:focus-within, .url-import:focus-within {
+  border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+}
+
+/* --- Messages d'erreur : même ton dans les deux thèmes, avec un repère visuel --- */
+.error-box {
+  display: flex; gap: 10px; align-items: flex-start;
+  background: color-mix(in srgb, #d92d20 9%, var(--surface, #fff));
+  border: 1px solid color-mix(in srgb, #d92d20 26%, transparent);
+  color: color-mix(in srgb, #b42318 78%, var(--ink));
+  line-height: 1.45;
+}
+.error-box::before {
+  content: "!"; flex: none; width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center;
+  background: #d92d20; color: #fff; font-size: 12px; font-weight: 800; line-height: 1;
+}
+
+/* --- Chargement : blocs fantômes (classe .skeleton, utilisée sur « Mes biens ») --- */
+.skeleton-list { margin-top: 36px; display: grid; gap: 12px; }
+.skeleton {
+  height: 86px; border-radius: 18px; border: 1.5px solid color-mix(in srgb, var(--ink) 9%, transparent);
+  background: linear-gradient(100deg, color-mix(in srgb, var(--ink) 5%, var(--surface, #fff)) 30%, color-mix(in srgb, var(--ink) 10%, var(--surface, #fff)) 50%, color-mix(in srgb, var(--ink) 5%, var(--surface, #fff)) 70%);
+  background-size: 300% 100%; animation: skeleton-slide 1.4s ease-in-out infinite;
+}
+.skeleton:nth-child(2) { opacity: .7; } .skeleton:nth-child(3) { opacity: .45; }
+@keyframes skeleton-slide { from { background-position: 100% 0; } to { background-position: 0 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .primary-button, .nav-cta, .analyzer button, .secondary-button, .metric { transition: none; transform: none !important; }
+  .skeleton { animation: none; }
+}
+
+/* Note de confiance : lisible aussi en mode sombre (le brun fixe disparaissait sur fond noir). */
+.confidence-note { color: color-mix(in srgb, var(--accent-dark) 45%, var(--ink)); }
