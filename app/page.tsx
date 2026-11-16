@@ -215,36 +215,26 @@ export default function Home() {
 
       <ContainerShowcase />
 
-      <section className="highlight-band">
+      <section className="highlight-band trust-band">
         <div className="highlight-intro">
           <span className="eyebrow">{t("highlight2.eyebrow")}</span>
           <h2>{t("highlight2.title")}</h2>
         </div>
-        <div className="highlight-grid">
-          <div className="highlight-item">
-            <div className="highlight-item-top"><span className="highlight-icon">01</span><span className="highlight-tag">{t("highlight2.1.tag")}</span></div>
-            <h3>{t("highlight2.1.title")}</h3>
-            <p>{t("highlight2.1.desc")}</p>
-            <div className="highlight-stat">{t("highlight2.1.stat")}</div>
-          </div>
-          <div className="highlight-item">
-            <div className="highlight-item-top"><span className="highlight-icon">02</span><span className="highlight-tag">{t("highlight2.2.tag")}</span></div>
-            <h3>{t("highlight2.2.title")}</h3>
-            <p>{t("highlight2.2.desc")}</p>
-            <div className="highlight-stat">{t("highlight2.2.stat")}</div>
-          </div>
-          <div className="highlight-item">
-            <div className="highlight-item-top"><span className="highlight-icon">03</span><span className="highlight-tag">{t("highlight2.3.tag")}</span></div>
-            <h3>{t("highlight2.3.title")}</h3>
-            <p>{t("highlight2.3.desc")}</p>
-            <div className="highlight-stat"><a href="/legal/confidentialite" style={{ color: "inherit" }}>{t("highlight2.3.stat")}</a></div>
-          </div>
-          <div className="highlight-item">
-            <div className="highlight-item-top"><span className="highlight-icon">04</span><span className="highlight-tag">{t("highlight2.4.tag")}</span></div>
-            <h3>{t("highlight2.4.title")}</h3>
-            <p>{t("highlight2.4.desc")}</p>
-            <div className="highlight-stat">{t("highlight2.4.stat")}</div>
-          </div>
+        <div className="trust-grid">
+          {([
+            ["1", "cadenas"],
+            ["2", "serveurs"],
+            ["3", "bouclier"],
+            ["4", "interrupteur"],
+          ] as const).map(([n, img]) => (
+            <div className="trust-card" key={n}>
+              <img className="trust-art" src={`/img/confiance-${img}.webp`} width={440} height={440} alt="" loading="lazy" decoding="async" />
+              <span className="trust-tag">{t(`highlight2.${n}.tag`)}</span>
+              <h3>{t(`highlight2.${n}.title`)}</h3>
+              <p>{t(`highlight2.${n}.desc`)}</p>
+              {n === "3" && <a className="trust-link" href="/legal/confidentialite">{t("highlight2.3.stat")}</a>}
+            </div>
+          ))}
         </div>
       </section>
 

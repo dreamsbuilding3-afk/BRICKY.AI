@@ -108,3 +108,40 @@ a:focus-visible, button:focus-visible, [role="button"]:focus-visible, summary:fo
 
 /* Note de confiance : lisible aussi en mode sombre (le brun fixe disparaissait sur fond noir). */
 .confidence-note { color: color-mix(in srgb, var(--accent-dark) 45%, var(--ink)); }
+
+/* ===== Section « Confiance » : cartes douces avec objet 3D ===== */
+/* Un peu plus d'air avec la section des conteneurs juste au-dessus. */
+.trust-band { margin-top: 40px; padding: 56px 24px 60px; }
+.trust-band .highlight-intro h2 { margin-bottom: 40px; }
+.trust-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+.trust-card {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 6px; min-width: 0;
+  padding: 18px 22px 26px; border-radius: 26px;
+  background: #f5f4f2;
+  transition: transform .25s cubic-bezier(.2,.8,.2,1), box-shadow .25s ease;
+}
+.trust-card:hover { transform: translateY(-3px); box-shadow: 0 22px 40px -28px rgba(60, 30, 10, .45); }
+.trust-art { align-self: center; width: 168px; height: 168px; max-width: 100%; margin: 0 0 10px; object-fit: contain; transition: transform .35s cubic-bezier(.2,.8,.2,1); }
+.trust-card:hover .trust-art { transform: translateY(-4px) rotate(-2deg) scale(1.03); }
+.trust-tag { font-size: 13px; font-weight: 600; letter-spacing: -.005em; }
+.trust-card:nth-child(1) .trust-tag { color: #e8590c; }
+.trust-card:nth-child(2) .trust-tag { color: #c2410c; }
+.trust-card:nth-child(3) .trust-tag { color: #d9480f; }
+.trust-card:nth-child(4) .trust-tag { color: #e67700; }
+.trust-card h3 { margin: 0; font-size: 19px; line-height: 1.22; font-weight: 700; letter-spacing: -.025em; color: var(--ink); text-wrap: balance; }
+.trust-card p { margin: 6px 0 0; font-size: 14px; line-height: 1.55; color: var(--text-muted, #666); text-wrap: pretty; }
+.trust-link { margin-top: 10px; font-size: 13.5px; font-weight: 700; color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
+.trust-link:hover { color: var(--accent-dark); }
+[data-theme="dark"] .trust-card { background: var(--surface-soft); }
+[data-theme="dark"] .trust-card:nth-child(n) .trust-tag { color: var(--accent-light); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .trust-card { background: var(--surface-soft); }
+  :root:not([data-theme="light"]) .trust-card:nth-child(n) .trust-tag { color: var(--accent-light); }
+}
+@media (max-width: 1000px) { .trust-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 560px) {
+  .trust-band { padding: 44px 16px 48px; }
+  .trust-grid { grid-template-columns: 1fr; gap: 12px; }
+  .trust-art { width: 140px; height: 140px; }
+}
+@media (prefers-reduced-motion: reduce) { .trust-card, .trust-art { transition: none; } .trust-card:hover, .trust-card:hover .trust-art { transform: none; } }
