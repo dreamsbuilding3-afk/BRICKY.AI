@@ -2471,6 +2471,8 @@ label.auto-filled input, label.auto-filled select { border-color: rgba(22,163,74
 .property-thumb { width: 112px; height: 88px; padding: 6px; border-radius: 16px; display: flex; align-items: center; justify-content: center; overflow: hidden; background: linear-gradient(160deg, #fff6ef, #ffe4d2); box-shadow: inset 0 0 0 1px rgba(17,17,17,.04); }
 .property-thumb svg { display: block; width: 100%; height: 100%; transition: transform .25s ease; }
 .property-row:hover .property-thumb svg { transform: translateY(-2px) scale(1.05); }
+.property-thumb img { display: block; width: 100%; height: 100%; object-fit: contain; transition: transform .25s ease; filter: drop-shadow(0 6px 10px rgba(0,0,0,.18)); }
+.property-row:hover .property-thumb img { transform: translateY(-2px) scale(1.05); }
 .property-thumb-immeuble, .property-thumb-terrain { background: linear-gradient(160deg, #f4fbf1, #dff1d8); }
 .property-thumb-villa { background: linear-gradient(160deg, #f2f8ff, #dcebfb); }
 .property-thumb-commerce { background: linear-gradient(160deg, #fffaf0, #fdecc8); }
