@@ -123,6 +123,12 @@ a:focus-visible, button:focus-visible, [role="button"]:focus-visible, summary:fo
 .trust-card:hover { transform: translateY(-3px); box-shadow: 0 22px 40px -28px rgba(60, 30, 10, .45); }
 .trust-art { align-self: center; width: 168px; height: 168px; max-width: 100%; margin: 0 0 10px; object-fit: contain; transition: transform .35s cubic-bezier(.2,.8,.2,1); }
 .trust-card:hover .trust-art { transform: translateY(-4px) rotate(-2deg) scale(1.03); }
+/* flottement doux des objets (décalé d'une carte à l'autre) */
+.trust-art { animation: trust-float 6s ease-in-out infinite; }
+.trust-card:nth-child(2) .trust-art { animation-delay: -1.5s; }
+.trust-card:nth-child(3) .trust-art { animation-delay: -3s; }
+.trust-card:nth-child(4) .trust-art { animation-delay: -4.5s; }
+@keyframes trust-float { 0%, 100% { translate: 0 0; } 50% { translate: 0 -6px; } }
 .trust-tag { font-size: 13px; font-weight: 600; letter-spacing: -.005em; }
 .trust-card:nth-child(1) .trust-tag { color: #e8590c; }
 .trust-card:nth-child(2) .trust-tag { color: #c2410c; }
@@ -144,4 +150,4 @@ a:focus-visible, button:focus-visible, [role="button"]:focus-visible, summary:fo
   .trust-grid { grid-template-columns: 1fr; gap: 12px; }
   .trust-art { width: 140px; height: 140px; }
 }
-@media (prefers-reduced-motion: reduce) { .trust-card, .trust-art { transition: none; } .trust-card:hover, .trust-card:hover .trust-art { transform: none; } }
+@media (prefers-reduced-motion: reduce) { .trust-card, .trust-art { transition: none; animation: none; } .trust-card:hover, .trust-card:hover .trust-art { transform: none; } }
