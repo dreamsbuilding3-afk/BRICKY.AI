@@ -1,50 +1,87 @@
-/* Éventail de photos sous le texte d'accueil */
-.pf { position: relative; margin: 28px auto 0; padding: 0 16px; max-width: 1040px; }
+/* Carrousel « coverflow » de photos sous le texte d'accueil */
+.pf { position: relative; margin: 30px auto 0; padding: 0 16px; max-width: 1100px; }
 .pf-stage {
-  position: relative; height: 318px;
-  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 14%, #000 86%, transparent 100%);
-  mask-image: linear-gradient(to right, transparent 0, #000 14%, #000 86%, transparent 100%);
+  --cw: 236px; --gap1: 226px; --gap2: 418px;
+  position: relative; height: 384px;
+  perspective: 1400px; perspective-origin: 50% 45%;
+  touch-action: pan-y; user-select: none;
+  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 10%, #000 90%, transparent 100%);
+  mask-image: linear-gradient(to right, transparent 0, #000 10%, #000 90%, transparent 100%);
 }
+
 .pf-card {
-  --w: 210px; --x: 0px; --y: 0px; --z: 5; --o: 1; --d: 0s;
-  position: absolute; left: 50%; top: 0; margin: 0; width: var(--w); aspect-ratio: 3 / 4;
-  transform: translate(calc(-50% + var(--x)), var(--y)); z-index: var(--z); opacity: var(--o);
-  border-radius: 20px; overflow: hidden; background: #ece8e1;
-  border: 3px solid #fff;
-  box-shadow: 0 1px 2px rgba(17,17,17,.06), 0 22px 44px -26px rgba(17,17,17,.45);
-  animation: pf-in .9s cubic-bezier(.2,.8,.2,1) var(--d) both, pf-float 7s ease-in-out calc(var(--d) + .9s) infinite;
+  --x: 0px; --z: 0px; --ry: 0deg; --s: 1; --o: 1; --zi: 5;
+  position: absolute; left: 50%; top: 8px; width: var(--cw); aspect-ratio: 2 / 3;
+  margin: 0 0 0 calc(var(--cw) / -2); padding: 0; border: 0; cursor: pointer;
+  border-radius: 24px; overflow: hidden; background: #d9d4cb; color: #fff; text-align: left;
+  transform: translateX(var(--x)) translateZ(var(--z)) rotateY(var(--ry)) scale(var(--s));
+  opacity: var(--o); z-index: var(--zi);
+  box-shadow: 0 2px 4px rgba(17,17,17,.08), 0 30px 60px -28px rgba(17,17,17,.55);
+  transition: transform .7s cubic-bezier(.2,.8,.2,1), opacity .7s ease, box-shadow .7s ease, filter .7s ease;
+  animation: pf-in .9s cubic-bezier(.2,.8,.2,1) var(--d, 0s) backwards;
+  -webkit-tap-highlight-color: transparent;
 }
-.pf-card img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.pf-card figcaption {
-  position: absolute; left: 10px; bottom: 10px; display: inline-flex; align-items: center; gap: 6px;
-  padding: 5px 10px 5px 8px; border-radius: 999px; font-size: 12px; font-weight: 700; letter-spacing: -.005em; color: #111;
-  background: rgba(255,255,255,.86); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
-  box-shadow: 0 6px 16px -10px rgba(17,17,17,.5);
+.pf-card img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none; }
+.pf-shade {
+  position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(to top, rgba(8,8,10,.72) 0%, rgba(8,8,10,.32) 26%, rgba(8,8,10,0) 50%),
+              linear-gradient(to bottom, rgba(8,8,10,.28) 0%, rgba(8,8,10,0) 18%);
 }
-.pf-dot { width: 6px; height: 6px; border-radius: 50%; background: #ff5a1f; }
+.pf-count {
+  position: absolute; top: 12px; right: 14px; font-size: 11px; font-weight: 600; letter-spacing: .02em;
+  color: rgba(255,255,255,.88); text-shadow: 0 1px 6px rgba(0,0,0,.35); font-variant-numeric: tabular-nums;
+}
+.pf-cap { position: absolute; left: 16px; right: 14px; bottom: 15px; display: flex; flex-direction: column; gap: 2px; }
+.pf-cap b { font-size: 23px; line-height: 1.08; font-weight: 700; letter-spacing: -.02em; text-shadow: 0 2px 14px rgba(0,0,0,.3); }
+.pf-cap small { font-size: 12px; line-height: 1.3; font-weight: 500; color: rgba(255,255,255,.78); }
 
-.pf-posm2 { --w: 150px; --x: -352px; --y: 58px; --z: 1; --o: .75; --d: .24s; }
-.pf-posm1 { --w: 176px; --x: -196px; --y: 30px; --z: 3; --d: .12s; }
-.pf-posp0 { --w: 210px; --d: 0s; }
-.pf-posp1 { --w: 176px; --x: 196px; --y: 30px; --z: 3; --d: .12s; }
-.pf-posp2 { --w: 150px; --x: 352px; --y: 58px; --z: 1; --o: .75; --d: .24s; }
-.pf-posm2 figcaption, .pf-posp2 figcaption { font-size: 11px; }
+/* positions relatives à la carte active */
+.pf-card[data-off="0"] { --s: 1; --zi: 5; box-shadow: 0 2px 4px rgba(17,17,17,.1), 0 40px 70px -30px rgba(17,17,17,.65); }
+.pf-card[data-off="-1"] { --x: calc(var(--gap1) * -1); --z: -110px; --ry: 24deg; --s: .84; --zi: 3; }
+.pf-card[data-off="1"] { --x: var(--gap1); --z: -110px; --ry: -24deg; --s: .84; --zi: 3; }
+.pf-card[data-off="-2"] { --x: calc(var(--gap2) * -1); --z: -240px; --ry: 32deg; --s: .72; --zi: 1; --o: .92; }
+.pf-card[data-off="2"] { --x: var(--gap2); --z: -240px; --ry: -32deg; --s: .72; --zi: 1; --o: .92; }
+.pf-card:not([data-off="0"]) { filter: saturate(.92) brightness(.94); }
+.pf-card:not([data-off="0"]):hover { filter: none; }
+.pf-card:focus-visible { outline: 3px solid #ff5a1f; outline-offset: 3px; }
 
-@keyframes pf-in { from { opacity: 0; transform: translate(calc(-50% + var(--x)), calc(var(--y) + 18px)); } to { opacity: var(--o); transform: translate(calc(-50% + var(--x)), var(--y)); } }
-@keyframes pf-float { 0%, 100% { transform: translate(calc(-50% + var(--x)), var(--y)); } 50% { transform: translate(calc(-50% + var(--x)), calc(var(--y) - 5px)); } }
+/* pastilles d'infos (verre dépoli) sous la carte active */
+.pf-chips {
+  list-style: none; margin: 4px 0 0; padding: 0; display: flex; justify-content: center; flex-wrap: wrap; gap: 8px;
+  animation: pf-chips .5s ease both;
+}
+.pf-chips li {
+  display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px 7px 10px; border-radius: 999px;
+  font-size: 12px; font-weight: 600; color: #1d1c19; white-space: nowrap;
+  background: rgba(255,255,255,.62); border: 1px solid rgba(255,255,255,.85);
+  -webkit-backdrop-filter: blur(14px) saturate(1.4); backdrop-filter: blur(14px) saturate(1.4);
+  box-shadow: 0 8px 22px -14px rgba(17,17,17,.45), inset 0 1px 0 rgba(255,255,255,.7);
+}
+.pf-chips svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; opacity: .7; }
 
-@media (prefers-reduced-motion: reduce) { .pf-card { animation: none; } }
+@keyframes pf-in { from { opacity: 0; translate: 0 22px; } to { opacity: var(--o); translate: 0 0; } }
+@keyframes pf-chips { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .pf-card { animation: none; transition: none; }
+  .pf-chips { animation: none; }
+}
 
 @media (max-width: 720px) {
-  .pf { margin-top: 20px; }
-  .pf-stage { height: 222px; -webkit-mask-image: linear-gradient(to right, transparent 0, #000 9%, #000 91%, transparent 100%); mask-image: linear-gradient(to right, transparent 0, #000 9%, #000 91%, transparent 100%); }
-  .pf-card { border-radius: 16px; border-width: 2px; }
-  .pf-posp0 { --w: 150px; }
-  .pf-posm1 { --w: 118px; --x: -122px; --y: 26px; }
-  .pf-posp1 { --w: 118px; --x: 122px; --y: 26px; }
-  .pf-posm2, .pf-posp2 { display: none; }
-  .pf-card figcaption { left: 7px; bottom: 7px; font-size: 10.5px; padding: 4px 8px 4px 7px; }
+  .pf { margin-top: 22px; padding: 0; }
+  .pf-stage { --cw: 172px; --gap1: 138px; --gap2: 250px; height: 280px; perspective: 1000px;
+    -webkit-mask-image: linear-gradient(to right, transparent 0, #000 6%, #000 94%, transparent 100%);
+    mask-image: linear-gradient(to right, transparent 0, #000 6%, #000 94%, transparent 100%); }
+  .pf-card { border-radius: 20px; }
+  .pf-card[data-off="-1"], .pf-card[data-off="1"] { --z: -80px; --s: .8; }
+  .pf-card[data-off="-2"], .pf-card[data-off="2"] { --o: 0; pointer-events: none; }
+  .pf-cap { left: 12px; bottom: 11px; }
+  .pf-cap b { font-size: 18px; }
+  .pf-cap small { font-size: 10.5px; }
+  .pf-count { top: 9px; right: 11px; font-size: 10px; }
+  .pf-chips { gap: 6px; padding: 0 12px; }
+  .pf-chips li { font-size: 11px; padding: 6px 10px 6px 8px; }
 }
 
-[data-theme="dark"] .pf-card { border-color: #222019; background: #2a2820; box-shadow: 0 22px 44px -26px rgba(0,0,0,.8); }
-[data-theme="dark"] .pf-card figcaption { background: rgba(21,20,15,.78); color: #f1efe8; }
+[data-theme="dark"] .pf-card { background: #2a2820; box-shadow: 0 30px 60px -28px rgba(0,0,0,.85); }
+[data-theme="dark"] .pf-chips li { color: #f1efe8; background: rgba(40,38,32,.55); border-color: rgba(255,255,255,.12); box-shadow: 0 8px 22px -14px rgba(0,0,0,.8), inset 0 1px 0 rgba(255,255,255,.08); }
