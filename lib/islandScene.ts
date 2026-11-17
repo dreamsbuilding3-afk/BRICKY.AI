@@ -1111,19 +1111,22 @@ function buildMascotHome(m: Mats, vr: () => number) {
   return g;
 }
 
-function makeCloud(m: Mats, rand: () => number, vr: () => number) {
-  // Mêmes tirages que la version low-poly (nombre, taille et place des bouffées).
+function makeCloud(mat: THREE.SpriteMaterial, rand: () => number, aspect: number) {
+  // Mêmes tirages que la version low-poly (nombre, taille et place des bouffées) : la disposition ne bouge pas.
   const g = new THREE.Group();
   const n = 3 + Math.floor(rand() * 3);
+  let size = 0;
   for (let i = 0; i < n; i++) {
-    const r = 0.35 + rand() * 0.35;
-    const x = i * 0.45 - n * 0.22, y = rand() * 0.18, z = (rand() - 0.5) * 0.3;
-    const sp = new THREE.Sprite(m.cloud);
-    const s = r * (3.2 + vr() * 0.8);
-    sp.scale.set(s * 1.3, s * 0.8, 1);
-    sp.position.set(x + (vr() - 0.5) * 0.3, y + 0.1, z);
-    g.add(sp);
+    size += 0.35 + rand() * 0.35;
+    rand();
+    rand();
   }
+  // Un seul nuage « photo » (cumulus volumétrique pré-rendu), à l'échelle de l'ancien amas.
+  const sp = new THREE.Sprite(mat);
+  const w = Math.max(2.6, n * 0.45 + size * 0.9);
+  sp.scale.set(w, w * aspect, 1);
+  sp.position.set(0, w * aspect * 0.18, 0);
+  g.add(sp);
   return g;
 }
 
@@ -1664,13 +1667,25 @@ export function createIsland(canvas: HTMLCanvasElement, overlay: HTMLElement, op
   scene.add(sky);
   // Nuages derrière l'île uniquement (jamais entre la caméra et les bâtiments).
   const clouds: { g: THREE.Group; speed: number; x: number; range: number; z: number; y: number; phase: number }[] = [];
+  // Nuages photoréalistes (textures pré-rendues dans /img/nuages, chargées à la demande)
+  const CLOUD_ASPECT = [262 / 548, 249 / 550, 241 / 560];
+  const cloudLoader = new THREE.TextureLoader();
+  const cloudMats = [1, 2, 3].map((i) => {
+    const tex = cloudLoader.load(`/img/nuages/nuage-${i}.webp`, () => {
+      if (!running) renderOnce();
+    });
+    tex.colorSpace = THREE.SRGBColorSpace;
+    T.list.push(tex);
+    return new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false, toneMapped: false });
+  });
   const cloudSpots = [
     { x: -7.2, z: -3.5, y: 0.6 },
     { x: 7.4, z: -2.5, y: 1.2 },
     { x: 2.5, z: -7.5, y: -0.6 },
   ];
   for (const spot of cloudSpots) {
-    const g = makeCloud(m, rand, vr);
+    const k = clouds.length;
+    const g = makeCloud(cloudMats[k % cloudMats.length], rand, CLOUD_ASPECT[k % CLOUD_ASPECT.length]);
     g.scale.setScalar(1 + rand() * 0.4);
     sky.add(g);
     clouds.push({ g, speed: 0.12 + rand() * 0.1, x: spot.x, range: 0.9 + rand() * 0.6, z: spot.z, y: spot.y, phase: rand() * 6 });
@@ -1728,6 +1743,10 @@ export function createIsland(canvas: HTMLCanvasElement, overlay: HTMLElement, op
     homeLight.intensity = dark ? 2.2 : 0;
     m.cloud.color.set(dark ? "#6f7896" : "#ffffff");
     m.cloud.opacity = dark ? 0.55 : 0.95;
+    for (const cm of cloudMats) {
+      cm.color.set(dark ? "#7d86a3" : "#ffffff");
+      cm.opacity = dark ? 0.5 : 0.82;
+    }
     m.mist.opacity = dark ? 0.2 : 0.45;
     m.fall.color.set(dark ? "#7f93a8" : "#ffffff");
     m.water.emissiveIntensity = dark ? 0.3 : 0.12;
@@ -1912,6 +1931,7 @@ export function createIsland(canvas: HTMLCanvasElement, overlay: HTMLElement, op
         if (mesh.material) (Array.isArray(mesh.material) ? mesh.material : [mesh.material]).forEach((x) => mats.add(x));
       });
       Object.values(m).forEach((mat) => mats.add(mat));
+      cloudMats.forEach((mat) => mats.add(mat));
       mats.forEach((mat) => mat.dispose());
       T.list.forEach((t) => t.dispose());
       envDay.dispose();
