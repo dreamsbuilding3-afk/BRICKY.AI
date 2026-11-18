@@ -277,3 +277,9 @@ a:focus-visible, button:focus-visible, [role="button"]:focus-visible, summary:fo
 @media (max-width: 900px), (hover: none) and (pointer: coarse) {
   .trust-card.trust-card { -webkit-backdrop-filter: none; backdrop-filter: none; }
 }
+/* En-tête comme les cartes du dessus : objet à gauche, étiquette à droite, sur la même ligne */
+.trust-card.trust-card { display: grid; grid-template-columns: auto 1fr; align-content: start; column-gap: 10px; row-gap: 6px; }
+.trust-card .trust-art { grid-column: 1; grid-row: 1; width: 58px; height: 58px; margin: -6px 0 2px -8px; }
+.trust-card .trust-tag { grid-column: 2; grid-row: 1; justify-self: end; align-self: center; padding: 4px 9px; border-radius: 999px; background: color-mix(in srgb, currentColor 10%, transparent); font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.trust-card h3, .trust-card p, .trust-card .trust-link { grid-column: 1 / -1; }
+@media (max-width: 560px) { .trust-card .trust-art { width: 54px; height: 54px; } }
