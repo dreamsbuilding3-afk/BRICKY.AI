@@ -151,3 +151,27 @@ a:focus-visible, button:focus-visible, [role="button"]:focus-visible, summary:fo
   .trust-art { width: 140px; height: 140px; }
 }
 @media (prefers-reduced-motion: reduce) { .trust-card, .trust-art { transition: none; animation: none; } .trust-card:hover, .trust-card:hover .trust-art { transform: none; } }
+
+/* ===== Fluidité sur téléphone =====
+   Même rendu, moins de travail pour le processeur graphique :
+   - animations en pause hors écran (voir components/PauseOffscreen.tsx) ;
+   - pas de flou d'arrière-plan sur les éléments qui bougent ou se répètent : leur fond est
+     déjà presque opaque, l'effet de verre ne se voyait quasiment pas mais coûtait cher au défilement ;
+   - la grille du fond ne dérive plus (elle reste affichée, immobile). */
+.anim-off, .anim-off * { animation-play-state: paused !important; }
+
+@media (max-width: 900px), (hover: none) and (pointer: coarse) {
+  body::before { animation: none; will-change: auto; }
+  .capability-pill, .island-badge, .island-step, .highlight-item,
+  .analyzer, .url-import, .property-form, .result-panel, .property-row,
+  .cadastral-card, .market-card {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  .capability-pill { background: linear-gradient(180deg, rgba(255,255,255,.96), rgba(255,255,255,.86)); }
+  .island-step { background: rgba(255,255,255,.92); }
+  [data-theme="dark"] .island-step { background: color-mix(in srgb, var(--surface) 94%, transparent); }
+}
+@media (max-width: 900px) and (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .island-step { background: color-mix(in srgb, var(--surface) 94%, transparent); }
+}
