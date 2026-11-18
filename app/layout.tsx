@@ -3,9 +3,8 @@ import { Bricolage_Grotesque, Inter } from "next/font/google";
 import "./globals.css";
 import "./finitions.css";
 import SplashScreen from "../components/SplashScreen";
-import { ThemeToggle } from "../components/ThemeToggle";
 import { LocaleProvider } from "../components/LocaleProvider";
-import { LanguageToggle } from "../components/LanguageToggle";
+import { SiteTools } from "../components/SiteTools";
 import { BrickyGhost } from "../components/BrickyGhost";
 import { PauseOffscreen } from "../components/PauseOffscreen";
 
@@ -59,8 +58,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <LocaleProvider>
           <SplashScreen />
           <BrickyGhost />
-          <ThemeToggle />
-          <LanguageToggle />
+          <SiteTools />
           {children}
         </LocaleProvider>
         <PauseOffscreen />
