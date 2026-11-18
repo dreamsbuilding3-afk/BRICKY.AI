@@ -217,3 +217,12 @@ a:focus-visible, button:focus-visible, [role="button"]:focus-visible, summary:fo
 /* ===== Bandeau « Bricky lit les annonces… » : plus d'air avec le bloc du dessus ===== */
 .lm-section { margin-top: 56px; }
 @media (max-width: 720px) { .lm-section { margin-top: 40px; } }
+
+/* ===== Accueil téléphone : moins de vide sous le texte, plus d'air autour des pastilles ===== */
+/* (sélecteurs doublés pour passer devant components/propertyFan.css) */
+.pf .pf-chips { margin-top: 14px; }
+@media (max-width: 720px) {
+  .hero { padding-bottom: 20px; }
+  .pf.pf { margin-top: 8px; }
+  .pf .pf-chips { margin-top: 16px; }
+}
