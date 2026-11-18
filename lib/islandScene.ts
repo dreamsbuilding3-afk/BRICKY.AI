@@ -1885,8 +1885,11 @@ export function createIsland(canvas: HTMLCanvasElement, overlay: HTMLElement, op
     updateBadges();
   }
 
+  // Sur téléphone, 30 images par seconde suffisent pour une rotation lente : moitié moins de calcul.
+  const frameGap = opts.compact ? 1000 / 30 - 2 : 0;
   function loop(now: number) {
     if (!running) return;
+    if (frameGap && now - last < frameGap) { raf = requestAnimationFrame(loop); return; }
     const dt = Math.min(0.05, (now - last) / 1000);
     last = now;
     step(dt);
