@@ -175,3 +175,87 @@ a:focus-visible, button:focus-visible, [role="button"]:focus-visible, summary:fo
 @media (max-width: 900px) and (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) .island-step { background: color-mix(in srgb, var(--surface) 94%, transparent); }
 }
+
+/* ===== Langue et mode sombre rangés dans la barre de navigation ===== */
+.nav-tools { display: flex; align-items: center; gap: 8px; margin-left: 14px; flex-shrink: 0; }
+.nav:has(> .nav-tools) > .nav-links { margin-left: auto; }
+.nav-tools .lang-toggle-wrap { position: relative; top: auto; right: auto; z-index: auto; }
+.nav-tools .theme-toggle-floating { position: static; width: 38px; height: 38px; box-shadow: none; }
+.nav-tools .lang-toggle { height: 38px; box-shadow: none; }
+@media (max-width: 900px) {
+  /* Téléphone et tablette : [Bricky] ........ [FR] [lune] [menu] */
+  .nav-has-burger > .nav-tools { order: 2; margin-left: auto; margin-right: 4px; }
+  .nav-has-burger > .nav-burger { order: 3; }
+}
+@media (max-width: 640px) {
+  .nav-tools { gap: 6px; }
+  .nav-tools .theme-toggle-floating, .nav-tools .lang-toggle { height: 34px; }
+  .nav-tools .theme-toggle-floating { width: 34px; }
+  .nav-tools .lang-toggle { padding: 0 10px; gap: 5px; }
+  .nav-tools .lang-toggle-chevron { display: none; }
+  .nav:not(.nav-has-burger) > .nav-links { gap: 12px; }
+}
+
+/* ===== Rappel d'inscription : une seule ligne fine et discrète sur téléphone =====
+   (sélecteurs doublés pour passer devant components/signupNudge.css) */
+@media (max-width: 720px) {
+  .sn.sn { left: 10px; right: 10px; bottom: calc(10px + env(safe-area-inset-bottom)); gap: 10px; align-items: center; padding: 8px 8px 8px 10px; border-radius: 14px; background: rgba(255,255,255,.97); box-shadow: 0 12px 28px -18px rgba(17,17,17,.5), 0 1px 2px rgba(17,17,17,.06); }
+  .sn.sn::before { display: none; }
+  .sn.sn .sn-mascot { width: 28px; height: 28px; animation: none; }
+  .sn.sn .sn-body { flex: 1; display: flex; align-items: center; gap: 10px; padding-right: 0; }
+  .sn.sn .sn-body strong { flex: 1; min-width: 0; font-size: 13px; line-height: 1.25; font-weight: 600; }
+  .sn.sn .sn-body p, .sn.sn .sn-login { display: none; }
+  .sn.sn .sn-actions { margin: 0; flex: none; }
+  .sn.sn .sn-cta { padding: 7px 11px; border-radius: 9px; font-size: 12.5px; box-shadow: none; white-space: nowrap; }
+  .sn.sn .sn-x { position: static; order: 3; flex: none; width: 26px; height: 26px; }
+  [data-theme="dark"] .sn.sn { background: rgba(29,28,22,.97); }
+}
+@media (max-width: 720px) and (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .sn.sn { background: rgba(29,28,22,.97); }
+}
+
+/* ===== Bandeau « Bricky lit les annonces… » : plus d'air avec le bloc du dessus ===== */
+.lm-section { margin-top: 56px; }
+@media (max-width: 720px) { .lm-section { margin-top: 40px; } }
+
+/* ===== Accueil téléphone : moins de vide sous le texte, plus d'air autour des pastilles ===== */
+/* (sélecteurs doublés pour passer devant components/propertyFan.css) */
+.pf .pf-chips { margin-top: 14px; }
+@media (max-width: 720px) {
+  .hero { padding-bottom: 20px; }
+  .pf.pf { margin-top: 8px; }
+  .pf .pf-chips { margin-top: 16px; }
+}
+
+/* ===== « Dans chaque analyse » : plus de panneau blanc, des cartes en verre qui flottent =====
+   Même disposition ; seul le fond change. (La section Confiance garde son style à part.) */
+.highlight-band:not(.trust-band),
+[data-theme="dark"] .highlight-band:not(.trust-band) {
+  background: transparent; border-top-color: transparent; border-bottom-color: transparent;
+}
+.highlight-band:not(.trust-band) .highlight-item {
+  background: linear-gradient(160deg, rgba(255,255,255,.55) 0%, rgba(255,255,255,.22) 100%);
+  border: 1px solid rgba(255,255,255,.75);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.9), 0 1px 1px rgba(17,17,17,.03), 0 18px 36px -24px rgba(17,17,17,.28);
+  -webkit-backdrop-filter: blur(10px) saturate(1.2); backdrop-filter: blur(10px) saturate(1.2);
+  overflow: hidden;
+}
+/* reflet brillant discret en haut de chaque carte */
+.highlight-band:not(.trust-band) .highlight-item::before {
+  content: ""; position: absolute; inset: 0 0 auto; height: 46%; pointer-events: none; border-radius: inherit;
+  background: linear-gradient(180deg, rgba(255,255,255,.55), rgba(255,255,255,0));
+}
+.highlight-band:not(.trust-band) .highlight-item > * { position: relative; }
+.highlight-band:not(.trust-band) .highlight-stat { border-top-color: rgba(17,17,17,.08); }
+[data-theme="dark"] .highlight-band:not(.trust-band) .highlight-item {
+  background: linear-gradient(160deg, rgba(255,255,255,.07) 0%, rgba(255,255,255,.025) 100%);
+  border-color: rgba(255,255,255,.1);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.08), 0 18px 36px -24px rgba(0,0,0,.7);
+}
+[data-theme="dark"] .highlight-band:not(.trust-band) .highlight-item::before { background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,0)); }
+[data-theme="dark"] .highlight-band:not(.trust-band) .highlight-stat { border-top-color: rgba(255,255,255,.1); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .highlight-band:not(.trust-band) { background: transparent; border-color: transparent; }
+  :root:not([data-theme="light"]) .highlight-band:not(.trust-band) .highlight-item { background: linear-gradient(160deg, rgba(255,255,255,.07) 0%, rgba(255,255,255,.025) 100%); border-color: rgba(255,255,255,.1); box-shadow: inset 0 1px 0 rgba(255,255,255,.08), 0 18px 36px -24px rgba(0,0,0,.7); }
+  :root:not([data-theme="light"]) .highlight-band:not(.trust-band) .highlight-item::before { background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,0)); }
+}
