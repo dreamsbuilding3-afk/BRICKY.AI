@@ -7,6 +7,7 @@ import { ThemeToggle } from "../components/ThemeToggle";
 import { LocaleProvider } from "../components/LocaleProvider";
 import { LanguageToggle } from "../components/LanguageToggle";
 import { BrickyGhost } from "../components/BrickyGhost";
+import { PauseOffscreen } from "../components/PauseOffscreen";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://bricky-ai-three.vercel.app"),
@@ -62,6 +63,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           <LanguageToggle />
           {children}
         </LocaleProvider>
+        <PauseOffscreen />
       </body>
     </html>
   );
