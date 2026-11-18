@@ -63,7 +63,8 @@ export function PropertyFan() {
     if (paused) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const id = window.setInterval(() => {
-      if (!document.hidden) go(1);
+      // pas de défilement si le carrousel est hors écran (classe posée par PauseOffscreen)
+      if (!document.hidden && !document.querySelector(".pf.anim-off")) go(1);
     }, AUTO_MS);
     return () => window.clearInterval(id);
   }, [paused, go, active]);
