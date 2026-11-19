@@ -452,3 +452,17 @@ a:focus-visible, button:focus-visible, [role="button"]:focus-visible, summary:fo
   .pricing-hero { margin: 16px 12px 0; padding: 22px 16px 36px; border-radius: 26px; }
   .ph-stage { width: 660px; height: 330px; transform: scale(.54); transform-origin: 50% 0; margin-bottom: -150px; left: 50%; translate: -50% 0; max-width: none; }
 }
+
+/* Tarifs : visuel « 0 € » plus fin — texte à gauche, objet à droite */
+@media (min-width: 900px) {
+  .pricing-hero {
+    display: grid; grid-template-columns: minmax(0, 1fr) 440px; align-items: center; column-gap: 8px;
+    padding: 30px 40px 30px 56px; text-align: left;
+  }
+  .pricing-hero .ph-copy { order: -1; margin: 0; justify-items: start; gap: 12px; }
+  .pricing-hero h2 { font-size: clamp(30px, 3.2vw, 42px); text-align: left; justify-items: start; }
+  .pricing-hero .ph-sub { text-align: left; }
+  .pricing-hero .ph-sub { font-size: 17px; }
+  .pricing-hero .ph-cta { margin-top: 6px; height: 46px; }
+  .pricing-hero .ph-stage { width: 660px; height: 330px; margin: -36px 0 -40px; transform: scale(.72); transform-origin: 0 50%; }
+}
