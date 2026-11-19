@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "../../lib/supabase/client";
 import { useLocale } from "../../components/LocaleProvider";
+import PricingHero from "../../components/PricingHero";
 import type { Locale } from "../../lib/i18n/translations";
 
 type Plan = {
@@ -148,6 +149,8 @@ export default function PricingPage() {
           <Link className="nav-cta" href="/analyze">{t("nav.cta")}</Link>
         </div>
       </nav>
+
+      <PricingHero />
 
       <section className="pricing-intro">
         <span className="eyebrow">{t("pricing.intro.eyebrow")}</span>
