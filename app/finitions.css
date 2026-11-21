@@ -466,3 +466,162 @@ a:focus-visible, button:focus-visible, [role="button"]:focus-visible, summary:fo
   .pricing-hero .ph-cta { margin-top: 6px; height: 46px; }
   .pricing-hero .ph-stage { width: 660px; height: 330px; margin: -36px 0 -40px; transform: scale(.72); transform-origin: 0 50%; }
 }
+
+/* ===== Tarifs : cartes claires à dégradé nuancé + petits motifs de fond discrets =====
+   Fond et cartes restent clairs ; seul le thème sombre passe en noir.
+   Le palier Pro reçoit le dégradé orange (inspiré de la carte « Middle »). */
+.pricing-stage { position: relative; overflow: clip; padding: 14px 0 40px; }
+.pricing-stage > .pricing-grid { position: relative; z-index: 1; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+@media (max-width: 900px) { .pricing-stage > .pricing-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 640px) { .pricing-stage > .pricing-grid { grid-template-columns: minmax(0, 1fr); } }
+.pricing-stage::before, .pricing-stage::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 0;
+  -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
+}
+/* 4 motifs neutres, très légers : étincelle, plus, brique, grille de points */
+.pricing-stage::before {
+  background: rgba(17,17,17,.13);
+  -webkit-mask-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 0C12.6 7.2 16.8 11.4 24 12 16.8 12.6 12.6 16.8 12 24 11.4 16.8 7.2 12.6 0 12 7.2 11.4 11.4 7.2 12 0Z'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect x='10' y='2' width='4' height='20' rx='2'/%3E%3Crect x='2' y='10' width='20' height='4' rx='2'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 18'%3E%3Crect x='1.5' y='1.5' width='29' height='15' rx='3.5' fill='none' stroke='%23000' stroke-width='2.4'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cg%3E%3Ccircle cx='6' cy='6' r='1.7'/%3E%3Ccircle cx='20' cy='6' r='1.7'/%3E%3Ccircle cx='34' cy='6' r='1.7'/%3E%3Ccircle cx='6' cy='20' r='1.7'/%3E%3Ccircle cx='20' cy='20' r='1.7'/%3E%3Ccircle cx='34' cy='20' r='1.7'/%3E%3Ccircle cx='6' cy='34' r='1.7'/%3E%3Ccircle cx='20' cy='34' r='1.7'/%3E%3Ccircle cx='34' cy='34' r='1.7'/%3E%3C/g%3E%3C/svg%3E");
+  mask-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 0C12.6 7.2 16.8 11.4 24 12 16.8 12.6 12.6 16.8 12 24 11.4 16.8 7.2 12.6 0 12 7.2 11.4 11.4 7.2 12 0Z'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect x='10' y='2' width='4' height='20' rx='2'/%3E%3Crect x='2' y='10' width='20' height='4' rx='2'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 18'%3E%3Crect x='1.5' y='1.5' width='29' height='15' rx='3.5' fill='none' stroke='%23000' stroke-width='2.4'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cg%3E%3Ccircle cx='6' cy='6' r='1.7'/%3E%3Ccircle cx='20' cy='6' r='1.7'/%3E%3Ccircle cx='34' cy='6' r='1.7'/%3E%3Ccircle cx='6' cy='20' r='1.7'/%3E%3Ccircle cx='20' cy='20' r='1.7'/%3E%3Ccircle cx='34' cy='20' r='1.7'/%3E%3Ccircle cx='6' cy='34' r='1.7'/%3E%3Ccircle cx='20' cy='34' r='1.7'/%3E%3Ccircle cx='34' cy='34' r='1.7'/%3E%3C/g%3E%3C/svg%3E");
+  -webkit-mask-position: 6% 14px, 94% 22px, 11% calc(100% - 10px), 89% calc(100% - 4px);
+  mask-position: 6% 14px, 94% 22px, 11% calc(100% - 10px), 89% calc(100% - 4px);
+  -webkit-mask-size: 18px, 13px, 30px, 30px;
+  mask-size: 18px, 13px, 30px, 30px;
+}
+/* 2 petites étincelles orange, rien de plus */
+.pricing-stage::after {
+  background: rgba(255,90,31,.45);
+  -webkit-mask-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 0C12.6 7.2 16.8 11.4 24 12 16.8 12.6 12.6 16.8 12 24 11.4 16.8 7.2 12.6 0 12 7.2 11.4 11.4 7.2 12 0Z'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 0C12.6 7.2 16.8 11.4 24 12 16.8 12.6 12.6 16.8 12 24 11.4 16.8 7.2 12.6 0 12 7.2 11.4 11.4 7.2 12 0Z'/%3E%3C/svg%3E");
+  mask-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 0C12.6 7.2 16.8 11.4 24 12 16.8 12.6 12.6 16.8 12 24 11.4 16.8 7.2 12.6 0 12 7.2 11.4 11.4 7.2 12 0Z'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 0C12.6 7.2 16.8 11.4 24 12 16.8 12.6 12.6 16.8 12 24 11.4 16.8 7.2 12.6 0 12 7.2 11.4 11.4 7.2 12 0Z'/%3E%3C/svg%3E");
+  -webkit-mask-position: 34% 10px, 64% calc(100% - 12px);
+  mask-position: 34% 10px, 64% calc(100% - 12px);
+  -webkit-mask-size: 20px, 11px;
+  mask-size: 20px, 11px;
+}
+
+/* Cartes : blanches, liseré dégradé orange → gris, léger voile chaud en haut */
+.pricing-stage .pricing-card {
+  border: 1.5px solid transparent;
+  background:
+    linear-gradient(180deg, #fff7f2 0%, #fff 30%) padding-box,
+    linear-gradient(180deg, rgba(255,90,31,.42), rgba(17,17,17,.08) 38%, rgba(17,17,17,.11)) border-box;
+  box-shadow: 0 1px 1px rgba(17,17,17,.03), 0 18px 40px -30px rgba(17,17,17,.28);
+  transition: transform .2s ease, box-shadow .2s ease;
+}
+.pricing-stage .pricing-card:hover { transform: translateY(-3px); box-shadow: 0 1px 1px rgba(17,17,17,.03), 0 26px 48px -28px rgba(17,17,17,.32); }
+
+/* Palier mis en avant : le dégradé nuancé orange qui se fond dans le blanc */
+.pricing-stage .pricing-card-featured {
+  background:
+    linear-gradient(180deg, #ff6a35 0px, #ff8c5c 70px, #ffc3a6 150px, #ffe9de 220px, #fff8f4 300px, #fff 380px) padding-box,
+    linear-gradient(180deg, #ff5a1f, rgba(255,90,31,.32) 380px, rgba(255,90,31,.2)) border-box;
+  box-shadow: 0 1px 1px rgba(17,17,17,.04), 0 28px 56px -30px rgba(255,90,31,.55);
+}
+@media (min-width: 901px) {
+  .pricing-stage .pricing-card-featured { transform: translateY(-10px); }
+  .pricing-stage .pricing-card-featured:hover { transform: translateY(-13px); }
+}
+.pricing-stage .pricing-card-featured h2 { color: rgba(17,17,17,.78); }
+.pricing-stage .pricing-card-featured .pricing-audience { color: rgba(17,17,17,.72); }
+.pricing-stage .pricing-card-featured .pricing-daily { border-top-color: rgba(17,17,17,.1); }
+.pricing-stage .pricing-card-featured .pricing-yearly, .pricing-stage .pricing-card-featured .pricing-daily-unit, .pricing-stage .pricing-card-featured .pricing-daily-note { color: rgba(17,17,17,.62); }
+.pricing-stage .pricing-card-featured .pricing-daily-value { color: var(--accent-dark); }
+
+/* Palier actuel : liseré plein orange, quel que soit le palier */
+.pricing-stage .pricing-card-current {
+  background:
+    linear-gradient(180deg, #fff7f2 0%, #fff 30%) padding-box,
+    linear-gradient(var(--accent), var(--accent)) border-box;
+  box-shadow: 0 0 0 3px rgba(255,90,31,.12), 0 18px 40px -30px rgba(17,17,17,.28);
+}
+.pricing-stage .pricing-card-featured.pricing-card-current {
+  background:
+    linear-gradient(180deg, #ff6a35 0px, #ff8c5c 70px, #ffc3a6 150px, #ffe9de 220px, #fff8f4 300px, #fff 380px) padding-box,
+    linear-gradient(var(--accent), var(--accent)) border-box;
+}
+.pricing-stage .pricing-card-featured .pricing-current-badge { background: #fff; color: var(--accent-dark); }
+
+.pricing-popular-badge {
+  position: absolute; top: 16px; right: 16px;
+  padding: 4px 10px; border-radius: 999px;
+  background: rgba(255,255,255,.92); color: var(--accent-dark);
+  font-size: 11px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase;
+  box-shadow: 0 4px 12px -6px rgba(120,40,10,.45);
+}
+
+/* Coches cerclées */
+.pricing-stage .pricing-features li { padding-left: 24px; }
+.pricing-stage .pricing-features li::before {
+  content: "✓"; top: 1px; width: 15px; height: 15px; border-radius: 50%;
+  border: 1.5px solid currentColor; display: grid; place-items: center;
+  font-size: 8.5px; line-height: 1; color: var(--accent);
+}
+
+/* Boutons en pilule, flèche dans une pastille à droite */
+.pricing-stage .pricing-card .pricing-cta { position: relative; border-radius: 999px; padding: 0 44px 0 16px; min-width: 0; white-space: normal; line-height: 1.15; text-align: center; }
+.pricing-stage .pricing-network-cta { white-space: normal; max-width: 100%; height: auto; min-height: 38px; padding: 8px 14px; text-align: center; line-height: 1.25; }
+.pricing-stage .pricing-card .primary-button.pricing-cta {
+  background: linear-gradient(90deg, #ff5a1f 0%, #ff7a3d 55%, #ffa06d 100%);
+  box-shadow: 0 1px 2px rgba(0,0,0,.1), inset 0 1px 0 rgba(255,255,255,.25);
+}
+.pricing-stage .pricing-card .primary-button.pricing-cta:hover { background: linear-gradient(90deg, #e94d16 0%, #ff6a35 55%, #ff8f57 100%); }
+.pricing-stage .pricing-card .secondary-button.pricing-cta {
+  border: 1.5px solid transparent;
+  background: linear-gradient(#fff, #fff) padding-box, linear-gradient(90deg, rgba(17,17,17,.2), rgba(255,90,31,.55)) border-box;
+  color: var(--ink);
+}
+.pricing-stage .pricing-card .secondary-button.pricing-cta:hover { background: linear-gradient(#fff7f2, #fff7f2) padding-box, linear-gradient(90deg, rgba(17,17,17,.3), var(--accent)) border-box; color: var(--ink); }
+.pricing-cta-arrow {
+  position: absolute; right: 7px; top: 50%; transform: translateY(-50%);
+  width: 32px; height: 32px; border-radius: 50%;
+  display: grid; place-items: center;
+  background: #fff; color: var(--accent);
+  transition: transform .15s ease;
+}
+.secondary-button .pricing-cta-arrow { background: var(--ink); color: #fff; }
+.pricing-cta:hover .pricing-cta-arrow { transform: translateY(-50%) rotate(45deg); }
+
+/* Thème sombre : là seulement, le noir */
+[data-theme="dark"] .pricing-stage::before { background: rgba(255,255,255,.12); }
+[data-theme="dark"] .pricing-stage::after { background: rgba(255,106,53,.5); }
+[data-theme="dark"] .pricing-stage .pricing-card {
+  background:
+    linear-gradient(180deg, #211a16 0%, #171513 34%) padding-box,
+    linear-gradient(180deg, rgba(255,106,53,.55), rgba(255,255,255,.07) 40%, rgba(255,255,255,.1)) border-box;
+  box-shadow: 0 22px 44px -28px rgba(0,0,0,.8);
+}
+[data-theme="dark"] .pricing-stage .pricing-card-featured,
+[data-theme="dark"] .pricing-stage .pricing-card-featured.pricing-card-current {
+  background:
+    linear-gradient(180deg, #cf4a18 0px, #a63b14 60px, #6e2912 140px, #34190f 230px, #1c1613 320px, #171513 420px) padding-box,
+    linear-gradient(180deg, #ff6a35, rgba(255,106,53,.3) 380px, rgba(255,255,255,.1)) border-box;
+  box-shadow: 0 30px 60px -30px rgba(255,90,31,.45);
+}
+[data-theme="dark"] .pricing-stage .pricing-card-current { background: linear-gradient(180deg, #211a16 0%, #171513 34%) padding-box, linear-gradient(var(--accent), var(--accent)) border-box; }
+[data-theme="dark"] .pricing-stage .pricing-card-featured h2,
+[data-theme="dark"] .pricing-stage .pricing-card-featured .pricing-audience { color: rgba(255,255,255,.88); }
+[data-theme="dark"] .pricing-stage .pricing-card-featured .pricing-yearly, [data-theme="dark"] .pricing-stage .pricing-card-featured .pricing-daily-unit, [data-theme="dark"] .pricing-stage .pricing-card-featured .pricing-daily-note { color: rgba(255,255,255,.72); }
+[data-theme="dark"] .pricing-stage .pricing-card-featured .pricing-daily-value { color: #ffb08a; }
+[data-theme="dark"] .pricing-stage .pricing-card .secondary-button.pricing-cta {
+  background: linear-gradient(#1c1816, #1c1816) padding-box, linear-gradient(90deg, rgba(255,255,255,.18), rgba(255,106,53,.6)) border-box;
+  color: var(--ink);
+}
+[data-theme="dark"] .pricing-stage .pricing-card .secondary-button.pricing-cta:hover { background: linear-gradient(#26201c, #26201c) padding-box, linear-gradient(90deg, rgba(255,255,255,.28), var(--accent)) border-box; }
+[data-theme="dark"] .secondary-button .pricing-cta-arrow { background: #fff; color: #111; }
+[data-theme="dark"] .pricing-popular-badge { background: rgba(255,255,255,.95); }
+
+@media (prefers-reduced-motion: reduce) {
+  .pricing-stage .pricing-card, .pricing-cta-arrow { transition: none; }
+}

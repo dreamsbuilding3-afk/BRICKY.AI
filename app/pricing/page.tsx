@@ -91,6 +91,14 @@ function featureList(plan: Plan, t: (key: string, vars?: Record<string, string |
   return items;
 }
 
+function CtaArrow() {
+  return (
+    <span className="pricing-cta-arrow" aria-hidden="true">
+      <svg width="12" height="12" viewBox="0 0 12 12"><path d="M3 9 9 3M4.5 3H9v4.5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
+    </span>
+  );
+}
+
 function Check({ ok }: { ok: boolean }) {
   return ok ? <span className="pricing-compare-check">✓</span> : <span className="pricing-compare-dash">—</span>;
 }
@@ -165,13 +173,18 @@ export default function PricingPage() {
         <section className="pricing-intro"><div className="error-box" style={{ maxWidth: 520, margin: "0 auto" }}>{t("pricing.loadError")}</div></section>
       ) : (
         <>
+        <div className="pricing-stage">
         <section className="pricing-grid">
           {plans.map((plan) => (
             <div
               key={plan.plan_code}
-              className={"pricing-card" + (currentPlan === plan.plan_code ? " pricing-card-current" : "")}
+              className={"pricing-card" + (plan.plan_code === "pro" ? " pricing-card-featured" : "") + (currentPlan === plan.plan_code ? " pricing-card-current" : "")}
             >
-              {currentPlan === plan.plan_code ? <span className="pricing-current-badge">{t("pricing.currentBadge")}</span> : null}
+              {currentPlan === plan.plan_code ? (
+                <span className="pricing-current-badge">{t("pricing.currentBadge")}</span>
+              ) : plan.plan_code === "pro" ? (
+                <span className="pricing-popular-badge">{t("pricing.popular")}</span>
+              ) : null}
               <h2>{plan.name}</h2>
               {PLAN_AUDIENCE_KEY[plan.plan_code] ? (
                 <div className="pricing-audience">{t(PLAN_AUDIENCE_KEY[plan.plan_code])}</div>
@@ -198,15 +211,18 @@ export default function PricingPage() {
               {plan.plan_code === "decouverte" ? (
                 <Link className="secondary-button pricing-cta" href="/analyze">
                   {t("pricing.cta.start")}
+                  <CtaArrow />
                 </Link>
               ) : plan.plan_code === "agence" ? (
                 <Link className="secondary-button pricing-cta" href="/contact?sujet=agence">
                   {t("pricing.cta.contact")}
+                  <CtaArrow />
                 </Link>
               ) : (
                 <div className="pricing-cta-wrap">
                 <Link className="primary-button pricing-cta" href={`/contact?sujet=${plan.plan_code}`}>
                   {t("pricing.cta.trial")}
+                  <CtaArrow />
                 </Link>
                 <span className="pricing-cta-note">{t("pricing.cta.trialNote")}</span>
                 </div>
@@ -214,6 +230,7 @@ export default function PricingPage() {
             </div>
           ))}
         </section>
+        </div>
         <p className="pricing-daily-footnote">{t("pricing.daily.footnote")}</p>
         <section className="pricing-pack" aria-labelledby="pricing-pack-title">
           <div className="pricing-pack-text">
