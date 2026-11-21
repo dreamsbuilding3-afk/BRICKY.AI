@@ -145,7 +145,6 @@ export default function Home() {
           <span></span>
         </button>
         <div className={"nav-links" + (menuOpen ? " nav-links-open" : "")}>
-          <a className="navlink" href="/pricing" onClick={() => setMenuOpen(false)}>{t("nav.pricing")}</a>
           <a className="navlink" href="/login" onClick={() => setMenuOpen(false)}>{t("nav.login")}</a>
           <a className="nav-cta" href="/analyze" onClick={() => setMenuOpen(false)}>{t("nav.cta")}</a>
         </div>
