@@ -11,6 +11,7 @@ import { clearPendingImport, takePendingImportFromLocation, type PendingImport }
 import { DOC_LABELS, agencyRequestText, mergeDossier, missingDocuments, type DocKind, type DossierPiece } from "../../lib/dossier";
 import { mergeCopro, type CoproFindings } from "../../lib/copro";
 import { computeOffer, type OfferInput, type OfferResult } from "../../lib/negotiation";
+import { Paywall, PAYWALL_ON, useFullAccess } from "../../components/Paywall";
 
 type AnalysisResult = { property_id?: string; analysis_id?: string; [key: string]: unknown };
 type Payload = { title: string; city: string; address: string; price: string; surface_m2: string; rooms: string; bedrooms: string; property_type: string; dpe_class: string; ges_class: string; monthly_rent: string; down_payment: string; loan_rate_pct: string; loan_duration_years: string; renovation_budget: string; source_url: string; annual_property_tax: string; annual_insurance: string; annual_maintenance: string; annual_management_fees: string; other_annual_charges: string; vacancy_rate: string };
@@ -643,6 +644,9 @@ return <button type="button" key={opt.code || "none"} className={`type-scroller-
 }
 
 function AnalysisDashboard({ result, address, onResultRefresh, offerInput }: { result: AnalysisResult; address?: string; onResultRefresh?: (propertyId: string) => void; offerInput?: Pick<OfferInput, "price" | "dpe" | "renovation" | "condition" | "coproWorksVoted"> }) {
+// Paywall : sans forfait payant, score et verdict restent visibles, le détail est flouté (components/Paywall.tsx).
+const access = useFullAccess();
+const locked = PAYWALL_ON && !access.paid;
 const [shareStatus, setShareStatus] = useState<{ loading: boolean; url: string | null; error: string | null }>({ loading: false, url: null, error: null });
 async function handleShare() {
 if (!result?.analysis_id) return;
@@ -744,9 +748,10 @@ setDossierError(err?.message || "Erreur inattendue lors de la génération du do
 setDownloadingDossier(false);
 }
 }
-return <section className="result-panel decision-dashboard"><div className="result-head"><div><span className="eyebrow">Analyse terminée</span><h2>Voici ce que Bricky en pense.</h2></div><div className="result-head-actions">{propertyId && <a className="secondary-button visit-link" href={`/visite?property_id=${propertyId}`}>Mode visite</a>}{propertyId && <button type="button" className="secondary-button" onClick={downloadDossier} disabled={downloadingDossier}>{downloadingDossier ? "Génération…" : "Télécharger le dossier complet (PDF) →"}</button>}<span className="status-dot">● Décision</span></div></div>
+return <section className="result-panel decision-dashboard"><div className="result-head"><div><span className="eyebrow">Analyse terminée</span><h2>Voici ce que Bricky en pense.</h2></div><div className="result-head-actions">{propertyId && !locked && <a className="secondary-button visit-link" href={`/visite?property_id=${propertyId}`}>Mode visite</a>}{propertyId && !locked && <button type="button" className="secondary-button" onClick={downloadDossier} disabled={downloadingDossier}>{downloadingDossier ? "Génération…" : "Télécharger le dossier complet (PDF) →"}</button>}<span className="status-dot">● Décision</span></div></div>
 {dossierError ? <p className="share-error" style={{ marginTop: 4 }}>{dossierError}</p> : null}
 <div className="decision-hero"><div><span className="decision-label">Verdict</span><strong>{label}</strong></div><div className="score-block"><span>Score</span><b>{score ?? "—"}<small>/100</small></b></div><div className="score-block"><span>Confiance</span><b>{confidence ?? "—"}<small>%</small></b>{confidenceLabel ? <em className="confidence-tag">{confidenceLabel}</em> : null}</div></div>{missingCount > 0 ? <p className="confidence-note">Score basé sur {missingCount} donnée{missingCount > 1 ? "s" : ""} manquante{missingCount > 1 ? "s" : ""} — plus vous complétez le bien, plus l'estimation est fiable.</p> : null}
+<div className={"pw-zone" + (locked ? " is-locked" : "")}><div className="pw-content" aria-hidden={locked || undefined} inert={locked}>
 <div className="share-row"><button type="button" className="share-button" onClick={handleShare} disabled={shareStatus.loading}>{shareStatus.loading ? "Génération du lien…" : shareStatus.url ? "Lien actif" : "Partager cette analyse"}</button>{shareStatus.url ? <div className="share-link"><input type="text" readOnly value={shareStatus.url} onFocus={(e) => e.target.select()} /><button type="button" onClick={() => navigator.clipboard.writeText(shareStatus.url || "")}>Copier</button></div> : null}{shareStatus.error ? <p className="share-error">{shareStatus.error}</p> : null}</div>
 <div className="metric-grid"><Metric label="Loyer mensuel" value={metrics.monthly_rent} suffix=" €" /><Metric label="Revenu annuel net" value={metrics.annual_net_income} suffix=" €" /><Metric label={yieldOnTotalCost ? "Rendement brut (sur coût total)" : "Rendement brut (sur prix)"} value={yieldOnTotalCost ? acquisition.gross_yield_on_total_cost_pct : metrics.gross_yield_pct} suffix=" %" /><Metric label={yieldOnTotalCost ? "Rendement net (sur coût total)" : "Rendement net (sur prix)"} value={yieldOnTotalCost ? acquisition.net_yield_on_total_cost_pct : metrics.net_yield_pct} suffix=" %" /></div>
 {propertyId && <CadastralPanel propertyId={propertyId} address={address} />}
@@ -771,6 +776,7 @@ Bricky a classé ce bien comme <b>« {label} »</b>{score != null ? <> avec un s
 {risks.length > 0 && <div className="dashboard-section"><h3>Points de vigilance</h3><div className="risk-list">{risks.map((r: any, i: number) => <div className="risk-item" key={i}><b>{r.title || "Risque"}</b><span>{r.severity || ""}</span><p>{r.explanation || r.impact || ""}</p></div>)}</div></div>}
 {missing.length > 0 && <div className="dashboard-section"><h3>Données manquantes</h3><div className="missing-list">{missing.map((m: any, i: number) => <div key={i}><b>{m.label || m.field_key}</b><p>{m.suggested_question || m.impact || "À vérifier avant décision."}</p></div>)}</div></div>}
 {result.analysis_id && <ChecklistPanel analysisId={result.analysis_id} />}
+</div>{locked && !access.loading && <Paywall />}</div>
 </section>;
 }
 

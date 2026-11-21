@@ -146,7 +146,7 @@ export default function LoginPage() {
         <div className="lg-form-side">
           <div className="lg-form">
             <h2>{signup ? "Créer un compte" : "Se connecter"}</h2>
-            <p className="lg-lead">{signup ? "Ta première analyse est offerte, sans carte bancaire." : "Entre tes identifiants pour accéder à ton espace."}</p>
+            <p className="lg-lead">{signup ? "Ton premier résultat en quelques secondes." : "Entre tes identifiants pour accéder à ton espace."}</p>
 
             <div className="lg-social">
               <button type="button" className="lg-social-btn" onClick={() => handleOAuth("google")} disabled={oauthLoading !== null}>
