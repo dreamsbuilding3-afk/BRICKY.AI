@@ -22,7 +22,7 @@ function Checkout() {
   const params = useSearchParams();
   const code = params.get("plan") || "pro";
   const [plan, setPlan] = useState<Plan | null>(code === "pack" ? PACK : null);
-  const [billing, setBilling] = useState<Billing>(params.get("periode") === "annuel" ? "yearly" : "monthly");
+  const [billing, setBilling] = useState<Billing>(params.get("periode") === "mensuel" ? "monthly" : "yearly");
   const [email, setEmail] = useState<string | null>(null);
   const [holder, setHolder] = useState("");
   const [flipped, setFlipped] = useState(false);

@@ -14,6 +14,9 @@ type Plan = {
   can_share_link: boolean;
   can_compare_properties: boolean;
   can_set_alerts: boolean;
+  can_download_full_pdf?: boolean;
+  can_suggest_offer?: boolean;
+  can_use_visit_mode?: boolean;
 };
 
 const PACK: Plan = { plan_code: "pack", name: "Pack 3 analyses", monthly_analysis_quota: null, lifetime_analysis_quota: 3, can_download_pdf: true, can_use_financing_simulator: false, can_share_link: false, can_compare_properties: false, can_set_alerts: false };
@@ -159,7 +162,7 @@ function Merci() {
     if (code === "pack") return;
     supabase
       .from("subscription_plans")
-      .select("plan_code, name, monthly_analysis_quota, lifetime_analysis_quota, can_download_pdf, can_use_financing_simulator, can_share_link, can_compare_properties, can_set_alerts")
+      .select("*")
       .eq("plan_code", code)
       .maybeSingle()
       .then(({ data }) => data && setPlan(data as Plan));
@@ -174,7 +177,9 @@ function Merci() {
   const perks = plan
     ? [
         { on: true, icon: "search", title: quota, fun: "De quoi inspecter tout le quartier (et celui d'à côté)." },
-        { on: plan.can_download_pdf, icon: "pdf", title: "Dossier PDF complet", fun: "Imprime-le, encadre-le, montre-le à ton banquier." },
+        { on: plan.can_download_full_pdf ?? plan.can_download_pdf, icon: "pdf", title: plan.can_download_full_pdf === false ? "PDF synthèse" : "Dossier PDF complet", fun: "Imprime-le, encadre-le, montre-le à ton banquier." },
+        { on: !!plan.can_suggest_offer, icon: "compare", title: "Prix à proposer", fun: "L'offre d'ouverture et les arguments, prêts à envoyer." },
+        { on: !!plan.can_use_visit_mode, icon: "bell", title: "Mode visite", fun: "La checklist dans la poche, les photos au bon endroit." },
         { on: plan.can_compare_properties, icon: "compare", title: "Comparateur de biens", fun: "Fini le duel d'onglets à 2 h du matin." },
         { on: plan.can_set_alerts, icon: "bell", title: "Alertes marché", fun: "Bricky fait le guet pendant que tu dors." },
         { on: plan.can_use_financing_simulator, icon: "bank", title: "Simulateur de financement", fun: "On parle taux, sans le banquier qui baille." },

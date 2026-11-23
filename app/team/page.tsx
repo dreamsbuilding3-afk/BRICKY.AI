@@ -23,6 +23,7 @@ export default function TeamPage() {
   const router = useRouter();
   const [userEmail, setUserEmail] = useState("");
   const [canInvite, setCanInvite] = useState(false);
+  const [isTeamMember, setIsTeamMember] = useState(false);
   const [checkingPlan, setCheckingPlan] = useState(true);
   const [members, setMembers] = useState<Member[]>([]);
   const [memberships, setMemberships] = useState<Membership[]>([]);
@@ -62,10 +63,12 @@ export default function TeamPage() {
       await supabase.rpc("accept_pending_agency_invites");
 
       const { data: sub } = await supabase.rpc("get_my_subscription");
-      const allowed = Boolean(
-        sub && typeof sub === "object" && "multi_user" in sub && (sub as { multi_user: boolean }).multi_user,
-      );
+      // Un membre d'équipe hérite du plan Agence mais ne gère pas l'équipe : seul le propriétaire invite.
+      const s = (sub && typeof sub === "object" ? sub : {}) as { multi_user?: boolean; team_role?: string | null };
+      const member = s.team_role === "member";
+      const allowed = Boolean(s.multi_user) && !member;
       if (cancelled) return;
+      setIsTeamMember(member);
       setCanInvite(allowed);
       setCheckingPlan(false);
 
@@ -126,7 +129,17 @@ export default function TeamPage() {
 
         {checkingPlan && <div className="extract-note">Vérification de votre abonnement…</div>}
 
-        {!checkingPlan && !canInvite && (
+        {!checkingPlan && isTeamMember && (
+          <div className="result-panel" style={{ textAlign: "center" }}>
+            <span className="eyebrow">Équipe Agence</span>
+            <h2 style={{ margin: "14px 0 8px" }}>Vous faites partie d&apos;une équipe Agence</h2>
+            <p className="empty-note" style={{ maxWidth: 480, margin: "0 auto" }}>
+              Vous avez toutes les fonctions de l&apos;offre Agence. Les 150 analyses par mois sont partagées avec votre équipe. Seul le titulaire du compte peut inviter ou retirer des membres.
+            </p>
+          </div>
+        )}
+
+        {!checkingPlan && !canInvite && !isTeamMember && (
           <div className="result-panel" style={{ textAlign: "center" }}>
             <span className="eyebrow">Fonctionnalité Agence</span>
             <h2 style={{ margin: "14px 0 8px" }}>Les comptes multi-utilisateurs sont réservés au palier Agence</h2>

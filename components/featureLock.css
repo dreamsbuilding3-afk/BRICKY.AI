@@ -1,0 +1,59 @@
+/* Verrous de fonctions (components/FeatureLock.tsx) */
+.fl-lock { flex: none; }
+
+.fl-locked-btn { display: inline-flex; align-items: center; gap: 8px; opacity: .92; }
+.fl-locked-btn .fl-lock { color: var(--accent); }
+
+.fl-pro-tag {
+  display: inline-flex; align-items: center; height: 18px; padding: 0 7px; border-radius: 999px;
+  background: var(--accent); color: #fff; font-size: 10.5px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase;
+}
+
+.fl-backdrop {
+  position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; padding: 16px;
+  background: rgba(17, 17, 17, .45); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
+  animation: fl-fade .15s ease-out;
+}
+.fl-dialog, .fl-page {
+  width: 100%; max-width: 400px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px;
+  background: var(--surface, #fff); color: var(--ink); border: 1px solid var(--line); border-radius: 22px;
+  padding: 28px 24px 20px; box-shadow: 0 24px 60px -20px rgba(17, 17, 17, .45);
+}
+.fl-dialog { animation: fl-pop .18s ease-out; }
+.fl-page { margin: 48px auto; box-shadow: none; max-width: 520px; }
+.fl-dialog-icon {
+  width: 48px; height: 48px; border-radius: 50%; display: grid; place-items: center;
+  background: rgba(255, 90, 31, .12); color: var(--accent);
+}
+.fl-feature { font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--text-muted, #666); }
+.fl-title { margin: 0; font-size: 21px; line-height: 1.2; letter-spacing: -.02em; }
+.fl-desc { margin: 0 0 6px; color: var(--text-muted, #666); font-size: 14px; line-height: 1.5; }
+.fl-cta {
+  display: inline-flex; align-items: center; justify-content: center; width: 100%; min-height: 46px; padding: 0 22px;
+  border-radius: 999px; background: var(--accent); color: #fff; font-weight: 800; text-decoration: none;
+}
+.fl-cta:hover { background: var(--accent-dark); }
+.fl-later { border: 0; background: none; color: var(--text-muted, #666); font-size: 13px; padding: 8px; text-decoration: underline; text-underline-offset: 3px; }
+
+/* Section verrouillée dans le tableau de bord d'analyse */
+.fl-panel { padding: 0 !important; overflow: hidden; }
+.fl-panel-hit {
+  width: 100%; display: flex; flex-direction: column; align-items: flex-start; gap: 8px; text-align: left;
+  border: 1.5px dashed rgba(255, 90, 31, .45); border-radius: inherit; background: rgba(255, 90, 31, .04);
+  padding: 18px 20px; color: inherit;
+}
+.fl-panel-hit:hover { background: rgba(255, 90, 31, .08); }
+.fl-panel-head { display: inline-flex; align-items: center; gap: 8px; font-size: 16px; }
+.fl-panel-head .fl-lock { color: var(--accent); }
+.fl-panel-teaser { color: var(--text-muted, #666); font-size: 13.5px; line-height: 1.45; }
+.fl-panel-msg { font-weight: 800; font-size: 14.5px; }
+.fl-cta-inline { width: auto; min-height: 38px; font-size: 14px; }
+
+@keyframes fl-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fl-pop { from { opacity: 0; transform: translateY(6px) scale(.98); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .fl-backdrop, .fl-dialog { animation: none; } }
+
+/* Page d'analyse : dépôt du dossier verrouillé, lien de passage à Pro sur le quota */
+.file-import-locked { margin-top: 10px; }
+.file-import-locked .fl-locked-btn { min-height: 40px; font-size: 13.5px; padding: 0 16px; }
+.quota-upgrade-link { font-weight: 800; color: var(--accent-dark); white-space: nowrap; }

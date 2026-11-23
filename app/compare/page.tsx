@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabase/client";
 import { AppNav } from "../../components/AppNav";
+import { LockedPage } from "../../components/FeatureLock";
 
 type AnalysisRow = {
   id: string;
@@ -61,6 +62,7 @@ function ComparePageInner() {
   const [rows, setRows] = useState<PropertyRow[] | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+  const [locked, setLocked] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -76,19 +78,12 @@ function ComparePageInner() {
         return;
       }
 
-      const { data: sub } = await supabase.rpc("get_my_subscription");
-      const canCompare = Boolean(sub && typeof sub === "object" && "can_compare_properties" in sub && (sub as { can_compare_properties: boolean }).can_compare_properties);
-      if (!canCompare) { router.replace("/pricing"); return; }
+      // Données servies par la RPC get_property_comparison : la base refuse si le plan n'inclut pas le comparateur.
+      const { data, error: queryError } = await supabase.rpc("get_property_comparison", { p_property_ids: ids.slice(0, 3) });
       if (cancelled) return;
-
-      const { data, error: queryError } = await supabase
-        .from("properties")
-        .select("id, title, address, city, price, surface_m2, analyses(id, verdict, overall_score, confidence_score, financial_snapshot, created_at)")
-        .in("id", ids.slice(0, 3));
-      if (cancelled) return;
+      if (queryError?.message?.includes("compare_not_included_in_plan")) { setLocked(true); setLoading(false); return; }
       if (queryError) { setError("Impossible de charger ces biens."); setLoading(false); return; }
-      const ordered = ids.map((id) => (data as unknown as PropertyRow[] || []).find((r) => r.id === id)).filter(Boolean) as PropertyRow[];
-      setRows(ordered);
+      setRows((data as unknown as PropertyRow[]) || []);
       setLoading(false);
     }
     load();
@@ -122,6 +117,7 @@ function ComparePageInner() {
 
         {loading && <div className="extract-note">Chargement de la comparaison…</div>}
         {error && <div className="error-box">{error}</div>}
+        {locked && <LockedPage feature="can_compare_properties" title="Comparateur" text="Comparez jusqu'à 3 biens côte à côte : prix au m², rendement, cash-flow et score." />}
 
         {!loading && !error && items.length > 0 && (
           <div className="compare-table-wrap">

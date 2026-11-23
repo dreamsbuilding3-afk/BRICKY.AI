@@ -3,6 +3,7 @@
 import { ChangeEvent, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabase/client";
+import { LockedPage, usePlan } from "../../components/FeatureLock";
 import { EMPTY_VISIT, visitQuestions, visitReportText, visitSections, type VisitData, type VisitStatus } from "../../lib/visit";
 import "./visite.css";
 
@@ -50,6 +51,7 @@ function Visite() {
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState("");
   const saveTimer = useRef<number | undefined>(undefined);
+  const plan = usePlan();
   const draftKey = `bricky_visit_${propertyId}`;
 
   const sections = useMemo(() => visitSections(property?.property_type), [property?.property_type]);
@@ -144,6 +146,8 @@ function Visite() {
     try { await navigator.clipboard.writeText(visitReportText(title, sections, questions, data)); setCopied(true); } catch { setCopied(false); }
   }
 
+  // Mode visite réservé aux plans qui l'incluent ; la base (RLS) refuse aussi l'enregistrement.
+  if (!plan.loading && !plan.has("can_use_visit_mode")) return <main className="page vs-page"><LockedPage feature="can_use_visit_mode" title="Mode visite" text="Sur place, téléphone en main : checklist pièce par pièce, photos et questions à poser à l'agent, enregistrées automatiquement." /></main>;
   if (error) return <main className="page vs-page"><div className="vs-empty"><p>{error}</p><a href="/properties">Mes biens</a></div></main>;
   if (!loaded || !property) return <main className="page vs-page"><div className="vs-empty"><p>Chargement de la visite…</p></div></main>;
 

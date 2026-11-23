@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { LockedPage } from "../../components/FeatureLock";
 import { supabase } from "../../lib/supabase/client";
 import { AppNav } from "../../components/AppNav";
 import { SpaceTabs } from "../../components/SpaceTabs";
@@ -94,7 +95,7 @@ export default function AlertsPage() {
       await refreshMatches();
     } catch (err: any) {
       const message = err?.message || "";
-      if (message.includes("alerts_not_included_in_plan")) setError("Les alertes sont disponibles à partir du palier Pro.");
+      if (message.includes("alerts_not_included_in_plan")) setCanSetAlerts(false);
       else if (message.includes("alert_limit_reached")) setError("Vous avez atteint la limite de 20 alertes.");
       else setError("Impossible de créer cette alerte.");
     } finally {
@@ -128,12 +129,7 @@ export default function AlertsPage() {
         {checkingPlan && <div className="extract-note">Vérification de votre abonnement…</div>}
 
         {!checkingPlan && !canSetAlerts && (
-          <div className="result-panel" style={{ textAlign: "center" }}>
-            <span className="eyebrow">Fonctionnalité Pro</span>
-            <h2 style={{ margin: "14px 0 8px" }}>Les alertes sont réservées au palier Pro</h2>
-            <p className="empty-note" style={{ maxWidth: 480, margin: "0 auto 28px" }}>Passez au palier Pro pour être averti automatiquement des nouveaux biens correspondant à vos critères (ville, budget, surface, rendement).</p>
-            <a href="/pricing" className="primary-button" style={{ display: "inline-flex", width: "auto", padding: "0 28px", textDecoration: "none", alignItems: "center", justifyContent: "center", minHeight: 54 }}>Voir les abonnements →</a>
-          </div>
+          <LockedPage feature="can_set_alerts" title="Alertes" text="Soyez averti automatiquement des nouveaux biens correspondant à vos critères (ville, budget, surface, rendement)." />
         )}
 
         {!checkingPlan && canSetAlerts && (

@@ -30,6 +30,12 @@ export default function SplashScreen() {
 
     setCols(window.innerWidth < 480 ? 6 : window.innerWidth < 900 ? 8 : 10);
     setVisible(true);
+    // Signale aux animations d'entrée (cartes de l'accueil) qu'elles doivent attendre la fin de l'écran.
+    document.documentElement.dataset.splash = "on";
+    const done = () => {
+      delete document.documentElement.dataset.splash;
+      window.dispatchEvent(new Event("bricky:splash-done"));
+    };
 
     let reduceMotion = false;
     try {
@@ -41,12 +47,13 @@ export default function SplashScreen() {
     const holdMs = reduceMotion ? 350 : 1700;
     const fadeMs = reduceMotion ? 120 : 420;
 
-    const leaveTimer = setTimeout(() => setLeaving(true), holdMs);
+    const leaveTimer = setTimeout(() => { setLeaving(true); done(); }, holdMs);
     const hideTimer = setTimeout(() => setVisible(false), holdMs + fadeMs);
 
     return () => {
       clearTimeout(leaveTimer);
       clearTimeout(hideTimer);
+      delete document.documentElement.dataset.splash;
     };
   }, []);
 

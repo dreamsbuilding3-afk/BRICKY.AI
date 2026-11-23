@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { UpgradeDialog } from "../../components/FeatureLock";
 import { supabase } from "../../lib/supabase/client";
 import { AppNav } from "../../components/AppNav";
 import { AnalysesCounter } from "../../components/AnalysesCounter";
@@ -141,6 +142,7 @@ export default function PropertiesPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [canCompare, setCanCompare] = useState(false);
+  const [compareLockOpen, setCompareLockOpen] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
   const [showFirstAnalysisCongrats, setShowFirstAnalysisCongrats] = useState(false);
   const [totalAnalyses, setTotalAnalyses] = useState<number | null>(null);
@@ -191,7 +193,7 @@ export default function PropertiesPage() {
     e.preventDefault();
     e.stopPropagation();
     if (!canCompare) {
-      router.push("/pricing");
+      setCompareLockOpen(true);
       return;
     }
     setSelected((prev) => {
@@ -203,6 +205,7 @@ export default function PropertiesPage() {
 
   return <main className="page">
     <AppNav email={userEmail} active="properties" />
+    {compareLockOpen && <UpgradeDialog feature="can_compare_properties" onClose={() => setCompareLockOpen(false)} />}
     <CapabilityMarquee />
     <section className="analysis-shell">
       {rows && !error && <MyIsland rows={rows} />}
@@ -266,7 +269,7 @@ export default function PropertiesPage() {
                 <a key={row.id} href={"/analyze?property_id=" + row.id} className={"property-row" + (isSelected ? " property-row-selected" : "")}>
                   <label
                     className={"property-row-check" + (canCompare ? "" : " property-row-check-locked")}
-                    title={canCompare ? "Sélectionner pour comparer" : "Comparaison disponible avec le palier Pro"}
+                    title={canCompare ? "Sélectionner pour comparer" : "Comparateur : disponible avec Pro"}
                     onClick={(e) => toggleSelect(row.id, e)}
                   >
                     <input type="checkbox" checked={isSelected} readOnly />

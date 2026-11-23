@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { getMySubscription } from "@/lib/plan/server";
+import { upgradeDeltaCents } from "@/lib/plan/features";
 import { enforceRateLimit } from "@/lib/rateLimit";
 import { logError } from "@/lib/logError";
 import { geocodeAddress } from "@/lib/data/geocode";
@@ -195,6 +197,8 @@ export async function POST(request: Request) {
 
   const quotaCheck = await rpc("check_analysis_quota", {}, authorization) as { allowed?: boolean; reason?: string; plan_code?: string; quota?: number; used?: number };
   if (quotaCheck && quotaCheck.allowed === false) {
+    const quotaSub = quotaCheck.plan_code === "pro" ? null : await getMySubscription(authorization);
+    const deltaCents = upgradeDeltaCents(quotaSub?.price_monthly_cents);
     return NextResponse.json(
       {
         error: "quota_reached",
@@ -202,10 +206,15 @@ export async function POST(request: Request) {
         plan_code: quotaCheck.plan_code,
         quota: quotaCheck.quota,
         used: quotaCheck.used,
+        // Le message pousse vers Pro (25 analyses/mois), sauf pour Pro qui monte vers Agence.
+        upgrade_plan: quotaCheck.plan_code === "pro" ? "agence" : "pro",
+        upgrade_url: quotaCheck.plan_code === "pro" ? "/contact?sujet=agence" : "/checkout?plan=pro&periode=annuel",
         message:
           quotaCheck.reason === "lifetime_quota_reached"
-            ? "Vous avez deja utilise votre analyse gratuite. Passez a un abonnement payant pour continuer."
-            : "Vous avez atteint le quota d'analyses de votre abonnement pour cette periode. Passez a un palier superieur pour continuer.",
+            ? "Vous avez déjà utilisé votre analyse gratuite. Avec Pro, vous avez 25 analyses par mois et toutes les fonctions."
+            : quotaCheck.plan_code === "pro"
+              ? "Vous avez utilisé vos 25 analyses du mois. L'offre Agence en inclut 150, contactez-nous."
+              : `Vous avez utilisé vos ${quotaCheck.quota ?? 5} analyses du mois. Passez à Pro : 25 analyses par mois${deltaCents ? `, pour seulement ${Math.round(deltaCents / 100)} € de plus` : ""}.`,
       },
       { status: 402 },
     );

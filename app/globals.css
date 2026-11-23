@@ -1720,11 +1720,28 @@ body::before {
   0%, 100% { transform: rotate(1.6deg) perspective(1100px) rotateX(-6deg) rotateY(39deg) translate3d(0, -3px, 0); }
   50% { transform: rotate(1.6deg) perspective(1100px) rotateX(7deg) rotateY(-37deg) translate3d(0, -28px, -34px); }
 }
+/* Entrée à l'ouverture : les cartes sortent de derrière le titre (--fx/--fy, calculés une fois
+   en JS) puis se posent à leur place. Une seule animation, transform + opacity uniquement. */
+.hero-float-slot { position: absolute; }
+.hero-float-slot > .hero-float { position: relative; }
+.hero-floaters-wait .hero-float-slot { opacity: 0; }
+.hero-floaters-enter .hero-float-slot {
+  animation: heroFloatEnter 1.15s cubic-bezier(.2, 1.25, .35, 1) both;
+  animation-delay: calc(var(--i, 0) * 110ms);
+  will-change: transform, opacity;
+}
+@keyframes heroFloatEnter {
+  0% { opacity: 0; transform: translate(var(--fx, 0), var(--fy, 0)) scale(.3); }
+  30% { opacity: 1; }
+  100% { opacity: 1; transform: none; }
+}
 @media (max-width: 1100px) {
   .hero-floaters { display: none; }
 }
 @media (prefers-reduced-motion: reduce) {
   .hero-float-1, .hero-float-2, .hero-float-3, .hero-float-4 { animation: none; }
+  .hero-floaters-wait .hero-float-slot { opacity: 1; }
+  .hero-floaters-enter .hero-float-slot { animation: none; }
 }
 
 /* ===== Bandeau exemple / demo (page /demo) ===== */

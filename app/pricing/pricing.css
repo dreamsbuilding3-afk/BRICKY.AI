@@ -1,0 +1,149 @@
+/* Page Tarifs : Essentiel | Pro (mis en avant, au centre) | Agence */
+
+.tl-billing {
+  display: flex; width: fit-content; margin: 26px auto 0; padding: 4px; gap: 4px;
+  border: 1px solid var(--line); border-radius: 999px; background: var(--surface, #fff);
+}
+.tl-billing button {
+  border: 0; border-radius: 999px; background: transparent; color: var(--text-muted, #666);
+  padding: 10px 18px; font-size: 14px; font-weight: 700; display: inline-flex; align-items: center; gap: 8px;
+}
+.tl-billing button.is-on { background: var(--ink); color: var(--bg); }
+.tl-billing em {
+  font-style: normal; font-size: 11.5px; font-weight: 800; padding: 3px 8px; border-radius: 999px;
+  background: rgba(255, 90, 31, .14); color: var(--accent-dark);
+}
+.tl-billing button.is-on em { background: var(--accent); color: #fff; }
+
+.tl-grid {
+  max-width: 1100px; margin: 34px auto 0; padding: 18px 24px 0;
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; align-items: stretch;
+}
+.tl-card {
+  position: relative; display: flex; flex-direction: column; padding: 28px 24px 24px;
+  background: var(--surface, #fff); border: 1.5px solid var(--line); border-radius: 22px;
+}
+.tl-card-featured {
+  border: 2px solid var(--accent); transform: translateY(-14px);
+  box-shadow: 0 28px 60px -28px rgba(255, 90, 31, .55), 0 0 0 6px rgba(255, 90, 31, .08);
+}
+.tl-card-current:not(.tl-card-featured) { border-color: var(--ink); }
+.tl-badge {
+  position: absolute; top: -14px; left: 50%; transform: translateX(-50%); white-space: nowrap;
+  padding: 6px 14px; border-radius: 999px; background: var(--accent); color: #fff;
+  font-size: 12px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase;
+  box-shadow: 0 6px 16px -6px rgba(255, 90, 31, .7);
+}
+.tl-card h2 { margin: 0; font-size: 22px; letter-spacing: -.03em; }
+.tl-audience { margin: 4px 0 0; min-height: 34px; color: var(--text-muted, #666); font-size: 13px; line-height: 1.35; }
+.tl-price { margin-top: 16px; display: flex; align-items: baseline; gap: 4px; }
+.tl-price b { font-size: 40px; line-height: 1; letter-spacing: -.045em; font-variant-numeric: tabular-nums; }
+.tl-price span { color: var(--text-muted, #666); font-size: 15px; font-weight: 700; }
+.tl-billed { margin: 6px 0 0; color: var(--text-faint, #888); font-size: 12.5px; line-height: 1.4; min-height: 18px; }
+
+.tl-per {
+  margin-top: 14px; padding: 10px 12px; border-radius: 12px; background: var(--surface-soft, #fafaf8);
+  display: flex; flex-direction: column; gap: 3px; font-size: 12.5px; color: var(--text-faint, #888);
+  font-variant-numeric: tabular-nums;
+}
+.tl-per .is-on { color: var(--ink); font-weight: 800; font-size: 14px; }
+.tl-card-featured .tl-per { background: rgba(255, 90, 31, .08); }
+.tl-card-featured .tl-per .is-on { color: var(--accent-dark); }
+
+.tl-current { margin: 12px 0 0; padding: 7px 10px; border-radius: 10px; background: var(--ink); color: var(--bg); font-size: 12.5px; font-weight: 700; text-align: center; }
+
+.tl-features {
+  list-style: none; margin: 18px 0 20px; padding: 16px 0 0; border-top: 1px solid var(--line);
+  display: flex; flex-direction: column; gap: 9px; flex: 1;
+}
+.tl-features li { display: flex; gap: 9px; align-items: flex-start; font-size: 13.5px; line-height: 1.4; color: var(--ink); }
+.tl-features li.tl-quota { font-weight: 800; }
+.tl-features li.tl-everything { color: var(--text-muted, #666); font-weight: 700; font-size: 12.5px; padding-left: 24px; }
+.tl-features li.tl-missing { color: var(--text-faint, #888); text-decoration: line-through; text-decoration-color: rgba(200, 40, 40, .45); }
+
+.tl-yes, .tl-no {
+  flex: none; width: 18px; height: 18px; border-radius: 50%; display: inline-grid; place-items: center;
+  font-size: 11px; font-weight: 900; line-height: 1; text-decoration: none; margin-top: 1px;
+}
+.tl-yes { background: rgba(30, 140, 60, .14); color: #1b7a34; }
+.tl-no { background: rgba(210, 45, 45, .12); color: #c22d2d; }
+
+.tl-cta {
+  margin-top: auto; display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px;
+  border-radius: 14px; border: 2px solid var(--ink); color: var(--ink); background: transparent;
+  font-weight: 800; font-size: 15px; text-decoration: none; transition: transform .15s ease, background .15s ease;
+}
+.tl-cta:hover { transform: translateY(-1px); }
+.tl-cta-primary { border-color: var(--accent); background: var(--accent); color: #fff; box-shadow: 0 12px 26px -12px rgba(255, 90, 31, .7); }
+.tl-cta-primary:hover { background: var(--accent-dark); border-color: var(--accent-dark); }
+.tl-cta-arrow { display: inline-flex; }
+.tl-cta-sm { min-height: 38px; font-size: 13.5px; padding: 0 14px; border-radius: 11px; }
+
+.tl-free {
+  max-width: 1052px; margin: 26px auto 0; padding: 16px 22px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  border: 1.5px dashed var(--line); border-radius: 18px; background: var(--surface-soft, #fafaf8);
+}
+.tl-free div { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; font-size: 14px; }
+.tl-free span { color: var(--text-muted, #666); }
+.tl-free-cta { flex: none; font-weight: 800; color: var(--ink); text-decoration: underline; text-underline-offset: 4px; font-size: 14px; }
+
+/* Comparatif */
+.tl-compare { max-width: 1100px; margin: 64px auto 0; padding: 0 24px; }
+.tl-table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 18px; background: var(--surface, #fff); }
+.tl-table { width: 100%; border-collapse: collapse; min-width: 560px; }
+.tl-table th, .tl-table td { padding: 12px 16px; border-bottom: 1px solid var(--line); text-align: center; font-size: 13.5px; }
+.tl-table tbody th[scope="row"] { text-align: left; font-weight: 600; color: var(--ink); }
+.tl-table thead th { padding-top: 22px; vertical-align: bottom; }
+.tl-th-name { display: block; font-size: 16px; font-weight: 800; letter-spacing: -.02em; }
+.tl-th-price { display: block; margin-top: 2px; color: var(--text-muted, #666); font-size: 12.5px; font-weight: 600; }
+.tl-th-badge { display: inline-block; margin-bottom: 6px; padding: 3px 9px; border-radius: 999px; background: var(--accent); color: #fff; font-size: 10.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; }
+.tl-col-pro { background: rgba(255, 90, 31, .06); }
+.tl-table thead th.tl-col-pro { box-shadow: inset 0 3px 0 var(--accent); }
+.tl-row-section th { text-align: left; padding-top: 20px; padding-bottom: 8px; background: var(--surface-soft, #fafaf8); color: var(--text-faint, #888); font-size: 11px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; }
+.tl-cell-no { background: rgba(210, 45, 45, .05); }
+.tl-cell-no.tl-col-pro { background: rgba(210, 45, 45, .05); }
+.tl-table .tl-yes, .tl-table .tl-no { width: 22px; height: 22px; font-size: 12.5px; }
+.tl-quota-cell { font-weight: 800; font-size: 15px; font-variant-numeric: tabular-nums; }
+.tl-row-per th, .tl-row-per td { font-weight: 800; font-variant-numeric: tabular-nums; }
+.tl-row-per td.tl-col-pro { color: var(--accent-dark); }
+.tl-row-cta td { border-bottom: 0; padding: 16px 12px; }
+.tl-row-cta .tl-cta { margin: 0 auto; max-width: 140px; }
+.tl-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+
+/* FAQ */
+.tl-faq { max-width: 760px; margin: 64px auto 0; padding: 0 24px; }
+.tl-faq-list { display: flex; flex-direction: column; gap: 10px; }
+.tl-faq-item { border: 1px solid var(--line); border-radius: 16px; background: var(--surface, #fff); padding: 0 18px; }
+.tl-faq-item summary { cursor: pointer; list-style: none; padding: 16px 28px 16px 0; font-weight: 800; font-size: 15px; position: relative; }
+.tl-faq-item summary::-webkit-details-marker { display: none; }
+.tl-faq-item summary::after { content: "+"; position: absolute; right: 0; top: 13px; font-size: 20px; color: var(--accent); font-weight: 700; }
+.tl-faq-item[open] summary::after { content: "–"; }
+.tl-faq-item p { margin: 0 0 16px; color: var(--text-muted, #666); font-size: 14px; line-height: 1.6; }
+
+[data-theme="dark"] .tl-yes { background: rgba(80, 200, 110, .16); color: #7ee09a; }
+[data-theme="dark"] .tl-no { background: rgba(255, 90, 90, .16); color: #ff8b8b; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .tl-yes { background: rgba(80, 200, 110, .16); color: #7ee09a; }
+  :root:not([data-theme="light"]) .tl-no { background: rgba(255, 90, 90, .16); color: #ff8b8b; }
+}
+
+/* Tablette / mobile : Pro en premier, cartes empilées */
+@media (max-width: 900px) {
+  .tl-grid { grid-template-columns: minmax(0, 1fr); max-width: 520px; gap: 26px; padding: 18px 16px 0; }
+  .tl-card-featured { order: -1; transform: none; }
+  .tl-free { margin: 22px 16px 0; flex-direction: column; align-items: flex-start; }
+  .tl-compare, .tl-faq { padding: 0 16px; }
+  .tl-table th, .tl-table td { padding: 10px 10px; font-size: 12.5px; }
+  .tl-table { min-width: 480px; }
+}
+@media (max-width: 420px) {
+  .tl-billing button { padding: 9px 13px; font-size: 13px; }
+  .tl-price b { font-size: 36px; }
+}
+/* Barre du haut de la page Tarifs : « Se connecter » ne passe plus sur deux lignes */
+.tl-page .nav-links .navlink { white-space: nowrap; }
+@media (max-width: 480px) { .tl-page .nav-links .navlink { display: none; } }
+/* Comparatif sur mobile : la colonne des libellés reste visible quand on fait défiler le tableau */
+.tl-table tbody th[scope="row"], .tl-table thead th:first-child { position: sticky; left: 0; z-index: 1; background: var(--surface, #fff); }
+.tl-table .tl-row-section th { position: static; }
+@media (max-width: 900px) { .tl-table tbody th[scope="row"], .tl-table thead th:first-child { max-width: 150px; box-shadow: 1px 0 0 var(--line); } }

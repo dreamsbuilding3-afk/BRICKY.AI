@@ -11,7 +11,9 @@ import { PROPERTY_TYPE_LABELS } from "../../lib/data/propertyTypeClassifier";
 import { clearPendingImport, takePendingImportFromLocation, type PendingImport } from "../../lib/brickyImport";
 import { DOC_LABELS, agencyRequestText, mergeDossier, missingDocuments, type DocKind, type DossierPiece } from "../../lib/dossier";
 import { mergeCopro, type CoproFindings } from "../../lib/copro";
-import { computeOffer, type OfferInput, type OfferResult } from "../../lib/negotiation";
+import type { OfferInput, OfferResult } from "../../lib/negotiation";
+import { LockedButton, LockedPanel, UpgradeDialog, isFeatureLocked, usePlan } from "../../components/FeatureLock";
+import type { PlanFeature } from "../../lib/plan/features";
 import { Paywall, PAYWALL_ON, useFullAccess } from "../../components/Paywall";
 
 type AnalysisResult = { property_id?: string; analysis_id?: string; [key: string]: unknown };
@@ -238,6 +240,10 @@ const [error, setError] = useState("");
 const [extractNote, setExtractNote] = useState("");
 const [dossier, setDossier] = useState<{ pieces: { name: string; kind: DocKind; fields: number }[]; failed: string[]; missing: DocKind[]; copro: CoproFindings | null } | null>(null);
 const [requestCopied, setRequestCopied] = useState(false);
+const [lockedFeature, setLockedFeature] = useState<PlanFeature | null>(null);
+const [quotaUpgradeUrl, setQuotaUpgradeUrl] = useState<string | null>(null);
+const plan = usePlan();
+const canMultiDocs = plan.has("can_upload_multi_documents");
 const [result, setResult] = useState<AnalysisResult | null>(null);
 const [userEmail, setUserEmail] = useState("");
 const [loadingExisting, setLoadingExisting] = useState(false);
@@ -498,6 +504,7 @@ for (const batch of batches) {
   try {
     const response = await fetch("/api/properties/extract-file", { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: formData });
     const data = await response.json();
+    if (isFeatureLocked(data)) { setLockedFeature(data.feature); failed.push(`${label} (réservé à Pro)`); continue; }
     if (!response.ok) throw new Error(data?.error || "Impossible de lire ce fichier.");
     pieces.push({ name: label, kind: (data.document_kind as DocKind) || "autre", data, fields: data.extraction?.fields_found ?? 0 });
   } catch (err) {
@@ -530,7 +537,7 @@ try {
 }
 
 async function handleSubmit(event: FormEvent) {
-event.preventDefault(); setLoading(true); setError(""); setResult(null);
+event.preventDefault(); setLoading(true); setError(""); setQuotaUpgradeUrl(null); setResult(null);
 try {
 const { data: sessionData } = await supabase.auth.getSession(); const token = sessionData.session?.access_token;
 if (!token) { router.replace("/login"); return; }
@@ -540,7 +547,9 @@ for (const [key, value] of Object.entries(extra)) {
   body[key] = NUMERIC_EXTRA_KEYS.has(key) ? Number(value) : value;
 }
 const response = await fetch("/api/properties/analyze", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify(body) });
-const data = await response.json(); if (!response.ok) throw new Error(data?.details?.message || data?.error || "Analyse impossible."); setResult(data); try { window.localStorage.removeItem(DRAFT_KEY); } catch {}
+const data = await response.json();
+if (response.status === 402 && data?.error === "quota_reached") { setQuotaUpgradeUrl(typeof data.upgrade_url === "string" ? data.upgrade_url : "/checkout?plan=pro&periode=annuel"); throw new Error(data.message || "Quota d'analyses atteint."); }
+if (!response.ok) throw new Error(data?.details?.message || data?.error || "Analyse impossible."); setResult(data); try { window.localStorage.removeItem(DRAFT_KEY); } catch {}
 } catch (err) { setError(err instanceof Error ? err.message : "Une erreur est survenue."); }
 finally { setLoading(false); }
 }
@@ -558,7 +567,12 @@ return <main className="page">
 <div className="url-import has-mascot"><MascotPeek /><label>Lien de l'annonce<input value={payload.source_url} onChange={(e) => update("source_url", e.target.value)} placeholder="Colle le lien : Bricky remplit tout" /></label><button type="button" className="primary-extract-button secondary-button" onClick={extractListing} disabled={extracting || !payload.source_url.trim()}>{extracting ? "Bricky lit l'annonce…" : "Remplir automatiquement"}</button></div>
 <p className="bookmarklet-tip">Leboncoin, PAP ou SeLoger refusent les liens ? <a href="/bouton">Installe le bouton « Envoyer à Bricky »</a> : un clic depuis l'annonce suffit.</p>
 <div className="url-import text-import"><label>Lien illisible ? Colle le texte de l'annonce<textarea value={pastedText} onChange={(e) => setPastedText(e.target.value)} rows={4} placeholder="Sélectionne tout le texte de l'annonce (Ctrl+A / Cmd+A), copie-le et colle-le ici." /></label><button type="button" className="secondary-button" onClick={() => extractFromText()} disabled={extractingText || pastedText.trim().length < 30}>{extractingText ? "Lecture…" : "Analyser le texte"}</button></div>
+{canMultiDocs || plan.loading ? (
 <div className="url-import file-import"><label>Ou dépose tout le dossier d'un coup : annonce, captures, DPE, taxe foncière, PV d'AG, bail…<input type="file" accept="application/pdf,image/jpeg,image/png,image/webp" multiple onChange={(e) => { const list = Array.from(e.target.files ?? []); if (list.length) extractFromFile(list); e.target.value = ""; }} disabled={extractingFile} /></label>{extractingFile && <span className="extract-note">Bricky lit le dossier, pièce par pièce…</span>}</div>
+) : (
+<div className="url-import file-import"><label>Ou dépose l'annonce en PDF ou en captures d'écran<input type="file" accept="application/pdf,image/jpeg,image/png,image/webp" multiple onChange={(e) => { const list = Array.from(e.target.files ?? []); const pdfs = list.filter((f) => !f.type.startsWith("image/")); if (list.length) extractFromFile(pdfs.length ? [pdfs[0]] : list.slice(0, 5)); e.target.value = ""; }} disabled={extractingFile} /></label>{extractingFile && <span className="extract-note">Bricky lit l'annonce…</span>}<div className="file-import-locked"><LockedButton feature="can_upload_multi_documents">Déposer tout le dossier (DPE, PV d'AG, bail…)</LockedButton></div></div>
+)}
+{lockedFeature && <UpgradeDialog feature={lockedFeature} onClose={() => setLockedFeature(null)} />}
 {dossier && (
   <div className="dossier-panel">
     <div className="dossier-col">
@@ -612,7 +626,7 @@ return <main className="page">
 {openExtraSection === "diagnostics" && <ExtraFieldsSection fields={DIAGNOSTICS_FIELDS} extra={extra} onChange={updateExtra} autoFields={autoFields} />}
 {openExtraSection === "financing" && <ExtraFieldsSection fields={FINANCING_EXTRA_FIELDS} extra={extra} onChange={updateExtra} autoFields={autoFields} />}
 {openExtraSection === "rental_works" && <ExtraFieldsSection fields={RENTAL_WORKS_FIELDS} extra={extra} onChange={updateExtra} autoFields={autoFields} />}
-<button className="primary-button" disabled={loading}>{loading ? "Analyse en cours…" : "Lancer l’analyse Bricky →"}</button>{error && <div className="error-box">{error}</div>}</form>
+<button className="primary-button" disabled={loading}>{loading ? "Analyse en cours…" : "Lancer l’analyse Bricky →"}</button>{error && <div className="error-box">{error}{quotaUpgradeUrl && <> <a className="quota-upgrade-link" href={quotaUpgradeUrl}>{quotaUpgradeUrl.includes("agence") ? "Contacter l'équipe →" : "Passer à Pro →"}</a></>}</div>}</form>
 </>}
 {result && <AnalysisDashboard result={result} address={payload.address} onResultRefresh={refreshAnalysisFromDb} offerInput={{ price: Number(payload.price) || 0, dpe: payload.dpe_class || null, renovation: Number(payload.renovation_budget) || null, condition: extra.overall_condition || null, coproWorksVoted: dossier?.copro ? dossier.copro.works.filter((w) => w.status === "voté").reduce((s, w) => s + (w.amount ?? 0), 0) || null : null }} />}
 </section>
@@ -648,6 +662,7 @@ function AnalysisDashboard({ result, address, onResultRefresh, offerInput }: { r
 // Paywall : sans forfait payant, score et verdict restent visibles, le détail est flouté (components/Paywall.tsx).
 const access = useFullAccess();
 const locked = PAYWALL_ON && !access.paid;
+const plan = usePlan();
 const [shareStatus, setShareStatus] = useState<{ loading: boolean; url: string | null; error: string | null }>({ loading: false, url: null, error: null });
 async function handleShare() {
 if (!result?.analysis_id) return;
@@ -712,13 +727,32 @@ const historyReady = priceHistory.status === "ready" && historyYears.length >= 2
 const historyMax = historyYears.length ? Math.max(...historyYears.map((y: any) => Number(y.median_price_m2) || 0), 1) : 1;
 const historyMin = historyYears.length ? Math.min(...historyYears.map((y: any) => Number(y.median_price_m2) || 0)) : 0;
 const historyRange = historyMax - historyMin || historyMax || 1;
-const offer = offerInput ? computeOffer({
+// « Prix à proposer » : calculé par le serveur (/api/properties/offer), seulement si le plan l'inclut.
+const canOffer = plan.has("can_suggest_offer");
+const offerRequest = offerInput ? JSON.stringify({
   ...offerInput,
   renovation: offerInput.renovation ?? (Number(acquisition.renovation_budget) || null),
   marketValue: marketReady && market.market_value_estimate != null ? Number(market.market_value_estimate) : null,
   marketConfidence: market.confidence_score != null ? Number(market.confidence_score) : null,
   trendAnnualPct: priceHistory.trend_pct_annualized != null ? Number(priceHistory.trend_pct_annualized) : null,
 }) : null;
+const [offer, setOffer] = useState<OfferResult | null>(null);
+useEffect(() => {
+  if (!offerRequest || !canOffer || locked) { setOffer(null); return; }
+  let cancelled = false;
+  (async () => {
+    const { data } = await supabase.auth.getSession();
+    const token = data.session?.access_token;
+    if (!token) return;
+    const res = await fetch("/api/properties/offer", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: offerRequest });
+    const body = await res.json().catch(() => null);
+    if (!cancelled) setOffer(res.ok && body?.offer ? (body.offer as OfferResult) : null);
+  })();
+  return () => { cancelled = true; };
+}, [offerRequest, canOffer, locked]);
+const canVisit = plan.has("can_use_visit_mode");
+const fullPdf = plan.has("can_download_full_pdf");
+const canShare = plan.has("can_share_link");
 const propertyId = typeof result.property_id === "string" ? result.property_id : typeof analysis.property_id === "string" ? analysis.property_id : "";
 const [downloadingDossier, setDownloadingDossier] = useState(false);
 const [dossierError, setDossierError] = useState<string | null>(null);
@@ -749,11 +783,11 @@ setDossierError(err?.message || "Erreur inattendue lors de la génération du do
 setDownloadingDossier(false);
 }
 }
-return <section className="result-panel decision-dashboard"><div className="result-head"><div><span className="eyebrow">Analyse terminée</span><h2>Voici ce que Bricky en pense.</h2></div><div className="result-head-actions">{propertyId && !locked && <a className="secondary-button visit-link" href={`/visite?property_id=${propertyId}`}>Mode visite</a>}{propertyId && !locked && <button type="button" className="secondary-button" onClick={downloadDossier} disabled={downloadingDossier}>{downloadingDossier ? "Génération…" : "Télécharger le dossier complet (PDF) →"}</button>}<span className="status-dot">● Décision</span></div></div>
+return <section className="result-panel decision-dashboard"><div className="result-head"><div><span className="eyebrow">Analyse terminée</span><h2>Voici ce que Bricky en pense.</h2></div><div className="result-head-actions">{propertyId && !locked && !plan.loading && (canVisit ? <a className="secondary-button visit-link" href={`/visite?property_id=${propertyId}`}>Mode visite</a> : <LockedButton feature="can_use_visit_mode">Mode visite</LockedButton>)}{propertyId && !locked && <button type="button" className="secondary-button" onClick={downloadDossier} disabled={downloadingDossier}>{downloadingDossier ? "Génération…" : fullPdf || plan.loading ? "Télécharger le dossier complet (PDF) →" : "Télécharger la synthèse (PDF) →"}</button>}{propertyId && !locked && !plan.loading && !fullPdf && <LockedButton feature="can_download_full_pdf">Dossier complet (PDF)</LockedButton>}<span className="status-dot">● Décision</span></div></div>
 {dossierError ? <p className="share-error" style={{ marginTop: 4 }}>{dossierError}</p> : null}
 <div className="decision-hero"><div><span className="decision-label">Verdict</span><strong>{label}</strong></div><div className="score-block"><span>Score</span><b>{score ?? "—"}<small>/100</small></b></div><div className="score-block"><span>Confiance</span><b>{confidence ?? "—"}<small>%</small></b>{confidenceLabel ? <em className="confidence-tag">{confidenceLabel}</em> : null}</div></div>{missingCount > 0 ? <p className="confidence-note">Score basé sur {missingCount} donnée{missingCount > 1 ? "s" : ""} manquante{missingCount > 1 ? "s" : ""} — plus vous complétez le bien, plus l'estimation est fiable.</p> : null}
 <div className={"pw-zone" + (locked ? " is-locked" : "")}><div className="pw-content" aria-hidden={locked || undefined} inert={locked}>
-<div className="share-row"><button type="button" className="share-button" onClick={handleShare} disabled={shareStatus.loading}>{shareStatus.loading ? "Génération du lien…" : shareStatus.url ? "Lien actif" : "Partager cette analyse"}</button>{shareStatus.url ? <div className="share-link"><input type="text" readOnly value={shareStatus.url} onFocus={(e) => e.target.select()} /><button type="button" onClick={() => navigator.clipboard.writeText(shareStatus.url || "")}>Copier</button></div> : null}{shareStatus.error ? <p className="share-error">{shareStatus.error}</p> : null}</div>
+<div className="share-row">{!plan.loading && !canShare ? <LockedButton feature="can_share_link" className="share-button">Partager cette analyse</LockedButton> : <button type="button" className="share-button" onClick={handleShare} disabled={shareStatus.loading}>{shareStatus.loading ? "Génération du lien…" : shareStatus.url ? "Lien actif" : "Partager cette analyse"}</button>}{shareStatus.url ? <div className="share-link"><input type="text" readOnly value={shareStatus.url} onFocus={(e) => e.target.select()} /><button type="button" onClick={() => navigator.clipboard.writeText(shareStatus.url || "")}>Copier</button></div> : null}{shareStatus.error ? <p className="share-error">{shareStatus.error}</p> : null}</div>
 <div className="metric-grid"><Metric label="Loyer mensuel" value={metrics.monthly_rent} suffix=" €" /><Metric label="Revenu annuel net" value={metrics.annual_net_income} suffix=" €" /><Metric label={yieldOnTotalCost ? "Rendement brut (sur coût total)" : "Rendement brut (sur prix)"} value={yieldOnTotalCost ? acquisition.gross_yield_on_total_cost_pct : metrics.gross_yield_pct} suffix=" %" /><Metric label={yieldOnTotalCost ? "Rendement net (sur coût total)" : "Rendement net (sur prix)"} value={yieldOnTotalCost ? acquisition.net_yield_on_total_cost_pct : metrics.net_yield_pct} suffix=" %" /></div>
 {propertyId && <CadastralPanel propertyId={propertyId} address={address} />}
 {propertyId && <UrbanismePanel propertyId={propertyId} address={address} />}
@@ -765,7 +799,8 @@ return <section className="result-panel decision-dashboard"><div className="resu
 </div>
 
 <div className="dashboard-section market-card"><div className="section-heading"><div><h3>Valeur marché</h3><small>Transactions comparables · données disponibles</small></div><span className="market-badge">{marketReady ? `${market.confidence_score ?? 0}% confiance` : "Données insuffisantes"}</span></div>{marketReady ? <div className="market-grid"><Metric label="Prix du bien" value={market.property_price_m2} suffix=" €/m²" /><Metric label="Marché médian" value={market.market_price_m2_median} suffix=" €/m²" /><Metric label="Valeur estimée" value={market.market_value_estimate} suffix=" €" /><Metric label="Écart au marché" value={market.market_gap_pct} suffix=" %" /></div> : <p className="empty-note">Bricky ne dispose pas encore de suffisamment de transactions comparables pour produire une estimation fiable. Aucune valeur n'est inventée.</p>}</div><div className="dashboard-section price-history-card"><div className="section-heading"><div><h3>Évolution des prix (DVF)</h3><small>Prix médian au m² par année de transaction · biens comparables dans la commune</small></div>{historyReady && priceHistory.trend_pct_total != null ? <span className="market-badge">{priceHistory.trend_pct_total >= 0 ? "+" : ""}{priceHistory.trend_pct_total}% sur {historyYears.length} ans</span> : null}</div>{historyReady ? <><BarChart items={historyYears.map((y: any) => { const val = Number(y.median_price_m2) || 0; const pct = Math.max(8, Math.round(((val - historyMin) / historyRange) * 100)); return { key: String(y.year), label: String(y.year), display: `${Math.round(val).toLocaleString("fr-FR")} €`, pct }; })} />{priceHistory.trend_pct_annualized != null && <p className="extract-note">Soit environ {priceHistory.trend_pct_annualized >= 0 ? "+" : ""}{priceHistory.trend_pct_annualized}%/an en moyenne entre {priceHistory.first_year} et {priceHistory.last_year}, sur les transactions DVF comparables (même commune, surface proche).</p>}</> : <p className="empty-note">Pas encore assez de transactions DVF réparties sur plusieurs années pour tracer une tendance ici. Cela s'enrichit automatiquement à mesure que la base de comparables grandit.</p>}</div>
-{offer && offerInput && <OfferCard offer={offer} price={offerInput.price} />}
+{offer && offerInput && canOffer && <OfferCard offer={offer} price={offerInput.price} />}
+{offerInput && offerInput.price > 0 && !locked && !plan.loading && !canOffer && <LockedPanel feature="can_suggest_offer" title="Prix à proposer" teaser="Offre d'ouverture, prix visé, plafond à ne pas dépasser et arguments chiffrés à copier pour le vendeur." />}
 {rows.length > 0 && <div className="dashboard-section"><h3>Scénarios</h3><div className="scenario-grid">{rows.map((key) => <div className="scenario" key={key}><span>{key === "base" ? "Base" : key === "conservative" ? "Conservateur" : "Optimiste"}</span><b>{scenarios[key].net_yield ?? "—"} %</b><small>rendement net (sur prix)</small></div>)}</div></div>}
 {verdict && <div className="dashboard-section"><h3>Pourquoi ce verdict ?</h3><p className="empty-note" style={{fontSize:14, lineHeight:1.6}}>
 Bricky a classé ce bien comme <b>« {label} »</b>{score != null ? <> avec un score de <b>{score}/100</b></> : null}{confidenceLabel ? <> (confiance {confidenceLabel.toLowerCase()})</> : null}.{" "}

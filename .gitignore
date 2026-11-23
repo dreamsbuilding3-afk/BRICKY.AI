@@ -1,0 +1,4 @@
+# Dépendances et fichiers générés par le build
+node_modules/
+.next/
+*.tsbuildinfo

@@ -6,6 +6,11 @@ import { COPRO_INSTRUCTION, COPRO_SYSTEM, COPRO_TOOL, coproFromAi, scanCoproText
 import { enforceRateLimit } from "@/lib/rateLimit";
 import { requireUser } from "@/lib/auth/requireUser";
 import { detectDocumentKind, type DocKind } from "@/lib/dossier";
+import { featureLockedResponse, getMySubscription } from "@/lib/plan/server";
+
+// Pièces qui ne sont pas l'annonce elle-même : réservées au dépôt du dossier
+// complet (plans avec can_upload_multi_documents : Pro, Agence, Essentiel historique).
+const DOSSIER_ONLY_KINDS: DocKind[] = ["dpe", "diagnostics", "taxe_fonciere", "pv_ag", "charges", "reglement", "bail", "plan"];
 
 export const maxDuration = 60;
 
@@ -34,7 +39,8 @@ function aiJson(result: Awaited<ReturnType<typeof extractListingWithAi>>, source
 }
 
 // PV d'AG / relevé de charges : travaux, impayés, procédures. IA si possible, sinon mots-clés.
-async function readCopro(kind: DocKind, text: string, bytes: Uint8Array): Promise<CoproFindings | null> {
+async function readCopro(kind: DocKind, text: string, bytes: Uint8Array, allowed: boolean): Promise<CoproFindings | null> {
+  if (!allowed) return null;
   if (kind !== "pv_ag" && kind !== "charges" && kind !== "reglement") return null;
   if (isAiExtractionEnabled()) {
     try {
@@ -83,6 +89,11 @@ export async function POST(request: NextRequest) {
 
   const authResponse = await requireUser(request);
   if (authResponse) return authResponse;
+
+  // Droits lus côté serveur : en cas d'échec de lecture, on applique les droits les plus restreints.
+  const sub = await getMySubscription(request.headers.get("authorization") as string);
+  const canMultiDocs = sub?.can_upload_multi_documents === true;
+  const canCopro = sub?.can_read_copro_minutes === true;
 
   try {
     const formData = await request.formData();
@@ -145,6 +156,9 @@ export async function POST(request: NextRequest) {
 
     const bodyText = cleanText(rawText || "");
     const documentKind = detectDocumentKind(file.name, bodyText);
+    if (!canMultiDocs && DOSSIER_ONLY_KINDS.includes(documentKind)) {
+      return featureLockedResponse(["pv_ag", "charges", "reglement"].includes(documentKind) ? "can_read_copro_minutes" : "can_upload_multi_documents", sub);
+    }
 
     if (isAiExtractionEnabled()) {
       // PDF avec du texte : on envoie le texte (moins cher). PDF scanné : on
@@ -154,7 +168,7 @@ export async function POST(request: NextRequest) {
           bodyText.length >= 200
             ? await extractListingWithAi({ kind: "text", text: bodyText }, "none")
             : await extractListingWithAi({ kind: "pdf", base64: Buffer.from(bytes).toString("base64") }, "none");
-        const copro = await readCopro(documentKind, bodyText, bytes);
+        const copro = await readCopro(documentKind, bodyText, bytes, canCopro);
         const res = aiJson(result, file.name, "fichier PDF", documentKind);
         if (!copro) return res;
         const body = await res.json();
@@ -187,7 +201,7 @@ export async function POST(request: NextRequest) {
     const titleGuess = cleanText(bodyText.slice(0, 120));
     const propertyType = classifyPropertyType(titleGuess, bodyText.slice(0, 4000));
 
-    const copro = await readCopro(documentKind, bodyText, bytes);
+    const copro = await readCopro(documentKind, bodyText, bytes, canCopro);
     return NextResponse.json({
       document_kind: documentKind,
       copro,
