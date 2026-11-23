@@ -8,6 +8,7 @@ import { ContainerShowcase } from "../components/ContainerShowcase";
 import { SourcesMarquee } from "../components/SourcesMarquee";
 import { PropertyFan } from "../components/PropertyFan";
 import { SignupNudge } from "../components/SignupNudge";
+import { MascotPeek } from "../components/MascotPeek";
 
 const CAPABILITY_ROW_1 = [
   { key: "cap.rendement", color: "accent" },
@@ -159,6 +160,7 @@ export default function Home() {
         </p>
 
         <form className="analyzer" action="/analyze">
+          <MascotPeek />
           <input name="url" placeholder={t("hero.inputPlaceholder")} aria-label={t("hero.inputAriaLabel")} />
           <button type="submit">{t("hero.submit")}</button>
         </form>

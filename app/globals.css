@@ -3688,3 +3688,10 @@ label.auto-filled input, label.auto-filled select { border-color: rgba(22,163,74
 [data-theme="dark"] .offer-grid .offer-main { background: rgba(255,90,31,.12); border-color: rgba(255,90,31,.35); }
 [data-theme="dark"] .offer-args li span, [data-theme="dark"] .offer-foot small { color: var(--text-muted); }
 [data-theme="dark"] .offer-dot { border-color: #1a1a1a; }
+
+/* Mascotte : l'inspecteur Bricky jette un œil par-dessus les barres principales
+   (accueil, lien de l'annonce en achat et en location). Il se pose sur le bord haut. */
+.analyzer, .url-import.has-mascot { position: relative; }
+.mascot-peek { position: absolute; left: 72px; bottom: 100%; margin-bottom: -5px; width: 96px; height: auto; z-index: 2; pointer-events: none; user-select: none; -webkit-user-drag: none; }
+.url-import .mascot-peek { left: 28px; }
+@media (max-width: 720px) { .mascot-peek, .url-import .mascot-peek { left: 22px; width: 80px; margin-bottom: -4px; } }

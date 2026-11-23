@@ -4,6 +4,7 @@ import { FormEvent, Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabase/client";
 import { AppNav } from "../../components/AppNav";
+import { MascotPeek } from "../../components/MascotPeek";
 import { ModeChooser } from "./ModeChooser";
 import { RentalAnalyzer } from "./RentalAnalyzer";
 import { PROPERTY_TYPE_LABELS } from "../../lib/data/propertyTypeClassifier";
@@ -554,7 +555,7 @@ return <main className="page">
 {loadError && <div className="error-box">{loadError}</div>}
 {draftRestored && !propertyIdParam && <div className="draft-banner"><span>Brouillon restaure automatiquement, votre saisie precedente a ete recuperee.</span><button type="button" className="secondary-button" onClick={clearDraft}>Effacer</button></div>}
 {!propertyIdParam && <>
-<div className="url-import"><label>Lien de l'annonce<input value={payload.source_url} onChange={(e) => update("source_url", e.target.value)} placeholder="Colle le lien : Bricky remplit tout" /></label><button type="button" className="primary-extract-button secondary-button" onClick={extractListing} disabled={extracting || !payload.source_url.trim()}>{extracting ? "Bricky lit l'annonce…" : "Remplir automatiquement"}</button></div>
+<div className="url-import has-mascot"><MascotPeek /><label>Lien de l'annonce<input value={payload.source_url} onChange={(e) => update("source_url", e.target.value)} placeholder="Colle le lien : Bricky remplit tout" /></label><button type="button" className="primary-extract-button secondary-button" onClick={extractListing} disabled={extracting || !payload.source_url.trim()}>{extracting ? "Bricky lit l'annonce…" : "Remplir automatiquement"}</button></div>
 <p className="bookmarklet-tip">Leboncoin, PAP ou SeLoger refusent les liens ? <a href="/bouton">Installe le bouton « Envoyer à Bricky »</a> : un clic depuis l'annonce suffit.</p>
 <div className="url-import text-import"><label>Lien illisible ? Colle le texte de l'annonce<textarea value={pastedText} onChange={(e) => setPastedText(e.target.value)} rows={4} placeholder="Sélectionne tout le texte de l'annonce (Ctrl+A / Cmd+A), copie-le et colle-le ici." /></label><button type="button" className="secondary-button" onClick={() => extractFromText()} disabled={extractingText || pastedText.trim().length < 30}>{extractingText ? "Lecture…" : "Analyser le texte"}</button></div>
 <div className="url-import file-import"><label>Ou dépose tout le dossier d'un coup : annonce, captures, DPE, taxe foncière, PV d'AG, bail…<input type="file" accept="application/pdf,image/jpeg,image/png,image/webp" multiple onChange={(e) => { const list = Array.from(e.target.files ?? []); if (list.length) extractFromFile(list); e.target.value = ""; }} disabled={extractingFile} /></label>{extractingFile && <span className="extract-note">Bricky lit le dossier, pièce par pièce…</span>}</div>
