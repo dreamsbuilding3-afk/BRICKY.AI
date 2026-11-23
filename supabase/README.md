@@ -35,7 +35,7 @@ Cette migration s'applique **après** la précédente. Elle fait profiter les me
 supabase/tests/local/run.sh
 ```
 
-Ce script fait quatre choses :
+Ce script fait cinq choses :
 
 1. Il monte une base Postgres locale jetable, qui reproduit les objets de production concernés (`tests/local/00_baseline_prod.sql`).
 2. Il applique les deux migrations, puis lance 28 vérifications sur la grille (`tests/local/10_tests.sql`).
