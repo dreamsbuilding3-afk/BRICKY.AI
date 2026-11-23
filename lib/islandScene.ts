@@ -105,15 +105,27 @@ function hash3(ix: number, iy: number, iz: number, seed: number) {
   return (h >>> 0) / 4294967295;
 }
 const fade = (t: number) => t * t * (3 - 2 * t);
+const wrapP = (a: number, period: number) => (period > 0 ? ((a % period) + period) % period : a);
+const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 function vnoise(x: number, y: number, z: number, seed = 0, period = 0) {
   const ix = Math.floor(x), iy = Math.floor(y), iz = Math.floor(z);
   const fx = fade(x - ix), fy = fade(y - iy), fz = fade(z - iz);
-  const w = (a: number) => (period > 0 ? ((a % period) + period) % period : a);
-  const x0 = w(ix), x1 = w(ix + 1), y0 = w(iy), y1 = w(iy + 1);
-  const l = (a: number, b: number, t: number) => a + (b - a) * t;
-  const a = l(l(hash3(x0, y0, iz, seed), hash3(x1, y0, iz, seed), fx), l(hash3(x0, y1, iz, seed), hash3(x1, y1, iz, seed), fx), fy);
-  const b = l(l(hash3(x0, y0, iz + 1, seed), hash3(x1, y0, iz + 1, seed), fx), l(hash3(x0, y1, iz + 1, seed), hash3(x1, y1, iz + 1, seed), fx), fy);
-  return l(a, b, fz);
+  const x0 = wrapP(ix, period), x1 = wrapP(ix + 1, period), y0 = wrapP(iy, period), y1 = wrapP(iy + 1, period);
+  const a = lerp(lerp(hash3(x0, y0, iz, seed), hash3(x1, y0, iz, seed), fx), lerp(hash3(x0, y1, iz, seed), hash3(x1, y1, iz, seed), fx), fy);
+  const b = lerp(lerp(hash3(x0, y0, iz + 1, seed), hash3(x1, y0, iz + 1, seed), fx), lerp(hash3(x0, y1, iz + 1, seed), hash3(x1, y1, iz + 1, seed), fx), fy);
+  return lerp(a, b, fz);
+}
+
+/** Rend la main au navigateur entre deux étapes de construction : la page reste fluide
+ *  (défilement, clics) pendant que l'île se prépare, au lieu d'un gel d'une seconde ou plus. */
+function breathe(): Promise<void> {
+  const sch = (globalThis as { scheduler?: { yield?: () => Promise<void> } }).scheduler;
+  if (sch?.yield) return sch.yield();
+  return new Promise((resolve) => {
+    const ch = new MessageChannel();
+    ch.port1.onmessage = () => resolve();
+    ch.port2.postMessage(0);
+  });
 }
 function fbm(x: number, y: number, z: number, oct = 4, seed = 0, period = 0) {
   let amp = 0.5, f = 1, sum = 0, norm = 0;
@@ -154,9 +166,11 @@ function pixelCanvas(w: number, h: number, fn: ((u: number, v: number) => Rgba) 
   return canvas;
 }
 
-function makeTextures(compact: boolean, vr: () => number) {
+async function makeTextures(compact: boolean, vr: () => number) {
   const list: THREE.Texture[] = [];
   const S = compact ? 256 : 384;
+  // Chaque texture est générée dans sa propre tâche (await avant la suivante) ; l'ordre des
+  // tirages de `vr` est inchangé, donc le rendu est identique.
   const tex = (canvas: HTMLCanvasElement, srgb: boolean, repeat: [number, number] = [1, 1]) => {
     const t = new THREE.CanvasTexture(canvas);
     t.wrapS = t.wrapT = THREE.RepeatWrapping;
@@ -169,6 +183,7 @@ function makeTextures(compact: boolean, vr: () => number) {
   const gray = (g: number): Rgba => [g, g, g, 1];
 
   // Herbe vue du dessus : nuances, touffes, zones plus sèches.
+  await breathe();
   const grass = tex(
     pixelCanvas(S, S, (u, v) => {
       const n1 = fbm(u * 6, v * 6, 0, 4, 1, 6);
@@ -194,6 +209,7 @@ function makeTextures(compact: boolean, vr: () => number) {
   );
 
   // Bord de l'île : frange d'herbe qui retombe sur la terre.
+  await breathe();
   const grassSide = tex(
     pixelCanvas(256, 128, (u, v) => {
       const edge = 0.32 + 0.16 * fbm(u * 16, 0, 0, 3, 5, 16) + 0.08 * vnoise(u * 96, 0, 1, 6, 96);
@@ -211,6 +227,7 @@ function makeTextures(compact: boolean, vr: () => number) {
   );
 
   // Roche : strates horizontales, fissures (en gris, teintée par les couleurs de sommet).
+  await breathe();
   const rock = tex(
     pixelCanvas(256, 256, (u, v) => {
       const warp = fbm(u * 4, v * 4, 0, 3, 11, 4) * 0.8;
@@ -224,7 +241,9 @@ function makeTextures(compact: boolean, vr: () => number) {
     [6, 2],
   );
 
+  await breathe();
   const plaster = tex(pixelCanvas(256, 256, (u, v) => gray(0.9 + 0.1 * fbm(u * 16, v * 16, 0, 4, 21, 16))), false);
+  await breathe();
   const concrete = tex(
     pixelCanvas(256, 256, (u, v) => {
       const n = fbm(u * 12, v * 12, 0, 4, 22, 12);
@@ -235,6 +254,7 @@ function makeTextures(compact: boolean, vr: () => number) {
     false,
   );
   // Pierre de taille (assises + joints).
+  await breathe();
   const stone = tex(
     pixelCanvas(256, 256, (u, v) => {
       const rows = 4, row = Math.floor(v * rows);
@@ -248,6 +268,7 @@ function makeTextures(compact: boolean, vr: () => number) {
     false,
   );
   // Bardage bois vertical.
+  await breathe();
   const planks = tex(
     pixelCanvas(256, 256, (u, v) => {
       const n = 6, p = Math.floor(u * n), fu = (u * n) % 1;
@@ -259,6 +280,7 @@ function makeTextures(compact: boolean, vr: () => number) {
     false,
   );
   // Tuiles (rangées qui se chevauchent).
+  await breathe();
   const tiles = tex(
     pixelCanvas(256, 256, (u, v) => {
       const rows = 8, row = Math.floor(v * rows), fv = (v * rows) % 1;
@@ -273,6 +295,7 @@ function makeTextures(compact: boolean, vr: () => number) {
     [3, 3],
   );
   // Zinc à joints debout.
+  await breathe();
   const zinc = tex(
     pixelCanvas(256, 256, (u, v) => {
       const fu = (u * 8) % 1;
@@ -282,6 +305,7 @@ function makeTextures(compact: boolean, vr: () => number) {
     false,
     [2, 2],
   );
+  await breathe();
   const bark = tex(
     pixelCanvas(128, 128, (u, v) => {
       const n = fbm(u * 10, v * 2, 0, 4, 71, 10);
@@ -291,6 +315,7 @@ function makeTextures(compact: boolean, vr: () => number) {
     [2, 1],
   );
   // Carte de feuillage (amas de feuilles, transparente autour).
+  await breathe();
   const foliage = tex(
     pixelCanvas(256, 256, null, (ctx) => {
       for (let i = 0; i < 150; i++) {
@@ -311,10 +336,12 @@ function makeTextures(compact: boolean, vr: () => number) {
   );
   foliage.wrapS = foliage.wrapT = THREE.ClampToEdgeWrapping;
   // Relief du feuillage pour les volumes (bosses irrégulières).
+  await breathe();
   const leafBump = tex(pixelCanvas(256, 256, (u, v) => gray(fbm(u * 18, v * 18, 0, 4, 81, 18))), false, [2, 2]);
 
   // Carte de normales de l'eau (vaguelettes raccordables).
   const H = (u: number, v: number) => fbm(u * 8, v * 8, 0, 4, 91, 8);
+  await breathe();
   const waterNormal = tex(
     pixelCanvas(128, 128, (u, v) => {
       const e = 1 / 128;
@@ -328,6 +355,7 @@ function makeTextures(compact: boolean, vr: () => number) {
   );
 
   // Nuage : bouffées douces superposées.
+  await breathe();
   const cloud = tex(
     pixelCanvas(256, 256, null, (ctx) => {
       // ombre douce sous le nuage, puis bouffées éclairées par le haut
@@ -358,6 +386,7 @@ function makeTextures(compact: boolean, vr: () => number) {
   );
   cloud.wrapS = cloud.wrapT = THREE.ClampToEdgeWrapping;
 
+  await breathe();
   const blob = tex(
     pixelCanvas(128, 128, null, (ctx) => {
       const grd = ctx.createRadialGradient(64, 64, 4, 64, 64, 64);
@@ -372,6 +401,7 @@ function makeTextures(compact: boolean, vr: () => number) {
   blob.wrapS = blob.wrapT = THREE.ClampToEdgeWrapping;
 
   // Palme : nervure centrale + folioles.
+  await breathe();
   const frond = tex(
     pixelCanvas(256, 64, null, (ctx) => {
       ctx.strokeStyle = "#6f7a3a";
@@ -398,6 +428,7 @@ function makeTextures(compact: boolean, vr: () => number) {
   frond.wrapS = frond.wrapT = THREE.ClampToEdgeWrapping;
 
   // Garde-corps en fer forgé (barreaux).
+  await breathe();
   const rail = tex(
     pixelCanvas(64, 32, null, (ctx) => {
       ctx.fillStyle = "#fff";
@@ -409,6 +440,7 @@ function makeTextures(compact: boolean, vr: () => number) {
     [1, 1],
   );
 
+  await breathe();
   const fall = tex(
     pixelCanvas(64, 256, null, (ctx) => {
       const grad = ctx.createLinearGradient(0, 0, 0, 256);
@@ -428,7 +460,7 @@ function makeTextures(compact: boolean, vr: () => number) {
 
   return { list, grass, grassSide, rock, plaster, concrete, stone, planks, tiles, zinc, bark, foliage, leafBump, waterNormal, cloud, blob, frond, rail, fall };
 }
-type Texs = ReturnType<typeof makeTextures>;
+type Texs = Awaited<ReturnType<typeof makeTextures>>;
 
 // ---------- matériaux partagés ----------
 function makeMaterials(t: Texs) {
@@ -1268,7 +1300,7 @@ const FOOTPRINT: Record<IslandKind, [number, number]> = {
   terrain: [2.1, 1.7],
 };
 
-export function createIsland(canvas: HTMLCanvasElement, overlay: HTMLElement, opts: IslandOptions): IslandHandle {
+export async function createIsland(canvas: HTMLCanvasElement, overlay: HTMLElement, opts: IslandOptions): Promise<IslandHandle> {
   const rand = rng(20261029); // disposition (inchangée)
   const vr = rng(77031); // détails visuels
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: "high-performance" });
@@ -1282,11 +1314,13 @@ export function createIsland(canvas: HTMLCanvasElement, overlay: HTMLElement, op
 
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(28, 1, 0.1, 200);
-  const T = makeTextures(opts.compact, vr);
+  const T = await makeTextures(opts.compact, vr);
   const m = makeMaterials(T);
   const envDay = skyEnvironment(renderer, false);
-  const envNight = skyEnvironment(renderer, true);
+  // ciel de nuit calculé seulement si le thème sombre est demandé
+  let envNight: THREE.WebGLRenderTarget | null = null;
   scene.environment = envDay.texture;
+  await breathe();
 
   // Lumières
   const hemi = new THREE.HemisphereLight("#dff1ff", "#b08a66", 0.55);
@@ -1450,6 +1484,7 @@ export function createIsland(canvas: HTMLCanvasElement, overlay: HTMLElement, op
     island.add(b);
   }
 
+  await breathe();
   // Étang + ruisseau + cascade
   const pondAngle = 5.65;
   const pondPos = new THREE.Vector3(Math.sin(pondAngle) * 4.3, 0.012, Math.cos(pondAngle) * 4.3);
@@ -1532,6 +1567,7 @@ export function createIsland(canvas: HTMLCanvasElement, overlay: HTMLElement, op
     noGrass.push({ x: Math.sin(pondAngle) * rr, z: Math.cos(pondAngle) * rr, r: 0.24 });
   }
 
+  await breathe();
   // Parcelles
   type Slot = { kind: IslandKind; group: THREE.Group; count: number; anchor: THREE.Object3D; badge: HTMLElement | null; delay: number; fresh: boolean; base: THREE.Vector3; shadow: THREE.Mesh | null };
   const slots: Slot[] = [];
@@ -1598,7 +1634,7 @@ export function createIsland(canvas: HTMLCanvasElement, overlay: HTMLElement, op
       badge.append(b, span);
       overlay.appendChild(badge);
     }
-    slots.push({ kind, group: g, count, anchor, badge, delay: order * 0.14 + (freshSet.has(kind) ? 0.5 : 0), fresh: freshSet.has(kind), base: pos, shadow });
+    slots.push({ kind, group: g, count, anchor, badge, delay: order * 0.09 + (freshSet.has(kind) ? 0.35 : 0), fresh: freshSet.has(kind), base: pos, shadow });
     order++;
   }
   // Mesure des hauteurs une fois l'échelle « réelle » appliquée (le scale.y=0.001 fausse la boîte).
@@ -1610,6 +1646,7 @@ export function createIsland(canvas: HTMLCanvasElement, overlay: HTMLElement, op
     s.group.scale.set(sc, 0.001, sc);
   }
 
+  await breathe();
   // Végétation autour du bord + détails
   const occupied = slots.map((s) => s.base).concat([new THREE.Vector3(0, 0, 0), pondPos]);
   const free = (x: number, z: number, minD: number) => occupied.every((p) => Math.hypot(p.x - x, p.z - z) > minD);
@@ -1659,9 +1696,11 @@ export function createIsland(canvas: HTMLCanvasElement, overlay: HTMLElement, op
     }
   }
 
+  await breathe();
   // Herbe
   island.add(grassField(m, vr, opts.compact ? 7000 : 18000, 5.72, noGrass));
 
+  await breathe();
   // Nuages + îlots satellites (hors rotation de l'île)
   const sky = new THREE.Group();
   scene.add(sky);
@@ -1726,7 +1765,8 @@ export function createIsland(canvas: HTMLCanvasElement, overlay: HTMLElement, op
 
   // ---------- thème ----------
   function setDark(dark: boolean) {
-    scene.environment = dark ? envNight.texture : envDay.texture;
+    if (dark && !envNight) envNight = skyEnvironment(renderer, true);
+    scene.environment = dark && envNight ? envNight.texture : envDay.texture;
     scene.environmentIntensity = dark ? 0.35 : 0.9;
     hemi.color.set(dark ? "#5b6f9c" : "#dff1ff");
     hemi.groundColor.set(dark ? "#2a2230" : "#b08a66");
@@ -1815,6 +1855,8 @@ export function createIsland(canvas: HTMLCanvasElement, overlay: HTMLElement, op
   canvas.addEventListener("pointercancel", onUp);
 
   // ---------- boucle ----------
+  let primed = false; // rien n'est dessiné avant la fin de la compilation des shaders
+  let disposedFlag = false;
   let running = false;
   let raf = 0;
   let elapsed = 0;
@@ -1827,7 +1869,7 @@ export function createIsland(canvas: HTMLCanvasElement, overlay: HTMLElement, op
     if (buildStart < 0) return;
     const t = performance.now() / 1000 - buildStart;
     for (const s of slots) {
-      const k = opts.reducedMotion ? 1 : Math.min(1, Math.max(0, (t - s.delay) / 0.75));
+      const k = opts.reducedMotion ? 1 : Math.min(1, Math.max(0, (t - s.delay) / 0.55));
       const y = k <= 0 ? 0.001 : k >= 1 ? 1 : Math.max(0.001, easeOutBack(k));
       const sc = (s.group.userData.s as number) ?? 1;
       s.group.scale.set(sc, sc * y, sc);
@@ -1879,6 +1921,7 @@ export function createIsland(canvas: HTMLCanvasElement, overlay: HTMLElement, op
   }
 
   function renderOnce() {
+    if (!primed) return;
     updateBuild();
     island.rotation.y = rotY;
     renderer.render(scene, camera);
@@ -1899,7 +1942,7 @@ export function createIsland(canvas: HTMLCanvasElement, overlay: HTMLElement, op
   }
 
   function setActive(active: boolean) {
-    if (active && buildStart < 0) buildStart = performance.now() / 1000 + 0.25;
+    if (active && buildStart < 0) buildStart = performance.now() / 1000 + 0.05;
     if (active && !running && !opts.reducedMotion) {
       running = true;
       last = performance.now();
@@ -1914,11 +1957,28 @@ export function createIsland(canvas: HTMLCanvasElement, overlay: HTMLElement, op
 
   setDark(opts.dark);
   resize();
+  // Shaders compilés en tâche de fond (KHR_parallel_shader_compile) avant le premier rendu :
+  // sinon ce premier rendu gèle la page le temps de compiler chaque matériau.
+  try {
+    await renderer.compileAsync(scene, camera);
+  } catch {
+    // compilation au premier rendu, comme avant
+  }
+  await breathe();
+  primed = true;
+  renderOnce();
+  // ciel de nuit préparé au calme, pour un passage en thème sombre sans à-coup
+  const warmNight = () => {
+    if (!envNight && !disposedFlag) envNight = skyEnvironment(renderer, true);
+  };
+  if ("requestIdleCallback" in window) window.requestIdleCallback(warmNight, { timeout: 4000 });
+  else setTimeout(warmNight, 1500);
 
   return {
     setDark,
     setActive,
     dispose() {
+      disposedFlag = true;
       running = false;
       cancelAnimationFrame(raf);
       ro.disconnect();
@@ -1938,7 +1998,7 @@ export function createIsland(canvas: HTMLCanvasElement, overlay: HTMLElement, op
       mats.forEach((mat) => mat.dispose());
       T.list.forEach((t) => t.dispose());
       envDay.dispose();
-      envNight.dispose();
+      envNight?.dispose();
       mascotTex.dispose();
       renderer.dispose();
     },

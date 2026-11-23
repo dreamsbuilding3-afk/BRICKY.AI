@@ -86,7 +86,7 @@ export function BrickyIsland({ counts, mode, labelOverrides, className, ariaLabe
       try {
         const mod = await import("../lib/islandScene");
         if (disposed || !canvas || !overlay) return;
-        handle = mod.createIsland(canvas, overlay, {
+        const h = await mod.createIsland(canvas, overlay, {
           counts,
           mode,
           dark: isDark(),
@@ -96,6 +96,11 @@ export function BrickyIsland({ counts, mode, labelOverrides, className, ariaLabe
           labels,
           mascotUrl: "/mascot-icon.png",
         });
+        if (disposed) {
+          h.dispose();
+          return;
+        }
+        handle = h;
         setReady(true);
         handle.setActive(visible && !document.hidden);
       } catch {
@@ -103,14 +108,21 @@ export function BrickyIsland({ counts, mode, labelOverrides, className, ariaLabe
       }
     }
 
-    const io = new IntersectionObserver(
-      (entries) => {
-        visible = entries.some((e) => e.isIntersecting);
-        if (visible) start();
-        handle?.setActive(visible && !document.hidden);
-      },
-      { rootMargin: "200px 0px" },
-    );
+    // L'île se prépare à l'avance, par petites tâches, dès que la page est au repos :
+    // quand on arrive dessus elle est déjà prête et s'affiche immédiatement.
+    const hasIdle = "requestIdleCallback" in window; // absent de Safari
+    const idleId = hasIdle ? window.requestIdleCallback(() => start(), { timeout: 1500 }) : window.setTimeout(start, 600);
+    // Filet de sécurité : si l'on défile très vite, on démarre bien avant que l'île soit à l'écran.
+    const early = new IntersectionObserver((entries) => {
+      if (entries.some((e) => e.isIntersecting)) start();
+    }, { rootMargin: "1500px 0px" });
+    early.observe(wrap);
+    // L'animation (et le calcul image par image) ne tourne que lorsque l'île est réellement visible.
+    const io = new IntersectionObserver((entries) => {
+      visible = entries.some((e) => e.isIntersecting);
+      if (visible) start();
+      handle?.setActive(visible && !document.hidden);
+    });
     io.observe(wrap);
 
     const onVisibility = () => handle?.setActive(visible && !document.hidden);
@@ -120,6 +132,9 @@ export function BrickyIsland({ counts, mode, labelOverrides, className, ariaLabe
 
     return () => {
       disposed = true;
+      if (hasIdle) window.cancelIdleCallback(idleId);
+      else window.clearTimeout(idleId);
+      early.disconnect();
       io.disconnect();
       mo.disconnect();
       document.removeEventListener("visibilitychange", onVisibility);
