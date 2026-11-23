@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useLocale } from "../components/LocaleProvider";
 import { BrickyIsland } from "../components/BrickyIsland";
 import { ReviewsBoard } from "../components/ReviewsBoard";
@@ -60,19 +60,62 @@ const HERO_FLOAT_ITEMS = [
 { key: "floaters.dossier", top: "58%", right: "9vw", n: 4, color: "blue" },
 ];
 
+// Les cartes sortent de derrière le titre à l'ouverture, puis se posent à leur place.
+// Une seule animation (transform + opacity, sans recalcul de mise en page) ;
+// elle attend la fin de l'écran de démarrage s'il est affiché.
 function HeroFloaters() {
 const { t } = useLocale();
+const ref = useRef<HTMLDivElement>(null);
+const [phase, setPhase] = useState<"wait" | "enter" | "done">("wait");
+
+useEffect(() => {
+  const root = ref.current;
+  if (!root) return;
+  let reduce = false;
+  try { reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches; } catch {}
+  if (reduce || window.innerWidth <= 1100) { setPhase("done"); return; }
+
+  const start = () => {
+    const title = root.parentElement?.querySelector("h1");
+    if (!title) { setPhase("done"); return; }
+    const tr = title.getBoundingClientRect();
+    const cx = tr.left + tr.width / 2;
+    const cy = tr.top + tr.height / 2;
+    root.querySelectorAll<HTMLElement>(".hero-float-slot").forEach((slot) => {
+      const r = slot.getBoundingClientRect();
+      slot.style.setProperty("--fx", `${Math.round(cx - (r.left + r.width / 2))}px`);
+      slot.style.setProperty("--fy", `${Math.round(cy - (r.top + r.height / 2))}px`);
+    });
+    setPhase("enter");
+  };
+
+  // L'écran de démarrage s'affiche si la session ne l'a pas encore vu (son effet peut s'exécuter après celui-ci).
+  let splashOn = document.documentElement.dataset.splash === "on";
+  try { splashOn = splashOn || sessionStorage.getItem("bricky_splash_shown_v1") !== "1"; } catch { splashOn = true; }
+  let fallback: number | undefined;
+  if (splashOn) {
+    window.addEventListener("bricky:splash-done", start, { once: true });
+    fallback = window.setTimeout(start, 3000);
+  } else {
+    start();
+  }
+  return () => { window.removeEventListener("bricky:splash-done", start); window.clearTimeout(fallback); };
+}, []);
+
 return (
-<div className="hero-floaters" aria-hidden="true">
-{HERO_FLOAT_ITEMS.map((item) => (
+<div ref={ref} className={`hero-floaters hero-floaters-${phase}`} aria-hidden="true">
+{HERO_FLOAT_ITEMS.map((item, i) => (
 <div
 key={item.key}
-className={`hero-float hero-float-${item.n} hero-float-${item.color}`}
-style={{ top: item.top, left: item.left, right: item.right }}
+className="hero-float-slot"
+style={{ top: item.top, left: item.left, right: item.right, ["--i" as string]: i }}
+onAnimationEnd={i === HERO_FLOAT_ITEMS.length - 1 ? (e) => { if (e.target === e.currentTarget && e.animationName === "heroFloatEnter") setPhase("done"); } : undefined}
 >
+<div className={`hero-float hero-float-${item.n} hero-float-${item.color}`}>
 <span className="hero-float-shine" />
 <span className="hero-float-dot" />
 {t(item.key)}
+</div>
 </div>
 ))}
 </div>
