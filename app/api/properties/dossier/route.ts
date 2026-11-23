@@ -279,7 +279,9 @@ export async function POST(request: NextRequest) {
     body: "{}",
     cache: "no-store",
   });
+  // Droits lus côté serveur. Sans lecture possible du plan : PDF synthèse (le plus restreint).
   let whiteLabel = false;
+  let fullPdf = false;
   if (subRes.ok) {
     const sub = await subRes.json();
     if (sub && sub.can_download_pdf === false) {
@@ -289,7 +291,10 @@ export async function POST(request: NextRequest) {
       );
     }
     whiteLabel = Boolean(sub && sub.white_label === true);
+    fullPdf = Boolean(sub && sub.can_download_full_pdf === true);
   }
+  // PDF synthèse (Essentiel) : jamais en marque blanche, toujours signé « Analysé avec Bricky ».
+  if (!fullPdf) whiteLabel = false;
 
   let brandName = "Bricky.AI";
   let brandTagline = "";
@@ -577,10 +582,12 @@ export async function POST(request: NextRequest) {
 
   flow.y = Math.min(ly, ry) - 22;
 
-  flow.section("Ce qu'il faut faire");
-  if (actions.length > 0) actions.forEach((a) => flow.bullet(sanitizeText(a)));
-  else flow.emptyNote("Aucune action spécifique identifiée.");
-  flow.y -= 10;
+  if (fullPdf) {
+    flow.section("Ce qu'il faut faire");
+    if (actions.length > 0) actions.forEach((a) => flow.bullet(sanitizeText(a)));
+    else flow.emptyNote("Aucune action spécifique identifiée.");
+    flow.y -= 10;
+  }
 
   flow.section("Points de vigilance");
   if (allRisks.length > 0) {
@@ -595,13 +602,13 @@ export async function POST(request: NextRequest) {
   }
   flow.y -= 6;
 
-  if (missingRows.length > 0) {
+  if (fullPdf && missingRows.length > 0) {
     flow.section("Données manquantes à vérifier");
     for (const m of missingRows) flow.bullet(sanitizeText(`${String(m.label || m.field_key)} — ${String(m.suggested_question || m.impact || "à vérifier avant décision")}`));
     flow.y -= 10;
   }
 
-  if (checklistRows.length > 0) {
+  if (fullPdf && checklistRows.length > 0) {
     flow.section("Checklist de vérification");
     const priorityLabel = (p: unknown) => (p === "critical" ? "Critique" : p === "high" ? "Prioritaire" : "À vérifier");
     for (const item of checklistRows) flow.checklistItem(sanitizeText(String(item.title)), priorityLabel(item.priority), Boolean(item.completed));
@@ -695,11 +702,30 @@ export async function POST(request: NextRequest) {
     flow.y -= 9.5;
   }
 
+  // PDF synthèse : encart final vers le dossier complet (Pro).
+  if (!fullPdf) {
+    flow.y -= 10;
+    const upsell = "Version synthèse. Le dossier complet (actions à mener, checklist de vérification, données manquantes, prix à proposer et lecture des PV d'AG) est inclus dans Bricky Pro.";
+    const upsellLines = wrapText(font, 8.6, PAGE_WIDTH - 2 * MARGIN - 24, upsell);
+    const boxH = 22 + upsellLines.length * 11.5;
+    flow.ensure(boxH + 6);
+    flow.page.drawRectangle({ x: MARGIN, y: flow.y - boxH + 12, width: PAGE_WIDTH - 2 * MARGIN, height: boxH, color: BG_SOFT, borderColor: ACCENT, borderWidth: 1 });
+    flow.page.drawText("Analysé avec Bricky", { x: MARGIN + 12, y: flow.y, size: 9.5, font: bold, color: INK });
+    let uy = flow.y - 14;
+    for (const line of upsellLines) {
+      flow.page.drawText(line, { x: MARGIN + 12, y: uy, size: 8.6, font, color: INK_SOFT });
+      uy -= 11.5;
+    }
+    flow.y = uy - 6;
+  }
+
   // ======================================================= final pass — stamp "page X / Y" on every page
   const pages = pdfDoc.getPages();
   const total = pages.length;
   pages.forEach((page, i) => {
-    const label = `${brandName} — Document confidentiel · ${i + 1}/${total}`;
+    const label = fullPdf
+      ? `${brandName} — Document confidentiel · ${i + 1}/${total}`
+      : `Analysé avec Bricky · bricky.ai — Version synthèse · ${i + 1}/${total}`;
     const w = font.widthOfTextAtSize(label, 7.5);
     page.drawText(label, { x: (PAGE_WIDTH - w) / 2, y: 34, size: 7.5, font, color: MUTED });
   });
@@ -710,7 +736,8 @@ export async function POST(request: NextRequest) {
     status: 200,
     headers: {
       "Content-Type": "application/pdf",
-      "Content-Disposition": `attachment; filename="dossier-bricky-${propertyId}.pdf"`,
+      "Content-Disposition": `attachment; filename="${fullPdf ? "dossier" : "synthese"}-bricky-${propertyId}.pdf"`,
+      "X-Bricky-Pdf": fullPdf ? "full" : "summary",
       "Cache-Control": "no-store",
     },
   });
