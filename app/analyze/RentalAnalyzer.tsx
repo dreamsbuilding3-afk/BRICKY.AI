@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase/client";
 import { AppNav } from "../../components/AppNav";
+import { MascotPeek } from "../../components/MascotPeek";
 import { clearPendingImport, takePendingImportFromLocation, type PendingImport } from "../../lib/brickyImport";
 import type { RentalAssessment } from "../../lib/rental/assess";
 
@@ -200,7 +201,8 @@ export function RentalAnalyzer() {
           <p className="sub">Colle l'annonce : Bricky compare le loyer au marché du secteur et vérifie que l'annonce est en règle.</p>
         </div>
 
-        <div className="url-import">
+        <div className="url-import has-mascot">
+          <MascotPeek />
           <label>Lien de l'annonce<input value={form.source_url} onChange={(e) => update("source_url", e.target.value)} placeholder="Colle le lien : Bricky remplit tout" /></label>
           <button type="button" className="primary-extract-button secondary-button" disabled={!!busy || !form.source_url.trim()} onClick={() => extract({ url: form.source_url.trim() }, "link", "l'annonce")}>
             {busy === "link" ? "Bricky lit l'annonce…" : "Remplir automatiquement"}
