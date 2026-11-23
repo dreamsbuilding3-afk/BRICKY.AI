@@ -2,7 +2,8 @@
 -- relevée le 2026-11-23 sur le projet BRICKY.AI. Sert uniquement à tester la
 -- migration hors production : auth.uid() et storage sont simulés.
 
-create extension if not exists pgcrypto;
+create schema if not exists extensions;
+create extension if not exists pgcrypto with schema extensions;
 
 do $$ begin
   if not exists (select 1 from pg_roles where rolname = 'anon') then create role anon nologin; end if;
@@ -12,7 +13,7 @@ end $$;
 
 -- ---- auth (simulé) ---------------------------------------------------------
 create schema auth;
-create table auth.users (id uuid primary key);
+create table auth.users (id uuid primary key, email text);
 create function auth.uid() returns uuid language sql stable as
 $$ select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
 grant usage on schema auth to anon, authenticated, service_role;
@@ -84,9 +85,33 @@ alter table public.app_admins enable row level security;
 
 create table public.agency_members (
   id uuid primary key default gen_random_uuid(),
-  owner_id uuid, member_user_id uuid, invite_email text, status text default 'pending'
+  owner_id uuid references auth.users(id) on delete cascade,
+  member_user_id uuid references auth.users(id) on delete set null,
+  invite_email text, role text default 'member',
+  status text default 'pending' check (status in ('pending','active','revoked')),
+  created_at timestamptz default now(), accepted_at timestamptz,
+  unique (owner_id, invite_email)
 );
 alter table public.agency_members enable row level security;
+create policy agency_members_member_select on public.agency_members for select using (member_user_id = auth.uid());
+create policy agency_members_owner_all on public.agency_members for all using (owner_id = auth.uid()) with check (owner_id = auth.uid());
+grant select, insert, update, delete on public.agency_members to authenticated;
+
+create table public.agency_branding (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  agency_name text, agency_tagline text, contact_email text, updated_at timestamptz default now()
+);
+alter table public.agency_branding enable row level security;
+create policy agency_branding_owner_select on public.agency_branding for select using (auth.uid() = user_id);
+grant select on public.agency_branding to authenticated;
+
+create table public.api_keys (
+  id uuid primary key default gen_random_uuid(), user_id uuid, label text, key_hash text, key_prefix text,
+  created_at timestamptz default now(), last_used_at timestamptz, revoked boolean default false
+);
+alter table public.api_keys enable row level security;
+create policy api_keys_owner_select on public.api_keys for select using (user_id = auth.uid());
+grant select, update, delete on public.api_keys to authenticated;
 
 create table public.properties (
   id uuid primary key default gen_random_uuid(),
@@ -238,6 +263,44 @@ language plpgsql security definer set search_path to 'public' as $function$
 begin
   if auth.uid() is null then raise exception 'Authentication required'; end if;
   return;
+end; $function$;
+
+create function public.invite_agency_member(p_email text) returns public.agency_members language plpgsql security definer set search_path to 'public' as $function$
+declare v_multi_user boolean; v_count integer; v_row public.agency_members; v_email text := lower(trim(p_email));
+begin
+  if v_email is null or v_email = '' or position('@' in v_email) = 0 then raise exception 'invalid_email'; end if;
+  select sp.multi_user into v_multi_user from public.user_subscriptions us join public.subscription_plans sp on sp.plan_code = us.plan_code where us.user_id = auth.uid();
+  if coalesce(v_multi_user, false) is not true then raise exception 'multi_user_not_included_in_plan'; end if;
+  select count(*) into v_count from public.agency_members where owner_id = auth.uid() and status <> 'revoked';
+  if v_count >= 10 then raise exception 'member_limit_reached'; end if;
+  insert into public.agency_members (owner_id, invite_email, status) values (auth.uid(), v_email, 'pending')
+  on conflict (owner_id, invite_email) do update set status = 'pending', accepted_at = null returning * into v_row;
+  return v_row;
+end; $function$;
+
+create function public.create_api_key(p_label text)
+returns table(id uuid, label text, key_prefix text, created_at timestamptz, raw_key text)
+language plpgsql security definer set search_path to 'public', 'extensions' as $function$
+declare v_api_export boolean; v_count integer; v_token text; v_hash text; v_row public.api_keys;
+begin
+  select sp.api_export into v_api_export from public.user_subscriptions us join public.subscription_plans sp on sp.plan_code = us.plan_code where us.user_id = auth.uid();
+  if coalesce(v_api_export, false) is not true then raise exception 'api_export_not_included_in_plan'; end if;
+  select count(*) into v_count from public.api_keys where user_id = auth.uid() and revoked = false;
+  if v_count >= 10 then raise exception 'api_key_limit_reached'; end if;
+  v_token := 'bricky_' || encode(extensions.gen_random_bytes(24), 'hex');
+  v_hash := encode(extensions.digest(v_token, 'sha256'), 'hex');
+  insert into public.api_keys (user_id, label, key_hash, key_prefix) values (auth.uid(), nullif(trim(p_label), ''), v_hash, left(v_token, 14)) returning * into v_row;
+  return query select v_row.id, v_row.label, v_row.key_prefix, v_row.created_at, v_token;
+end; $function$;
+
+create function public.export_my_data(p_api_key text, p_resource text) returns jsonb language plpgsql security definer set search_path to 'public', 'extensions' as $function$
+declare v_key public.api_keys; v_api_export boolean;
+begin
+  select * into v_key from public.api_keys where key_hash = encode(extensions.digest(p_api_key, 'sha256'), 'hex') and revoked = false;
+  if v_key.id is null then raise exception 'invalid_api_key'; end if;
+  select sp.api_export into v_api_export from public.user_subscriptions us join public.subscription_plans sp on sp.plan_code = us.plan_code where us.user_id = v_key.user_id;
+  if coalesce(v_api_export, false) is not true then raise exception 'api_export_not_included_in_plan'; end if;
+  return '[]'::jsonb;
 end; $function$;
 
 grant execute on all functions in schema public to authenticated;

@@ -149,7 +149,7 @@ function checkoutHref(plan: Plan, billing: Billing) {
   return `/checkout?plan=${plan.plan_code}&periode=${billing === "yearly" ? "annuel" : "mensuel"}`;
 }
 
-const FAQ_COUNT = 7;
+const FAQ_COUNT = 8;
 
 export default function PricingPage() {
   const { locale, t } = useLocale();

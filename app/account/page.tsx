@@ -31,7 +31,8 @@ export default function AccountPage() {
       setCreatedAt(data.session.user.created_at ?? null);
 
       const { data: sub } = await supabase.rpc("get_my_subscription");
-      const allowed = Boolean(sub && typeof sub === "object" && "white_label" in sub && (sub as { white_label: boolean }).white_label);
+      // La marque est gérée par le titulaire du compte Agence ; ses membres l'utilisent sans la modifier.
+      const allowed = Boolean(sub && typeof sub === "object" && "white_label" in sub && (sub as { white_label: boolean }).white_label && (sub as { team_role?: string | null }).team_role !== "member");
       setWhiteLabel(allowed);
 
       if (allowed) {

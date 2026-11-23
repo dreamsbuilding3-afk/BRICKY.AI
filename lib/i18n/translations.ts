@@ -377,6 +377,8 @@ const fr: Dict = {
   "pricing.faq.a6": "Vos analyses restent consultables. Le quota est calculé sur 30 jours glissants : pour en lancer de nouvelles tout de suite, passez à Pro (25 analyses par mois) ou prenez le pack 3 analyses.",
   "pricing.faq.q7": "Que contient le PDF d'Essentiel ?",
   "pricing.faq.a7": "Une synthèse de l'analyse (verdict, chiffres clés, risques, cadastre, PLU et quartier), marquée « Analysé avec Bricky ». Le dossier complet, avec les actions à mener, la checklist et les données manquantes, est inclus dans Pro.",
+  "pricing.faq.q8": "Les membres de mon équipe Agence ont-ils accès à tout ?",
+  "pricing.faq.a8": "Oui. Chaque collègue invité dans votre équipe a toutes les fonctions de l'offre Agence, et ses dossiers PDF portent la marque de votre agence. Les 150 analyses par mois sont partagées par toute l'équipe. Seul le titulaire du compte invite ou retire des membres.",
 
   "lang.selectAria": "Choisir la langue",
 };
@@ -750,6 +752,8 @@ const en: Dict = {
   "pricing.faq.a6": "Your analyses stay available. The quota runs over a rolling 30 days: to start new ones right away, upgrade to Pro (25 analyses a month) or get the 3-analysis pack.",
   "pricing.faq.q7": "What's in the Essentiel PDF?",
   "pricing.faq.a7": "A summary of the analysis (verdict, key figures, risks, land registry, zoning and neighborhood), marked “Analyzed with Bricky”. The full report, with next steps, checklist and missing data, is included in Pro.",
+  "pricing.faq.q8": "Do my Agence team members get everything?",
+  "pricing.faq.a8": "Yes. Every colleague invited to your team gets all Agence features, and their PDF reports carry your agency's branding. The 150 analyses a month are shared by the whole team. Only the account holder can invite or remove members.",
 
   "lang.selectAria": "Choose language",
 };
@@ -1123,6 +1127,8 @@ const zh: Dict = {
   "pricing.faq.a6": "已完成的分析仍可查看。配额按滚动 30 天计算:如需立即进行新的分析,可升级到 Pro(每月 25 次)或购买 3 次分析套餐。",
   "pricing.faq.q7": "Essentiel 的 PDF 包含什么?",
   "pricing.faq.a7": "分析摘要(结论、关键数据、风险、地籍、城市规划和街区),并标注“由 Bricky 分析”。包含后续行动、检查清单和缺失数据的完整报告属于 Pro。",
+  "pricing.faq.q8": "我的 Agence 团队成员能使用全部功能吗?",
+  "pricing.faq.a8": "可以。受邀加入团队的每位同事都能使用 Agence 方案的全部功能,其 PDF 报告也会使用您中介机构的品牌。每月 150 次分析由整个团队共享。只有账户持有人可以邀请或移除成员。",
 
   "lang.selectAria": "选择语言",
 };

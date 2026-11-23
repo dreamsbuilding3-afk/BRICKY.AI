@@ -17,6 +17,8 @@ export type MySubscription = {
   price_monthly_cents?: number;
   price_yearly_cents?: number | null;
   is_legacy?: boolean;
+  /** « owner » : titulaire d'un compte Agence ; « member » : membre d'une équipe Agence (hérite du plan). */
+  team_role?: "owner" | "member" | null;
   monthly_analysis_quota?: number | null;
   lifetime_analysis_quota?: number | null;
   used_period?: number;

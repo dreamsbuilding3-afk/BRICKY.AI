@@ -300,12 +300,14 @@ export async function POST(request: NextRequest) {
   let brandTagline = "";
   if (whiteLabel) {
     try {
-      const brandRes = await fetch(`${SUPABASE_URL}/rest/v1/agency_branding?select=agency_name,agency_tagline`, {
-        headers: { apikey: SUPABASE_ANON_KEY as string, Authorization: authorization },
+      // get_my_branding : la marque du titulaire, ou celle de l'agence pour un membre d'équipe.
+      const brandRes = await fetch(`${SUPABASE_URL}/rest/v1/rpc/get_my_branding`, {
+        method: "POST",
+        headers: { apikey: SUPABASE_ANON_KEY as string, Authorization: authorization, "Content-Type": "application/json" },
+        body: "{}",
       });
       if (brandRes.ok) {
-        const brandRows = await brandRes.json();
-        const brand = Array.isArray(brandRows) && brandRows[0] ? brandRows[0] : null;
+        const brand = await brandRes.json();
         if (brand?.agency_name) brandName = sanitizeText(String(brand.agency_name));
         if (brand?.agency_tagline) brandTagline = sanitizeText(String(brand.agency_tagline));
       }

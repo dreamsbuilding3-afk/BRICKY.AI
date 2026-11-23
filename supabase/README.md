@@ -18,6 +18,17 @@ Ce que fait la migration :
   - La RLS du mode visite (table `visit_reports` et stockage `visit-photos`).
   - Les RPC `check_alert_matches`, `enable_analysis_share` et `get_property_comparison`, cette dernière étant nouvelle.
 
+## 20261123130000_equipe_agence_herite_plan
+
+Cette migration s'applique **après** la précédente. Elle fait profiter les membres d'une équipe du plan de l'agence :
+
+- **Héritage du plan** : un membre **actif** d'une équipe dont le titulaire a un plan multi-utilisateurs (Agence ou compte fondateur) reçoit tous les droits de ce plan.
+- **Quota partagé** : les 150 analyses sur 30 jours glissants comptent pour toute l'équipe, titulaire compris.
+- **Marque blanche** : les PDF des membres portent la marque de l'agence, via la nouvelle RPC `get_my_branding()`.
+- **Export API** : il est ouvert aux membres, et au compte fondateur, qui était refusé jusqu'ici. Chacun n'exporte que ses propres données.
+- **Réservé au titulaire** : inviter, retirer des membres et modifier la marque restent réservés au titulaire du compte.
+- **Fin d'abonnement** : si l'agence repasse sur un plan sans multi-utilisateurs, ses membres reprennent automatiquement leur propre plan.
+
 ### Tester sans toucher à la production
 
 ```bash
@@ -27,13 +38,14 @@ supabase/tests/local/run.sh
 Ce script fait quatre choses :
 
 1. Il monte une base Postgres locale jetable, qui reproduit les objets de production concernés (`tests/local/00_baseline_prod.sql`).
-2. Il applique la migration, puis lance 28 vérifications (`tests/local/10_tests.sql`).
-3. Il rejoue la migration pour vérifier qu'elle s'applique deux fois sans effet de bord, puis relance les vérifications.
-4. Il teste le retour arrière (`rollback/…_down.sql`).
+2. Il applique les deux migrations, puis lance 28 vérifications sur la grille (`tests/local/10_tests.sql`).
+3. Il lance 17 vérifications supplémentaires sur les équipes Agence (`tests/local/20_tests_equipe.sql`).
+4. Il rejoue les deux migrations pour vérifier qu'elles s'appliquent deux fois sans effet de bord, puis relance les vérifications.
+5. Il teste les deux retours arrière (`rollback/…_down.sql`).
 
 ### Mise en production (à faire par toi, dans cet ordre)
 
-1. Applique la migration : SQL Editor de Supabase, `supabase db push` ou `apply_migration`.
+1. Applique les deux migrations, dans l'ordre de leur nom : SQL Editor de Supabase, `supabase db push` ou `apply_migration`.
 2. Vérifie le résultat avec ces requêtes :
    ```sql
    select plan_code, price_monthly_cents, is_public from subscription_plans order by sort_order;
