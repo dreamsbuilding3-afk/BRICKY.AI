@@ -2894,8 +2894,28 @@ label.auto-filled input, label.auto-filled select { border-color: rgba(22,163,74
   .island-badge { font-size: 11px; padding: 4px 9px 4px 4px; }
   .island-badge b { min-width: 26px; height: 20px; font-size: 12px; }
 }
+/* Téléphone : la vitrine de l'accueil devient une image fixe (voir BrickyIsland) */
+.island-still { display: none; }
+@media (max-width: 720px) {
+  .island-stage-demo::before, .island-stage-demo .island-canvas, .island-stage-demo .island-overlay, .island-stage-demo .island-hint { display: none; }
+  .island-stage-demo { container-type: size; }
+  .island-still {
+    display: block; position: absolute; inset: 0; margin: auto;
+    width: min(100%, 400px); width: min(100%, 93cqh); aspect-ratio: 400 / 430; height: auto;
+    animation: island-still-float 7s ease-in-out infinite;
+  }
+  .island-still-img { display: block; position: absolute; inset: 0; width: 100%; height: 100%; }
+  .island-still-dark { display: none; }
+  [data-theme="dark"] .island-still-light { display: none; }
+  [data-theme="dark"] .island-still-dark { display: block; }
+  /* badges posés une fois pour toutes : pas de flou d'arrière-plan à recalculer */
+  .island-still .island-badge { transform: translate(-50%, -100%); will-change: auto; -webkit-backdrop-filter: none; backdrop-filter: none; background: rgba(255,255,255,.95); }
+  [data-theme="dark"] .island-still .island-badge { background: rgba(28,28,28,.94); }
+}
+@keyframes island-still-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
 @media (prefers-reduced-motion: reduce) {
   .island-step { animation: none !important; }
+  .island-still { animation: none; }
   .island-canvas { transition: none; transform: none; }
 }
 
