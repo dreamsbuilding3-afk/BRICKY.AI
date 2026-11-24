@@ -51,6 +51,7 @@ export function RentalAnalyzer() {
   const [pastedText, setPastedText] = useState("");
   const [busy, setBusy] = useState<"" | "link" | "text" | "file" | "analyze">("");
   const [error, setError] = useState("");
+  const [quotaUrl, setQuotaUrl] = useState<string | null>(null);
   const [note, setNote] = useState("");
   const [showMore, setShowMore] = useState(false);
   const [result, setResult] = useState<RentalResult | null>(null);
@@ -170,7 +171,7 @@ export function RentalAnalyzer() {
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
-    setBusy("analyze"); setError(""); setResult(null);
+    setBusy("analyze"); setError(""); setQuotaUrl(null); setResult(null);
     try {
       const response = await fetch("/api/rentals/analyze", {
         method: "POST",
@@ -178,6 +179,10 @@ export function RentalAnalyzer() {
         body: JSON.stringify(form),
       });
       const data = await response.json();
+      if (response.status === 402 && data?.error === "quota_reached") {
+        setQuotaUrl(typeof data.upgrade_url === "string" ? data.upgrade_url : "/checkout?plan=pro&periode=annuel");
+        throw new Error(data.message || "Quota d'analyses atteint.");
+      }
       if (!response.ok) throw new Error(data?.error || "Analyse impossible.");
       setResult(data);
       setTimeout(() => document.getElementById("rental-result")?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
@@ -221,7 +226,7 @@ export function RentalAnalyzer() {
         </div>
         {(busy === "text" && !pastedText) && <div className="extract-note">Bricky lit l'annonce…</div>}
         {note && <div className="extract-note">✓ {note}</div>}
-        {error && <div className="error-box">{error}</div>}
+        {error && <div className="error-box">{error}{quotaUrl && <> <a className="quota-upgrade-link" href={quotaUrl}>{quotaUrl.includes("agence") ? "Contacter l'équipe →" : "Passer à Pro →"}</a></>}</div>}
 
         <form className="property-form" onSubmit={handleSubmit}>
           <div className="form-grid">

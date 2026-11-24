@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { getMySubscription } from "@/lib/plan/server";
-import { upgradeDeltaCents } from "@/lib/plan/features";
+import { quotaReachedResponse, type QuotaCheck } from "@/lib/plan/server";
 import { enforceRateLimit } from "@/lib/rateLimit";
 import { logError } from "@/lib/logError";
 import { geocodeAddress } from "@/lib/data/geocode";
@@ -195,30 +194,8 @@ export async function POST(request: Request) {
   const rateLimitResponse = await enforceRateLimit(request, { endpoint: "properties.analyze", maxRequests: 20, windowSeconds: 60 });
   if (rateLimitResponse) return rateLimitResponse;
 
-  const quotaCheck = await rpc("check_analysis_quota", {}, authorization) as { allowed?: boolean; reason?: string; plan_code?: string; quota?: number; used?: number };
-  if (quotaCheck && quotaCheck.allowed === false) {
-    const quotaSub = quotaCheck.plan_code === "pro" ? null : await getMySubscription(authorization);
-    const deltaCents = upgradeDeltaCents(quotaSub?.price_monthly_cents);
-    return NextResponse.json(
-      {
-        error: "quota_reached",
-        reason: quotaCheck.reason,
-        plan_code: quotaCheck.plan_code,
-        quota: quotaCheck.quota,
-        used: quotaCheck.used,
-        // Le message pousse vers Pro (25 analyses/mois), sauf pour Pro qui monte vers Agence.
-        upgrade_plan: quotaCheck.plan_code === "pro" ? "agence" : "pro",
-        upgrade_url: quotaCheck.plan_code === "pro" ? "/contact?sujet=agence" : "/checkout?plan=pro&periode=annuel",
-        message:
-          quotaCheck.reason === "lifetime_quota_reached"
-            ? "Vous avez déjà utilisé votre analyse gratuite. Avec Pro, vous avez 25 analyses par mois et toutes les fonctions."
-            : quotaCheck.plan_code === "pro"
-              ? "Vous avez utilisé vos 25 analyses du mois. L'offre Agence en inclut 150, contactez-nous."
-              : `Vous avez utilisé vos ${quotaCheck.quota ?? 5} analyses du mois. Passez à Pro : 25 analyses par mois${deltaCents ? `, pour seulement ${Math.round(deltaCents / 100)} € de plus` : ""}.`,
-      },
-      { status: 402 },
-    );
-  }
+  const quotaCheck = await rpc("check_analysis_quota", {}, authorization) as QuotaCheck;
+  if (quotaCheck && quotaCheck.allowed === false) return quotaReachedResponse(quotaCheck, authorization);
 
   let payload: unknown;
   try { payload = await request.json(); } catch { return NextResponse.json({ error: "Invalid JSON payload." }, { status: 400 }); }

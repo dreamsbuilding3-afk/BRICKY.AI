@@ -3,6 +3,7 @@ import { geocodeAddress } from "@/lib/data/geocode";
 import { enforceRateLimit } from "@/lib/rateLimit";
 import { requireUser } from "@/lib/auth/requireUser";
 import { assessRental, type MarketReference } from "@/lib/rental/assess";
+import { quotaReachedResponse, type QuotaCheck } from "@/lib/plan/server";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -84,6 +85,24 @@ export async function POST(request: NextRequest) {
     }
   } catch {
     // Pas de référence de marché : l'analyse reste possible (DPE, dépôt, frais…).
+  }
+
+  // Quota : l'analyse location compte comme une analyse (même quota que l'achat).
+  // Vérifiée et enregistrée en une seule fois côté base, une fois la saisie validée.
+  const quotaRes = await fetch(`${SUPABASE_URL}/rest/v1/rpc/consume_rental_analysis`, {
+    method: "POST",
+    headers: { apikey: SUPABASE_ANON_KEY!, Authorization: authorization, "Content-Type": "application/json" },
+    body: JSON.stringify({ p_insee_code: location?.insee_code ?? null, p_surface_m2: surface, p_rent_monthly: rentCc ?? rentHc }),
+    cache: "no-store",
+  });
+  // 404 = la migration 20261124100000 n'est pas encore appliquée : on garde l'ancien comportement
+  // (pas de quota) plutôt que de bloquer l'analyse location.
+  if (quotaRes.status !== 404) {
+    if (!quotaRes.ok) {
+      return NextResponse.json({ error: "Impossible de vérifier ton quota d'analyses, réessaie dans un instant." }, { status: 503 });
+    }
+    const quotaCheck = (await quotaRes.json()) as QuotaCheck;
+    if (quotaCheck.allowed !== true) return quotaReachedResponse(quotaCheck, authorization);
   }
 
   const assessment = assessRental(
