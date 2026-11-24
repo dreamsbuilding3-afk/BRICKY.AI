@@ -54,3 +54,37 @@ export async function requireFeature(authorization: string, feature: PlanFeature
   if (sub[feature] !== true) return { denied: featureLockedResponse(feature, sub), sub };
   return { denied: null, sub };
 }
+
+export type QuotaCheck = { allowed?: boolean; reason?: string; plan_code?: string; quota?: number; used?: number };
+
+/**
+ * Réponse 402 « quota atteint », commune à l'analyse achat et à l'analyse location.
+ * Le message pousse vers Pro ; Pro monte vers Agence ; Agence est invitée à nous contacter.
+ */
+export async function quotaReachedResponse(check: QuotaCheck, authorization: string) {
+  const plan = check.plan_code ?? "";
+  const toContact = plan === "pro" || plan === "agence";
+  const sub = toContact ? null : await getMySubscription(authorization);
+  const deltaCents = upgradeDeltaCents(sub?.price_monthly_cents);
+  const message =
+    check.reason === "lifetime_quota_reached"
+      ? "Vous avez déjà utilisé votre analyse gratuite. Avec Pro, vous avez 25 analyses par mois et toutes les fonctions."
+      : plan === "agence"
+        ? `Votre équipe a utilisé ses ${check.quota ?? 150} analyses du mois. Contactez-nous pour un volume sur mesure.`
+        : plan === "pro"
+          ? `Vous avez utilisé vos ${check.quota ?? 25} analyses du mois. L'offre Agence en inclut 150, contactez-nous.`
+          : `Vous avez utilisé vos ${check.quota ?? 5} analyses du mois. Passez à Pro : 25 analyses par mois${deltaCents ? `, pour seulement ${Math.round(deltaCents / 100)} € de plus` : ""}.`;
+  return NextResponse.json(
+    {
+      error: "quota_reached",
+      reason: check.reason,
+      plan_code: plan,
+      quota: check.quota,
+      used: check.used,
+      upgrade_plan: toContact ? "agence" : "pro",
+      upgrade_url: toContact ? "/contact?sujet=agence" : "/checkout?plan=pro&periode=annuel",
+      message,
+    },
+    { status: 402 },
+  );
+}
