@@ -1,0 +1,175 @@
+/* « Mes dossiers » : feuilles de dossier en éventail 3D (CSS seul, transform + opacity). */
+
+/* ---------- Bandeau sombre façon « affiche » ---------- */
+.dz-shell { padding-top: 26px; }
+.dz-hero {
+  position: relative; overflow: hidden; isolation: isolate;
+  margin: 0 auto; max-width: 1080px; padding: 44px 24px 0; border-radius: 30px; text-align: center;
+  background:
+    radial-gradient(60% 55% at 85% 62%, rgba(255, 106, 53, .55), rgba(255, 106, 53, 0) 70%),
+    radial-gradient(45% 45% at 8% 78%, rgba(255, 138, 77, .32), rgba(255, 138, 77, 0) 70%),
+    #0d0c0a;
+  color: #fff;
+}
+.dz-grid-lines {
+  position: absolute; inset: 0; z-index: -1; pointer-events: none; opacity: .5;
+  background:
+    linear-gradient(to right, transparent calc(12% - 1px), rgba(255,255,255,.12) 12%, transparent calc(12% + 1px)),
+    linear-gradient(to right, transparent calc(88% - 1px), rgba(255,255,255,.12) 88%, transparent calc(88% + 1px)),
+    linear-gradient(to bottom, transparent 104px, rgba(255,255,255,.1) 105px, transparent 106px),
+    linear-gradient(to bottom, transparent 232px, rgba(255,255,255,.1) 233px, transparent 234px);
+  -webkit-mask-image: linear-gradient(#000, transparent 75%); mask-image: linear-gradient(#000, transparent 75%);
+}
+.dz-pill {
+  display: inline-block; padding: 7px 14px; border-radius: 999px; font-size: 12.5px; font-weight: 600;
+  color: rgba(255,255,255,.86); background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.16);
+}
+.dz-title { margin: 18px auto 12px; max-width: 760px; color: #fff; font-size: clamp(30px, 4.6vw, 52px); line-height: 1.06; letter-spacing: -.035em; }
+.dz-hl {
+  position: relative; display: inline-block; padding: 0 .16em; margin-left: .06em;
+  background: rgba(255, 106, 53, .22); color: #ffb08a; outline: 2px solid var(--accent); outline-offset: 0;
+}
+.dz-hl i { position: absolute; width: 9px; height: 9px; border-radius: 50%; background: var(--accent); }
+.dz-hl i:first-child { top: -5px; left: -5px; }
+.dz-hl i:last-child { bottom: -5px; right: -5px; }
+.dz-sub { margin: 0 auto; max-width: 560px; color: rgba(255,255,255,.72); font-size: 15.5px; line-height: 1.55; }
+
+/* ---------- Éventail 3D des 3 derniers dossiers ---------- */
+.dz-stage {
+  --tx: 0; --ty: 0;
+  position: relative; height: 360px; margin-top: 34px; perspective: 1500px; perspective-origin: 50% 0%;
+}
+.dz-fan {
+  --x: 0px; --y: 0px; --z: 0px; --r: 0deg; --ry: 0deg;
+  position: absolute; left: 50%; top: 0; width: min(460px, 78%); margin-left: calc(min(460px, 78%) / -2);
+  color: inherit; text-decoration: none; transform-style: preserve-3d;
+  transform: translate3d(var(--x), var(--y), var(--z)) rotate(var(--r)) rotateY(var(--ry));
+  transition: transform .5s cubic-bezier(.2, .8, .2, 1);
+  animation: dz-rise .95s cubic-bezier(.2, 1.1, .3, 1) backwards;
+}
+.dz-fan[data-pos="c"] {
+  z-index: 3;
+  transform: translate3d(0, 0, 0) rotateX(calc(var(--ty) * -6deg)) rotateY(calc(var(--tx) * 9deg));
+  transition: transform .25s ease-out;
+}
+.dz-fan[data-pos="l"] { --x: -34%; --y: 30px; --z: -90px; --r: -5deg; --ry: 14deg; z-index: 2; animation-delay: .12s; }
+.dz-fan[data-pos="r"] { --x: 34%; --y: 30px; --z: -90px; --r: 5deg; --ry: -14deg; z-index: 1; animation-delay: .2s; }
+.dz-fan[data-pos="l"] .dz-sheet, .dz-fan[data-pos="r"] .dz-sheet { filter: brightness(.9); }
+.dz-stage:hover .dz-fan[data-pos="l"] { --x: -40%; --r: -7deg; }
+.dz-stage:hover .dz-fan[data-pos="r"] { --x: 40%; --r: 7deg; }
+.dz-fade {
+  position: absolute; left: -24px; right: -24px; bottom: 0; height: 150px; z-index: 4; pointer-events: none;
+  background: linear-gradient(to bottom, rgba(13,12,10,0), #0d0c0a 88%);
+}
+.dz-badge {
+  position: absolute; left: 6%; bottom: 46px; z-index: 5; padding: 9px 14px; border-radius: 14px; font-size: 13px;
+  color: #fff; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.2);
+  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+}
+.dz-badge b { color: #ffb08a; }
+@keyframes dz-rise {
+  from { opacity: 0; transform: translate3d(0, 120px, -60px) rotate(0deg) rotateY(0deg); }
+}
+
+/* ---------- La feuille « dossier » ---------- */
+.dz-sheet {
+  background: #fff; color: #111; border-radius: 22px; padding: 24px 26px 22px; text-align: left;
+  box-shadow: 0 1px 0 rgba(0,0,0,.04), 0 30px 60px -24px rgba(0,0,0,.6);
+  font-variant-numeric: tabular-nums;
+}
+.dz-sheet-top { display: flex; align-items: center; justify-content: space-between; }
+.dz-logo { position: relative; width: 26px; height: 18px; }
+.dz-logo i { position: absolute; left: 0; width: 26px; height: 8px; border-radius: 2px; transform: skewX(-18deg); }
+.dz-logo i:first-child { top: 0; background: #111; }
+.dz-logo i:last-child { bottom: 0; left: 4px; width: 22px; background: var(--accent, #ff5a1f); }
+.dz-ref { font-size: 11px; font-weight: 800; letter-spacing: .04em; color: #333; }
+.dz-word { display: block; margin: 16px 0 14px; font-size: 34px; line-height: 1; font-weight: 900; letter-spacing: -.03em; }
+.dz-meta { display: grid; grid-template-columns: 1fr auto; gap: 14px; padding-bottom: 14px; border-bottom: 1px solid #ececea; }
+.dz-meta small { display: block; color: #8a8a86; font-size: 9.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.dz-meta strong { display: block; margin: 2px 0 6px; font-size: 13px; line-height: 1.3; font-weight: 800;
+  overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.dz-meta span { display: block; color: #666; font-size: 12px; }
+.dz-meta-right { text-align: right; }
+.dz-v { font-size: 12.5px !important; }
+.dz-v-interesting { color: #1b7a34; }
+.dz-v-check { color: #b45309; }
+.dz-v-unattractive { color: #c22d2d; }
+.dz-table { margin-top: 10px; }
+.dz-tr { display: flex; justify-content: space-between; gap: 12px; padding: 7px 0; border-bottom: 1px solid #f1f1ef; font-size: 12.5px; }
+.dz-tr span:last-child { font-weight: 800; }
+.dz-th { padding-top: 0; color: #8a8a86; font-size: 9.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.dz-th span:last-child { font-weight: 800; }
+.dz-neg { color: #c22d2d; }
+.dz-total { display: flex; justify-content: space-between; align-items: baseline; margin-top: 10px; padding-top: 10px; border-top: 2px solid #111; font-size: 13px; font-weight: 800; }
+.dz-total b { font-size: 22px; letter-spacing: -.02em; }
+.dz-total small { color: #8a8a86; font-size: 12px; }
+.dz-notes { margin: 12px 0 0; color: #8a8a86; font-size: 11px; line-height: 1.45; }
+.dz-sheet-compact { padding: 18px 20px 16px; border-radius: 18px; box-shadow: none; }
+.dz-sheet-compact .dz-word { font-size: 26px; margin: 12px 0 10px; }
+
+/* ---------- Filtres et liste ---------- */
+.dz-filters { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 34px auto 18px; }
+.dz-filter {
+  display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 999px;
+  border: 1px solid var(--line); background: var(--surface, #fff); color: var(--ink); font-size: 13.5px; font-weight: 700;
+}
+.dz-filter span { color: var(--text-faint, #888); font-weight: 800; font-size: 12px; }
+.dz-filter.is-on { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.dz-filter.is-on span { color: var(--accent-light, #ff8a4d); }
+.dz-filter:disabled { opacity: .4; cursor: default; }
+
+.dz-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 26px 20px; max-width: 1080px; margin: 0 auto; }
+.dz-card {
+  position: relative; display: flex; flex-direction: column; gap: 10px;
+  animation: dz-card-in .6s cubic-bezier(.2, .8, .2, 1) calc(var(--i, 0) * 60ms) backwards;
+}
+.dz-card-doc {
+  position: relative; display: block; color: inherit; text-decoration: none; border-radius: 18px; isolation: isolate;
+  transition: transform .35s cubic-bezier(.2, .8, .2, 1);
+}
+/* deux feuilles « derrière » pour l'effet de liasse */
+.dz-card-doc::before, .dz-card-doc::after {
+  content: ""; position: absolute; inset: 0; border-radius: 18px; background: #fff; border: 1px solid #ecebe8; z-index: -1;
+  transition: transform .35s cubic-bezier(.2, .8, .2, 1);
+}
+.dz-card-doc::before { transform: translate(6px, 8px) rotate(2.2deg); }
+.dz-card-doc::after { transform: translate(-5px, 12px) rotate(-2deg); opacity: .8; }
+.dz-card-doc .dz-sheet { border: 1px solid #ecebe8; box-shadow: 0 18px 36px -24px rgba(17,17,17,.45); }
+.dz-card-doc:hover { transform: translateY(-6px) rotate(-.6deg); }
+.dz-card-doc:hover::before { transform: translate(12px, 10px) rotate(4deg); }
+.dz-card-doc:hover::after { transform: translate(-11px, 14px) rotate(-3.6deg); }
+.dz-card-doc:focus-visible { outline: 3px solid var(--accent); outline-offset: 4px; }
+.dz-actions { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 8px; }
+.dz-act {
+  display: inline-flex; align-items: center; justify-content: center; min-height: 38px; padding: 0 10px; border-radius: 12px;
+  border: 1.5px solid var(--line); background: var(--surface, #fff); color: var(--ink); font-size: 13px; font-weight: 700; text-decoration: none; white-space: nowrap;
+}
+.dz-act:hover { border-color: var(--ink); }
+.dz-act:disabled { opacity: .55; cursor: wait; }
+.dz-act-main { background: var(--accent); border-color: var(--accent); color: #fff; }
+.dz-act-main:hover { background: var(--accent-dark); border-color: var(--accent-dark); }
+@keyframes dz-card-in { from { opacity: 0; transform: translateY(16px); } }
+
+.dz-empty { text-align: center; margin-top: 26px; }
+.dz-empty .primary-button { display: inline-flex; align-items: center; min-height: 50px; padding: 0 26px; text-decoration: none; margin-top: 8px; }
+
+/* ---------- Mobile ---------- */
+@media (max-width: 720px) {
+  .dz-hero { padding: 32px 16px 0; border-radius: 24px; }
+  .dz-sub { font-size: 14px; }
+  .dz-stage { height: 300px; margin-top: 26px; perspective: 1000px; }
+  .dz-fan { width: 84%; margin-left: -42%; }
+  .dz-fan[data-pos="l"] { --x: -14%; --y: 22px; --z: -70px; --ry: 10deg; }
+  .dz-fan[data-pos="r"] { --x: 14%; --y: 22px; --z: -70px; --ry: -10deg; }
+  .dz-sheet { padding: 18px 18px 16px; }
+  .dz-word { font-size: 26px; }
+  .dz-badge { left: 50%; transform: translateX(-50%); bottom: 26px; white-space: nowrap; }
+  .dz-list { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dz-fan, .dz-card { animation: none; }
+  .dz-fan, .dz-card-doc, .dz-card-doc::before, .dz-card-doc::after { transition: none; }
+}
+
+[data-theme="dark"] .dz-card-doc::before, [data-theme="dark"] .dz-card-doc::after { background: #e9e7e1; border-color: #d6d3cb; }

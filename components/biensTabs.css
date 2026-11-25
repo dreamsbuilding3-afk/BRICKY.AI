@@ -1,0 +1,16 @@
+/* Onglets Mes biens / Mes dossiers (components/BiensTabs.tsx) */
+.biens-tabs {
+  display: flex; width: fit-content; margin: 0 auto 22px; padding: 4px; gap: 4px;
+  border: 1px solid var(--line); border-radius: 999px; background: var(--surface, #fff);
+}
+.biens-tab {
+  display: inline-flex; align-items: center; gap: 8px; padding: 9px 18px; border-radius: 999px;
+  color: var(--text-muted, #666); font-size: 14px; font-weight: 700; text-decoration: none;
+}
+.biens-tab:hover { color: var(--ink); }
+.biens-tab.is-active { background: var(--ink); color: var(--bg); }
+.biens-tab-count {
+  min-width: 20px; height: 20px; padding: 0 6px; border-radius: 999px; display: inline-grid; place-items: center;
+  background: var(--accent); color: #fff; font-size: 11px; font-weight: 800;
+}
+

@@ -12,6 +12,7 @@ import { illustrationKind } from "../../lib/illustrations/propertyIllustrations"
 import type { IslandCounts, IslandKind } from "../../lib/islandScene";
 import { useLocale } from "../../components/LocaleProvider";
 import { PromoSplash } from "../../components/PromoSplash";
+import { BiensTabs } from "../../components/BiensTabs";
 
 type AnalysisRow = {
   id: string;
@@ -209,6 +210,7 @@ export default function PropertiesPage() {
     <CapabilityMarquee />
     <section className="analysis-shell">
       {rows && !error && <MyIsland rows={rows} />}
+      <BiensTabs active="biens" count={rows ? rows.filter((r) => (r.analyses || []).length > 0).length : null} />
       <div className="analysis-intro"><span className="eyebrow">Bricky · Historique</span><h1>Mes biens <span className="accent">analysés</span></h1><p className="sub">Retrouvez ici chaque bien que vous avez soumis à Bricky, avec son verdict et ses métriques clés.{canCompare ? " Sélectionnez jusqu'à 3 biens pour les comparer." : null}</p></div>
 
       {totalAnalyses !== null && <AnalysesCounter value={totalAnalyses} />}
