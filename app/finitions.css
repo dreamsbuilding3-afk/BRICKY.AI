@@ -625,3 +625,33 @@ a:focus-visible, button:focus-visible, [role="button"]:focus-visible, summary:fo
 @media (prefers-reduced-motion: reduce) {
   .pricing-stage .pricing-card, .pricing-cta-arrow { transition: none; }
 }
+
+/* =====================================================================
+   Coins « squircle » (courbe continue façon Apple) sur tous les boutons.
+   - Boutons rectangulaires : courbe superellipse et rayon agrandi d'environ
+     35 %, pour garder la même rondeur à l'œil avec un raccord plus doux
+     (la courbe démarre plus tôt, comme les coins d'iOS).
+   - Boutons pilule : courbe très légèrement adoucie, la forme reste une pilule.
+   - Boutons ronds (fermer, thème, menu, vignettes) : inchangés.
+   Amélioration progressive : un navigateur qui ne connaît pas corner-shape
+   garde exactement les coins actuels. Zéro JavaScript, aucun coût.
+   ===================================================================== */
+@supports (corner-shape: superellipse(2)) {
+  button:not(.theme-toggle, .nav-burger, .pw-close, .ps-close),
+  .primary-button, .secondary-button, .danger-button, .share-button, .nav-cta,
+  .island-cta, .mode-cta, .resume-cta, .pricing-compare-cta, .pricing-network-cta,
+  .pricing-pack-cta, .tl-billing, .fl-cta, .auth-social-btn, .info-more-btn, .lang-toggle {
+    corner-shape: superellipse(1.2);
+  }
+  .pj-tag button, .vs-thumb button { corner-shape: round; }
+
+  html .sn.sn .sn-cta { border-radius: 12px; corner-shape: superellipse(1.5); }
+  html .dossier-copy, html .ph-cta, html .pw-bar-btn, html .vs-photo-btn { border-radius: 14px; corner-shape: superellipse(1.5); }
+  html .vs-note-btn { border-radius: 15px; corner-shape: superellipse(1.5); }
+  html .lg-social-btn, html .pm-billing, html .ty-cta, html .ty-ghost, html .sn-cta { border-radius: 16px; corner-shape: superellipse(1.5); }
+  html .pricing-card .primary-button.pricing-cta, html .pricing-card .secondary-button.pricing-cta { border-radius: 18px; corner-shape: superellipse(1.5); }
+  html .pm-pay, html .tl-cta, html .pw-cta, html .pw-offer { border-radius: 19px; corner-shape: superellipse(1.5); }
+  html .tl-cta-sm { border-radius: 15px; }
+  html .pm-billing button { border-radius: 12px; corner-shape: superellipse(1.5); }
+  html .blog-cta { border-radius: 27px; corner-shape: superellipse(1.5); }
+}
