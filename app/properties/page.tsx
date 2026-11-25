@@ -6,13 +6,13 @@ import { UpgradeDialog } from "../../components/FeatureLock";
 import { supabase } from "../../lib/supabase/client";
 import { AppNav } from "../../components/AppNav";
 import { AnalysesCounter } from "../../components/AnalysesCounter";
-import { PropertyIllustration } from "../../components/PropertyIllustration";
 import { BrickyIsland } from "../../components/BrickyIsland";
 import { illustrationKind } from "../../lib/illustrations/propertyIllustrations";
 import type { IslandCounts, IslandKind } from "../../lib/islandScene";
 import { useLocale } from "../../components/LocaleProvider";
 import { PromoSplash } from "../../components/PromoSplash";
 import { BiensTabs } from "../../components/BiensTabs";
+import { BiensCarousel } from "../../components/BiensCarousel";
 
 type AnalysisRow = {
   id: string;
@@ -50,19 +50,6 @@ function decodeEntities(text: string): string {
       .replace(/&amp;/gi, "&");
   }
   return out;
-}
-
-function latestAnalysis(row: PropertyRow): AnalysisRow | null {
-  const list = row.analyses || [];
-  if (!list.length) return null;
-  return [...list].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0];
-}
-
-function verdictLabel(verdict: string | null | undefined): { label: string; className: string } {
-  if (verdict === "interesting") return { label: "Intéressant", className: "verdict-interesting" };
-  if (verdict === "unattractive") return { label: "Peu intéressant", className: "verdict-unattractive" };
-  if (verdict) return { label: "À vérifier", className: "verdict-pending" };
-  return { label: "Non évalué", className: "verdict-pending" };
 }
 
 const EMPTY_SEEN_KEY = "bricky_empty_seen";
@@ -157,7 +144,7 @@ export default function PropertiesPage() {
       setUserEmail(sessionData.session.user.email ?? "");
       const { data, error: queryError } = await supabase
         .from("properties")
-        .select("id, title, address, city, price, surface_m2, property_type, created_at, analyses(id, verdict, overall_score, confidence_score, status, created_at)")
+        .select("id, title, address, city, price, surface_m2, property_type, created_at, analyses(id, verdict, overall_score, confidence_score, status, created_at, gross:financial_snapshot->metrics->>gross_yield_pct, net:financial_snapshot->metrics->>net_yield_pct, rent:financial_snapshot->metrics->>monthly_rent, cashflow:financial_snapshot->financing->>monthly_cashflow)")
         .order("created_at", { ascending: false });
       if (cancelled) return;
       if (queryError) { setError("Impossible de charger vos biens."); setLoading(false); return; }
@@ -189,20 +176,6 @@ export default function PropertiesPage() {
       // localStorage indisponible (navigation privée, etc.) : pas grave, on ignore.
     }
   }, [loading, error, rows]);
-
-  function toggleSelect(id: string, e: React.MouseEvent | React.ChangeEvent) {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!canCompare) {
-      setCompareLockOpen(true);
-      return;
-    }
-    setSelected((prev) => {
-      if (prev.includes(id)) return prev.filter((x) => x !== id);
-      if (prev.length >= 3) return prev;
-      return [...prev, id];
-    });
-  }
 
   return <main className="page">
     <AppNav email={userEmail} active="properties" />
@@ -262,37 +235,15 @@ export default function PropertiesPage() {
               <span className="primary-button resume-cta">Reprendre →</span>
             </a>
           )}
-          <div className="properties-list">
-            {rows.map((row) => {
-              const analysis = latestAnalysis(row);
-              const verdict = verdictLabel(analysis?.verdict);
-              const isSelected = selected.includes(row.id);
-              return (
-                <a key={row.id} href={"/analyze?property_id=" + row.id} className={"property-row" + (isSelected ? " property-row-selected" : "")}>
-                  <label
-                    className={"property-row-check" + (canCompare ? "" : " property-row-check-locked")}
-                    title={canCompare ? "Sélectionner pour comparer" : "Comparateur : disponible avec Pro"}
-                    onClick={(e) => toggleSelect(row.id, e)}
-                  >
-                    <input type="checkbox" checked={isSelected} readOnly />
-                  </label>
-                  <PropertyIllustration propertyType={row.property_type} title={row.title} />
-                  <div className="property-row-info">
-                    <b>{decodeEntities(row.title || row.address || "Bien sans titre")}</b>
-                    <span>{[row.address, row.city].filter(Boolean).join(", ") || "Adresse non renseignée"}</span>
-                  </div>
-                  <div className="property-row-metrics">
-                    {row.price != null && <span>{row.price.toLocaleString("fr-FR")} €</span>}
-                    {row.surface_m2 != null && <span>{row.surface_m2} m²</span>}
-                    {analysis?.overall_score != null && <span>Score {analysis.overall_score}/100</span>}
-                  </div>
-                  <div className="property-row-verdict">
-                    <span className={"verdict-pill " + verdict.className}>{verdict.label}</span>
-                  </div>
-                </a>
-              );
-            })}
-          </div>
+          <BiensCarousel
+            rows={rows}
+            canCompare={canCompare}
+            selected={selected}
+            onToggleCompare={(id) => {
+              if (!canCompare) { setCompareLockOpen(true); return; }
+              setSelected((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : prev.length >= 3 ? prev : [...prev, id]));
+            }}
+          />
         </>
       )}
     </section>
