@@ -221,7 +221,7 @@ export function BiensCarousel({ rows, canCompare, selected, onToggleCompare }: {
       {open && (
         <div className="bc-sheet-wrap" onClick={closeCard}>
           <div className="bc-sheet" role="dialog" aria-modal="true" aria-label={open.title} onClick={(e) => e.stopPropagation()}>
-            <div className="bc-sheet-media" style={{ viewTransitionName: "bien-media" } as CSSProperties}>
+            <div className={"bc-sheet-media bc-k-" + open.kind} style={{ viewTransitionName: "bien-media" } as CSSProperties}>
               <Media kind={open.kind} big />
               <button type="button" className="bc-round bc-back" onClick={closeCard} ref={closeRef} aria-label="Fermer">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6" /></svg>
@@ -229,12 +229,17 @@ export function BiensCarousel({ rows, canCompare, selected, onToggleCompare }: {
               <a className="bc-round bc-dossier" href="/dossiers" aria-label="Voir dans Mes dossiers" title="Mes dossiers">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h7l5 5v13H7zM14 3v5h5" /></svg>
               </a>
-              <div className="bc-glass bc-glass-big" style={{ viewTransitionName: "bien-info" } as CSSProperties}>
-                <span className="bc-big-main">
+              <div className="bc-head-info" style={{ viewTransitionName: "bien-info" } as CSSProperties}>
+                <div className="bc-head-row">
                   <b>{open.title}</b>
-                  <span className="bc-city"><Pin />{[open.b.city, open.b.address].filter(Boolean).join(" · ") || "Adresse non renseignée"}</span>
-                </span>
-                <span className="bc-price-big"><small>Prix</small>{open.b.price != null ? eur(open.b.price) : "—"}</span>
+                  <span className="bc-head-price">{open.b.price != null ? shortEur(open.b.price) : "—"}</span>
+                </div>
+                <span className="bc-city"><Pin />{[open.b.city, open.b.address].filter(Boolean).join(" · ") || "Adresse non renseignée"}</span>
+                <div className="bc-head-stats">
+                  <span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 15v5h-5M4 4l6 6M20 20l-6-6" /></svg>Surface <b>{open.b.surface_m2 ? `${open.b.surface_m2} m²` : "—"}</b></span>
+                  <span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l2.6 5.6 6 .7-4.5 4.1 1.2 6L12 16.4 6.7 19.4l1.2-6L3.4 9.3l6-.7z" /></svg>Score <b>{score(open.a?.overall_score) ?? "—"}</b></span>
+                  <span className={"bc-tag-v bc-tag-" + open.v.key}><b>{open.v.label}</b></span>
+                </div>
               </div>
             </div>
 
@@ -244,19 +249,16 @@ export function BiensCarousel({ rows, canCompare, selected, onToggleCompare }: {
                 <button type="button" role="tab" aria-selected={tab === "chiffres"} className={tab === "chiffres" ? "is-on" : ""} onClick={() => setTab("chiffres")}>Chiffres</button>
               </div>
 
-              <div className="bc-stats">
-                <span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 15v5h-5M4 4l6 6M20 20l-6-6" /></svg>{open.b.surface_m2 ? `${open.b.surface_m2} m²` : "—"}</span>
-                <span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l2.6 5.6 6 .7-4.5 4.1 1.2 6L12 16.4 6.7 19.4l1.2-6L3.4 9.3l6-.7z" /></svg>{score(open.a?.overall_score) ?? "—"}/100</span>
-                <span className={"bc-v bc-v-" + open.v.key}>{open.v.label}</span>
-              </div>
 
               {tab === "apercu" ? (
                 <p className="bc-text">
                   {ILLUSTRATION_LABELS[open.kind]}{open.b.city ? ` à ${open.b.city}` : ""}
                   {open.b.surface_m2 ? `, ${open.b.surface_m2} m²` : ""}.{" "}
-                  {open.a
-                    ? `Analysé le ${new Date(open.a.created_at).toLocaleDateString("fr-FR", { day: "numeric", month: "long" })} : Bricky le classe « ${open.v.label.toLowerCase()} »${score(open.a.overall_score) != null ? ` avec un score de ${score(open.a.overall_score)}/100` : ""}. Ouvrez l'analyse pour voir le rendement, les risques, le cadastre et le prix à proposer.`
-                    : "Ce bien n'a pas encore d'analyse terminée : ouvrez-le pour la lancer."}
+                  {!open.a
+                    ? "Ce bien n'a pas encore d'analyse : ouvrez-le pour la lancer."
+                    : open.v.key === "none"
+                      ? `Analyse enregistrée le ${new Date(open.a.created_at).toLocaleDateString("fr-FR", { day: "numeric", month: "long" })}, sans verdict pour l'instant : il manque sans doute des données. Ouvrez l'analyse pour les compléter.`
+                      : `Analysé le ${new Date(open.a.created_at).toLocaleDateString("fr-FR", { day: "numeric", month: "long" })} : Bricky le classe « ${open.v.label.toLowerCase()} »${score(open.a.overall_score) != null ? ` avec un score de ${score(open.a.overall_score)}/100` : ""}. Ouvrez l'analyse pour voir le rendement, les risques, le cadastre et le prix à proposer.`}
                 </p>
               ) : (
                 <dl className="bc-figures">
