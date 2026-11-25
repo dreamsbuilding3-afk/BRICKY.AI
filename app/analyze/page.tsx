@@ -218,6 +218,8 @@ function AnalyzePageInner() {
 const router = useRouter();
 const searchParams = useSearchParams();
 const propertyIdParam = searchParams.get("property_id");
+// Depuis « Mes dossiers » : « Modifier » amène au formulaire prérempli, à corriger puis relancer.
+const editMode = !!propertyIdParam && searchParams.get("modifier") === "1";
 // Retour du mode visite avec des travaux repérés : ajoutés au budget travaux.
 const visitWorks = Number(searchParams.get("travaux")) || 0;
 const [payload, setPayload] = useState<Payload>({ title: "", city: "", address: "", price: "", surface_m2: "", rooms: "", bedrooms: "", property_type: "", dpe_class: "", ges_class: "", monthly_rent: "", down_payment: "", loan_rate_pct: "", loan_duration_years: "", renovation_budget: "", source_url: "", annual_property_tax: "", annual_insurance: "", annual_maintenance: "", annual_management_fees: "", other_annual_charges: "", vacancy_rate: "" });
@@ -251,6 +253,12 @@ const [loadError, setLoadError] = useState("");
 const [draftRestored, setDraftRestored] = useState(false);
 
 useEffect(() => { supabase.auth.getSession().then(({ data }) => { if (!data.session) router.replace("/login"); else { setUserEmail(data.session.user.email ?? ""); setSessionReady(true); } }); }, [router]);
+
+useEffect(() => {
+if (!editMode || loadingExisting) return;
+const t = window.setTimeout(() => document.getElementById("modifier")?.scrollIntoView({ behavior: "smooth", block: "start" }), 150);
+return () => window.clearTimeout(t);
+}, [editMode, loadingExisting]);
 
 useEffect(() => {
 if (!propertyIdParam) return;
@@ -594,6 +602,7 @@ return <main className="page">
 )}
 {extractingText && <div className="extract-note">Bricky lit l'annonce…</div>}
 {extractNote && <div className="extract-note">✓ {extractNote}</div>}
+{editMode && <div className="edit-dossier-note" id="modifier"><b>Modifier le dossier</b><span>Corrigez les données ci-dessous puis relancez l'analyse : Bricky met le dossier à jour. La nouvelle analyse compte dans votre quota.</span></div>}
 <form className="property-form" onSubmit={handleSubmit}><div className="form-grid">
 <label className={af("title")}>Titre<input value={payload.title} onChange={(e) => update("title", e.target.value)} /></label><label className={af("city")}>Ville<input value={payload.city} onChange={(e) => update("city", e.target.value)} placeholder="Fort-de-France" /></label><label className={af("address")}>Adresse<input value={payload.address} onChange={(e) => update("address", e.target.value)} placeholder="Adresse du bien" /></label><label className={af("property_type", "type-field")}>Type de bien<PropertyTypeScroller value={payload.property_type} onChange={(v) => update("property_type", v)} /></label><label className={af("price")}>Prix (€)<input required type="number" min="1" value={payload.price} onChange={(e) => update("price", e.target.value)} placeholder="250000" /></label><label className={af("surface_m2")}>Surface (m²)<input required type="number" min="1" value={payload.surface_m2} onChange={(e) => update("surface_m2", e.target.value)} placeholder="65" /></label><label className={af("monthly_rent")}>Loyer mensuel (€)<input type="number" min="0" value={payload.monthly_rent} onChange={(e) => update("monthly_rent", e.target.value)} placeholder="1200" /></label><label className={af("down_payment")}>Apport (€)<input type="number" min="0" value={payload.down_payment} onChange={(e) => update("down_payment", e.target.value)} placeholder="40000" /></label><label className={af("loan_rate_pct")}>Taux du prêt (%)<input type="number" min="0" step="0.1" value={payload.loan_rate_pct} onChange={(e) => update("loan_rate_pct", e.target.value)} placeholder="3.9" /></label><label className={af("loan_duration_years")}>Durée du prêt (années)<input type="number" min="1" value={payload.loan_duration_years} onChange={(e) => update("loan_duration_years", e.target.value)} placeholder="20" /></label><label className={af("renovation_budget")}>Budget travaux (€)<input type="number" min="0" value={payload.renovation_budget} onChange={(e) => update("renovation_budget", e.target.value)} placeholder="0" /></label><label className={af("rooms")}>Pièces<input type="number" min="0" value={payload.rooms} onChange={(e) => update("rooms", e.target.value)} placeholder="3" /></label><label className={af("bedrooms")}>Chambres<input type="number" min="0" value={payload.bedrooms} onChange={(e) => update("bedrooms", e.target.value)} placeholder="2" /></label><label className={af("dpe_class")}>DPE<input value={payload.dpe_class} onChange={(e) => update("dpe_class", e.target.value.toUpperCase())} placeholder="D" maxLength={1} /></label><label className={af("ges_class")}>GES<input value={payload.ges_class} onChange={(e) => update("ges_class", e.target.value.toUpperCase())} placeholder="D" maxLength={1} /></label>
 </div>

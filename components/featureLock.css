@@ -57,3 +57,8 @@
 .file-import-locked { margin-top: 10px; }
 .file-import-locked .fl-locked-btn { min-height: 40px; font-size: 13.5px; padding: 0 16px; }
 .quota-upgrade-link { font-weight: 800; color: var(--accent-dark); white-space: nowrap; }
+
+/* Page d'analyse ouverte depuis « Mes dossiers » > Modifier */
+.edit-dossier-note { display: flex; flex-direction: column; gap: 4px; margin: 18px auto 0; padding: 14px 18px; border-radius: 16px; border: 1.5px solid rgba(255, 90, 31, .4); background: rgba(255, 90, 31, .06); scroll-margin-top: 90px; }
+.edit-dossier-note b { font-size: 15px; }
+.edit-dossier-note span { color: var(--text-muted, #666); font-size: 13.5px; line-height: 1.45; }
