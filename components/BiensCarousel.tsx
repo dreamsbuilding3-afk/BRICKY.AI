@@ -62,6 +62,12 @@ function verdictOf(a: BienAnalysis | null): { label: string; key: Filter } {
 const num = (v: unknown) => (v == null || v === "" || Number.isNaN(Number(v)) ? null : Number(v));
 const eur = (v: unknown) => { const n = num(v); return n == null ? "—" : `${Math.round(n).toLocaleString("fr-FR")} €`; };
 const pct = (v: unknown) => { const n = num(v); return n == null ? "—" : `${n.toLocaleString("fr-FR", { maximumFractionDigits: 1 })} %`; };
+// Prix court pour la pastille : 300 k€, 1,25 M€ ; prix au m² arrondi à l'euro.
+function shortEur(n: number, compact = true) {
+  if (!compact || n < 10_000) return `${Math.round(n).toLocaleString("fr-FR")} €`;
+  if (n >= 1_000_000) return `${(n / 1_000_000).toLocaleString("fr-FR", { maximumFractionDigits: 2 })} M€`;
+  return `${Math.round(n / 1000).toLocaleString("fr-FR")} k€`;
+}
 const score = (v: unknown) => { const n = num(v); return n == null ? null : Math.round(n); };
 
 const Pin = () => (
@@ -173,18 +179,26 @@ export function BiensCarousel({ rows, canCompare, selected, onToggleCompare }: {
             const s = score(a?.overall_score);
             return (
               <article key={b.id} className={"bc-card" + (isSel ? " is-selected" : "")} style={{ "--i": Math.min(i, 6) } as CSSProperties}>
-                <button type="button" className="bc-card-hit" onClick={() => openCard(b.id)} aria-label={`Ouvrir ${title}`}>
+                <button type="button" className={"bc-card-hit bc-k-" + kind} onClick={() => openCard(b.id)} aria-label={`Ouvrir ${title}`}>
                   <span className="bc-card-media" style={named ? ({ viewTransitionName: "bien-media" } as CSSProperties) : undefined}>
                     <Media kind={kind} />
                   </span>
-                  {s != null && <span className="bc-score" aria-label={`Score ${s} sur 100`}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l2.6 5.6 6 .7-4.5 4.1 1.2 6L12 16.4 6.7 19.4l1.2-6L3.4 9.3l6-.7z" /></svg>{s}</span>}
-                  <span className="bc-glass" style={named ? ({ viewTransitionName: "bien-info" } as CSSProperties) : undefined}>
-                    <b>{title}</b>
-                    <span className="bc-glass-row">
-                      <span className="bc-city"><Pin />{b.city || "Ville non renseignée"}</span>
-                      <span className={"bc-v bc-v-" + v.key}>{v.label}</span>
+                  <span className="bc-kind">{ILLUSTRATION_LABELS[kind]}</span>
+                  <span className="bc-info" style={named ? ({ viewTransitionName: "bien-info" } as CSSProperties) : undefined}>
+                    <span className="bc-title-row">
+                      <b>{title}</b>
+                      {b.price != null && <span className="bc-price-pill">{shortEur(b.price)}</span>}
                     </span>
-                    <span className="bc-price">{b.price != null ? eur(b.price) : "Prix non renseigné"}{b.surface_m2 ? <small> · {b.surface_m2} m²</small> : null}</span>
+                    <span className="bc-desc">
+                      {[b.city || "Ville non renseignée", b.surface_m2 ? `${b.surface_m2} m²` : null].filter(Boolean).join(" · ")}
+                      {a ? ` · analysé le ${new Date(a.created_at).toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}` : " · pas encore analysé"}
+                    </span>
+                    <span className="bc-tags">
+                      {s != null && <span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l2.6 5.6 6 .7-4.5 4.1 1.2 6L12 16.4 6.7 19.4l1.2-6L3.4 9.3l6-.7z" /></svg>{s}</span>}
+                      <span className={"bc-tag-v bc-tag-" + v.key}>{v.label}</span>
+                      {b.price != null && b.surface_m2 ? <span>{shortEur(b.price / b.surface_m2, false)}/m²</span> : null}
+                    </span>
+                    <span className="bc-btn">Voir le bien</span>
                   </span>
                 </button>
                 <button
