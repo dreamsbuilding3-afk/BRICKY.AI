@@ -24,15 +24,53 @@ function decodeJwtSub(token: string): string | null {
   }
 }
 
-function getIdentity(request: Request): string {
+function getIp(request: Request): string {
+  const forwardedFor = request.headers.get("x-forwarded-for");
+  return forwardedFor?.split(",")[0]?.trim() || request.headers.get("x-real-ip") || "unknown";
+}
+
+/**
+ * Identité « utilisateur » lue dans le jeton. Attention : le jeton n'est PAS vérifié ici,
+ * n'importe qui peut fabriquer un faux « sub ». C'est pourquoi un second plafond, par
+ * adresse IP, est toujours appliqué en plus (voir enforceRateLimit).
+ */
+function getUserIdentity(request: Request): string | null {
   const authorization = request.headers.get("authorization");
   if (authorization?.startsWith("Bearer ")) {
     const sub = decodeJwtSub(authorization.slice(7));
     if (sub) return "user:" + sub;
   }
-  const forwardedFor = request.headers.get("x-forwarded-for");
-  const ip = forwardedFor?.split(",")[0]?.trim() || request.headers.get("x-real-ip") || "unknown";
-  return "ip:" + ip;
+  return null;
+}
+
+type RateLimitResult = { allowed: boolean; retryAfter: number };
+
+async function checkBucket(identity: string, endpoint: string, maxRequests: number, windowSeconds: number): Promise<RateLimitResult> {
+  try {
+    const response = await fetch(SUPABASE_URL + "/rest/v1/rpc/check_rate_limit", {
+      method: "POST",
+      headers: {
+        apikey: SUPABASE_ANON_KEY as string,
+        Authorization: "Bearer " + SUPABASE_ANON_KEY,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        p_identity: identity,
+        p_endpoint: endpoint,
+        p_max_requests: maxRequests,
+        p_window_seconds: windowSeconds,
+      }),
+      cache: "no-store",
+      signal: AbortSignal.timeout(3000),
+    });
+    if (!response.ok) return { allowed: true, retryAfter: 0 };
+    const rows = await response.json();
+    const result = Array.isArray(rows) ? rows[0] : rows;
+    if (result && result.allowed === false) return { allowed: false, retryAfter: Number(result.retry_after_seconds) || 60 };
+    return { allowed: true, retryAfter: 0 };
+  } catch {
+    return { allowed: true, retryAfter: 0 };
+  }
 }
 
 /**
@@ -50,41 +88,27 @@ function getIdentity(request: Request): string {
 export async function enforceRateLimit(request: Request, config: RateLimitConfig): Promise<NextResponse | null> {
   if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return null;
 
-  const identity = getIdentity(request);
+  const userIdentity = getUserIdentity(request);
+  const ipIdentity = "ip:" + getIp(request);
 
-  try {
-    const response = await fetch(SUPABASE_URL + "/rest/v1/rpc/check_rate_limit", {
-      method: "POST",
-      headers: {
-        apikey: SUPABASE_ANON_KEY,
-        Authorization: "Bearer " + SUPABASE_ANON_KEY,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        p_identity: identity,
-        p_endpoint: config.endpoint,
-        p_max_requests: config.maxRequests,
-        p_window_seconds: config.windowSeconds,
-      }),
-      cache: "no-store",
-    });
+  // Plafond par utilisateur (si jeton) + plafond par IP, plus large pour ne pas gêner
+  // plusieurs personnes derrière la même connexion (bureau, agence).
+  const checks = [
+    userIdentity
+      ? checkBucket(userIdentity, config.endpoint, config.maxRequests, config.windowSeconds)
+      : checkBucket(ipIdentity, config.endpoint, config.maxRequests, config.windowSeconds),
+  ];
+  if (userIdentity) checks.push(checkBucket(ipIdentity, config.endpoint + ":ip", config.maxRequests * 4, config.windowSeconds));
 
-    if (!response.ok) return null;
+  const results = await Promise.all(checks);
+  const blocked = results.find((r) => !r.allowed);
+  if (!blocked) return null;
 
-    const rows = await response.json();
-    const result = Array.isArray(rows) ? rows[0] : rows;
-    if (result && result.allowed === false) {
-      const retryAfter = result.retry_after_seconds ?? 60;
-      return NextResponse.json(
-        {
-          error: "Trop de requetes sur cet endpoint. Merci de reessayer dans quelques instants.",
-          retry_after_seconds: retryAfter,
-        },
-        { status: 429, headers: { "Retry-After": String(retryAfter) } },
-      );
-    }
-    return null;
-  } catch {
-    return null;
-  }
+  return NextResponse.json(
+    {
+      error: "Trop de requêtes. Merci de réessayer dans quelques instants.",
+      retry_after_seconds: blocked.retryAfter,
+    },
+    { status: 429, headers: { "Retry-After": String(blocked.retryAfter) } },
+  );
 }

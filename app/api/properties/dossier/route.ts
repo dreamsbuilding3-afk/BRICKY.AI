@@ -323,7 +323,8 @@ export async function POST(request: NextRequest) {
   } catch {
     propertyId = undefined;
   }
-  if (!propertyId) {
+  // property_id est inséré tel quel dans l'URL PostgREST : on n'accepte qu'un UUID.
+  if (!propertyId || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(propertyId)) {
     return NextResponse.json({ error: "property_id requis." }, { status: 400 });
   }
 

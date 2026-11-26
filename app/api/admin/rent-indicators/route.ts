@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { enforceRateLimit } from "@/lib/rateLimit";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -6,6 +7,9 @@ const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 export const maxDuration = 60;
 
 export async function POST(request: NextRequest) {
+  const rateLimitResponse = await enforceRateLimit(request, { endpoint: "admin.rent_indicators", maxRequests: 10, windowSeconds: 60 });
+  if (rateLimitResponse) return rateLimitResponse;
+
   if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
     return NextResponse.json({ error: "Supabase environment variables are not configured." }, { status: 500 });
   }
@@ -50,6 +54,7 @@ export async function POST(request: NextRequest) {
     }
     return NextResponse.json({ ok: true, result: data }, { status: 200 });
   } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "unknown_error" }, { status: 500 });
+    console.error("[admin.rent_indicators]", error);
+    return NextResponse.json({ error: "unknown_error" }, { status: 500 });
   }
 }
