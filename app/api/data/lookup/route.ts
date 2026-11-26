@@ -1,9 +1,16 @@
 import { NextResponse } from "next/server";
 import { collectPropertyData } from "@/lib/data";
+import { enforceRateLimit } from "@/lib/rateLimit";
+import { requireUser } from "@/lib/auth/requireUser";
 
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
+  const rateLimitResponse = await enforceRateLimit(request, { endpoint: "data.lookup", maxRequests: 20, windowSeconds: 60 });
+  if (rateLimitResponse) return rateLimitResponse;
+  const authResponse = await requireUser(request);
+  if (authResponse) return authResponse;
+
   try {
     const body = (await request.json()) as {
       address?: string;
@@ -28,9 +35,7 @@ export async function POST(request: Request) {
       headers: { "cache-control": "private, max-age=300" },
     });
   } catch (error) {
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Unexpected data pipeline error" },
-      { status: 500 },
-    );
+    console.error("[data.lookup]", error);
+    return NextResponse.json({ error: "Données indisponibles pour le moment, réessaie." }, { status: 500 });
   }
 }

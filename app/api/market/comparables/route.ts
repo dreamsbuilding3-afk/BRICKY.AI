@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { enforceRateLimit } from "@/lib/rateLimit";
+import { requireUser } from "@/lib/auth/requireUser";
 
 const DVF_API = "https://api.cquest.org/dvf";
 
@@ -20,10 +22,10 @@ function num(value: unknown) {
 }
 
 export async function POST(request: NextRequest) {
-  const authorization = request.headers.get("authorization");
-  if (!authorization?.startsWith("Bearer ")) {
-    return NextResponse.json({ error: "Authentication required." }, { status: 401 });
-  }
+  const rateLimitResponse = await enforceRateLimit(request, { endpoint: "market.comparables", maxRequests: 20, windowSeconds: 60 });
+  if (rateLimitResponse) return rateLimitResponse;
+  const authResponse = await requireUser(request);
+  if (authResponse) return authResponse;
 
   try {
     const body = await request.json();
@@ -86,7 +88,7 @@ export async function POST(request: NextRequest) {
       note: "Les transactions DVF sont des ventes enregistrées, pas des prix d'annonces. Elles servent de référence de marché et doivent être interprétées avec leur date et leurs caractéristiques.",
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Impossible de récupérer les comparables.";
-    return NextResponse.json({ error: message }, { status: 422 });
+    console.error("[market.comparables]", error);
+    return NextResponse.json({ error: "Impossible de récupérer les comparables." }, { status: 422 });
   }
 }

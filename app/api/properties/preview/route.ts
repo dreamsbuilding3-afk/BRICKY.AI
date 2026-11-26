@@ -2,30 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { classifyPropertyType } from "@/lib/data/propertyTypeClassifier";
 import { enforceRateLimit } from "@/lib/rateLimit";
 import { requireUser } from "@/lib/auth/requireUser";
-import dns from "node:dns/promises";
-import net from "node:net";
+import { safeFetch, assertPublicUrl, UnsafeUrlError } from "@/lib/safeFetch";
 import { extractFromListingText } from "@/lib/listingText";
 import { AI_UNAVAILABLE_MESSAGE, AiServiceError, extractListingWithAi, htmlToListingText, isAiExtractionEnabled, WebFetchFailed } from "@/lib/ai/listingExtractor";
 
 export const maxDuration = 60;
-
-function isPrivateOrLoopbackIp(ip: string): boolean {
-  if (net.isIPv6(ip)) {
-    const lower = ip.toLowerCase();
-    if (lower === "::1") return true;
-    if (lower.startsWith("fe80:") || lower.startsWith("fc") || lower.startsWith("fd")) return true;
-    if (lower.startsWith("::ffff:")) return isPrivateOrLoopbackIp(lower.slice(7));
-    return false;
-  }
-  const parts = ip.split(".").map(Number);
-  if (parts.length !== 4 || parts.some((p) => !Number.isFinite(p))) return true;
-  const [a, b] = parts;
-  if (a === 127 || a === 10 || a === 0) return true;
-  if (a === 172 && b >= 16 && b <= 31) return true;
-  if (a === 192 && b === 168) return true;
-  if (a === 169 && b === 254) return true;
-  return false;
-}
 
 const PRICE_RE = /(?:prix|price)[^\d]{0,40}([\d\s.,]+)\s*€?/i;
 const SURFACE_RE = /(?:surface|area)[^\d]{0,40}(\d+(?:[.,]\d+)?)\s*m(?:²|2)/i;
@@ -176,34 +157,28 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "URL ou texte requis." }, { status: 400 });
     }
 
-    const parsedUrl = new URL(url.trim());
-    if (!["http:", "https:"].includes(parsedUrl.protocol)) {
-      return NextResponse.json({ error: "URL HTTP/HTTPS invalide." }, { status: 400 });
-    }
-
-    const hostname = parsedUrl.hostname.toLowerCase();
-    if (hostname === "localhost" || hostname === "0.0.0.0" || hostname.endsWith(".local")) {
-      return NextResponse.json({ error: "Cette URL est refusee." }, { status: 400 });
+    let parsedUrl: URL;
+    try {
+      parsedUrl = new URL(url.trim());
+    } catch {
+      return NextResponse.json({ error: "Ce lien n'est pas valide. Copie l'adresse complète de l'annonce (https://…)." }, { status: 400 });
     }
     try {
-      const resolved = await dns.lookup(hostname);
-      if (isPrivateOrLoopbackIp(resolved.address)) {
-        return NextResponse.json({ error: "Cette URL est refusee." }, { status: 400 });
-      }
-    } catch {
-      return NextResponse.json({ error: "Impossible de resoudre cette adresse." }, { status: 400 });
+      await assertPublicUrl(parsedUrl);
+    } catch (error) {
+      const message = error instanceof UnsafeUrlError ? error.message : "Cette URL est refusée.";
+      return NextResponse.json({ error: message }, { status: 400 });
     }
 
     // Cas 2 : lien. On lit d'abord la page depuis notre serveur (gratuit et rapide).
     let html: string | null = null;
     let serverStatus = 0;
     try {
-      const response = await fetch(parsedUrl.toString(), {
+      const { response } = await safeFetch(parsedUrl, {
         headers: {
           "User-Agent": "Mozilla/5.0 (compatible; BrickyBot/1.0; +https://bricky.ai)",
           "Accept-Language": "fr-FR,fr;q=0.9",
         },
-        redirect: "follow",
         signal: AbortSignal.timeout(10000),
       });
       serverStatus = response.status;
@@ -255,7 +230,7 @@ export async function POST(request: NextRequest) {
     }
     return NextResponse.json({ error: UNREADABLE_LINK, code: "link_unreadable" }, { status: 422 });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Impossible de lire cette annonce.";
-    return NextResponse.json({ error: message }, { status: 422 });
+    console.error("[preview] unexpected error", error);
+    return NextResponse.json({ error: "Impossible de lire cette annonce. Réessaie, ou colle le texte de l'annonce." }, { status: 422 });
   }
 }

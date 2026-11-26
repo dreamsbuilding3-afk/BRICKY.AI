@@ -14,8 +14,12 @@ function toCsv(rows: Record<string, unknown>[]): string {
   );
   const escape = (value: unknown): string => {
     if (value === null || value === undefined) return "";
-    const str = typeof value === "object" ? JSON.stringify(value) : String(value);
-    if (/[",\n;]/.test(str)) return `"${str.replace(/"/g, '""')}"`;
+    let str = typeof value === "object" ? JSON.stringify(value) : String(value);
+    // Injection de formules : une cellule qui commence par = + - @ serait exécutée par Excel
+    // ou Google Sheets (titres d'annonces, notes…). On la neutralise avec une apostrophe,
+    // sauf pour les vrais nombres (ex. cash-flow négatif « -120.5 »).
+    if (/^[=+\-@\t\r]/.test(str) && !(typeof value === "number" || /^-?\d+(\.\d+)?$/.test(str))) str = "'" + str;
+    if (/[",\n\r;]/.test(str)) return `"${str.replace(/"/g, '""')}"`;
     return str;
   };
   const lines = [columns.join(",")];
