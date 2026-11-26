@@ -3733,3 +3733,7 @@ label.auto-filled input, label.auto-filled select { border-color: rgba(22,163,74
   .resume-banner p { margin-top: 2px; font-size: .75rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .resume-banner .resume-cta { min-height: 36px; padding: 0 14px; font-size: 14px; }
 }
+@media (max-width: 640px) {
+  .fig-card { padding: 10px 14px 12px; }
+  .fig-note { display: none; }
+}
