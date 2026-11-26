@@ -3712,3 +3712,25 @@ label.auto-filled input, label.auto-filled select { border-color: rgba(22,163,74
 .mascot-peek { position: absolute; left: 72px; bottom: 100%; margin-bottom: -5px; width: 96px; height: auto; z-index: 2; pointer-events: none; user-select: none; -webkit-user-drag: none; }
 .url-import .mascot-peek { left: 28px; }
 @media (max-width: 720px) { .mascot-peek, .url-import .mascot-peek { left: 22px; width: 80px; margin-bottom: -4px; } }
+
+/* ---- Mobile : « Bricky en chiffres » + « Reprendre » plus fins ---- */
+@media (max-width: 640px) {
+  .fig-card { margin-top: 22px; padding: 12px 14px 14px; gap: 6px; border-radius: 16px; }
+  .fig-card::after { left: 14px; right: 14px; }
+  .fig-main { gap: 4px; }
+  .fig-eyebrow { font-size: 10.5px; gap: 7px; }
+  .fig-eyebrow::before { width: 6px; height: 6px; box-shadow: 0 0 0 3px rgba(255,90,31,.15); }
+  .fig-figure { flex-wrap: nowrap; gap: 10px; }
+  .fig-number { font-size: 22px; gap: 3px; }
+  .fig-cell { border-radius: 7px; }
+  .fig-unit { font-size: 14px; }
+  .fig-note { margin: 0; max-width: none; font-size: 12px; line-height: 1.4; }
+  .fig-card + .properties-list, .fig-card ~ .properties-list { margin-top: 10px; }
+
+}
+@media (max-width: 640px) {
+  .fig-card { padding: 10px 14px 12px; }
+  .fig-note { display: none; }
+}
+.fig-card { margin-bottom: 14px; }
+@media (max-width: 640px) { .fig-card { margin-bottom: 10px; } }
