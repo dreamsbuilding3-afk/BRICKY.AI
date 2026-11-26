@@ -1,6 +1,10 @@
 import type { ComparableSale, Confidence, DvfMarketStats } from "./types";
 
-const DVF_BASE_URL = "https://apidf.cerema.fr/dvf_opendata/geomutations/";
+// API « DVF open data » du Cerema. Le point d'accès public historique est sur
+// apidf-preprod ; on tente ensuite le domaine principal si le premier ne répond pas.
+const DVF_HOSTS = ["https://apidf-preprod.cerema.fr", "https://apidf.cerema.fr"];
+const DVF_PATH = "/dvf_opendata/geomutations/";
+const REQUEST_TIMEOUT_MS = 8000;
 const MAX_PAGES = 3;
 const MAX_RESULTS = 60;
 const MAX_DISTANCE_M = 1500;
@@ -28,13 +32,25 @@ function distanceMeters(lat1: number, lon1: number, lat2: number, lon2: number):
   return 2 * radius * Math.asin(Math.sqrt(a));
 }
 
+/** Premier point [lon, lat] trouvé dans des coordonnées imbriquées (Point, Polygon, MultiPolygon). */
+function firstPositions(value: unknown, out: [number, number][] = []): [number, number][] {
+  if (!Array.isArray(value) || out.length >= 200) return out;
+  if (value.length >= 2 && typeof value[0] === "number" && typeof value[1] === "number") {
+    out.push([value[0], value[1]]);
+    return out;
+  }
+  for (const item of value) firstPositions(item, out);
+  return out;
+}
+
 function pickCoordinate(row: Record<string, unknown>): [number, number] | null {
   const geometry = row.geometry as { coordinates?: unknown } | undefined;
-  const coordinates = geometry?.coordinates;
-  if (Array.isArray(coordinates) && coordinates.length >= 2) {
-    const lon = numberValue(coordinates[0]);
-    const lat = numberValue(coordinates[1]);
-    if (lon !== undefined && lat !== undefined) return [lon, lat];
+  // Les géomutations sont des contours de parcelles : on prend le centre des points.
+  const points = firstPositions(geometry?.coordinates);
+  if (points.length > 0) {
+    const lon = points.reduce((sum, p) => sum + p[0], 0) / points.length;
+    const lat = points.reduce((sum, p) => sum + p[1], 0) / points.length;
+    if (Number.isFinite(lon) && Number.isFinite(lat)) return [lon, lat];
   }
 
   const lon = numberValue(row.lon ?? row.longitude);
@@ -49,7 +65,10 @@ function normalizePropertyType(row: Record<string, unknown>): string | undefined
   return stringValue(row.libtypbien ?? row.type_local_label);
 }
 
-function mapRow(row: Record<string, unknown>, lat: number, lon: number): ComparableSale | null {
+function mapRow(row: Record<string, unknown>, lat: number, lon: number, cityFallback?: string): ComparableSale | null {
+  // Échanges, adjudications, expropriations… : pas des prix de marché.
+  const nature = stringValue(row.libnatmut);
+  if (nature && !/^vente/i.test(nature)) return null;
   const price = numberValue(row.valeurfonc ?? row.valeur_fonciere ?? row.prix);
   const surface = numberValue(row.sbati ?? row.surface_bati ?? row.surface);
   if (!price || !surface || price <= 0 || surface <= 0) return null;
@@ -63,7 +82,7 @@ function mapRow(row: Record<string, unknown>, lat: number, lon: number): Compara
     source: "DVF+",
     transactionDate: stringValue(row.datemut ?? row.date_mutation),
     address: stringValue(row.adresse ?? row.adresse_nom_voie),
-    city: stringValue(row.libcom ?? row.nom_commune),
+    city: stringValue(row.libcom ?? row.nom_commune) ?? cityFallback,
     surfaceM2: surface,
     price,
     priceM2: price / surface,
@@ -88,6 +107,31 @@ function dedupeSales(rows: ComparableSale[]): ComparableSale[] {
   });
 }
 
+/** Lignes d'une page de réponse : GeoJSON (features) ou liste simple (results). */
+function pageRows(payload: Record<string, unknown>): Record<string, unknown>[] {
+  const container = payload.results && typeof payload.results === "object" && !Array.isArray(payload.results)
+    ? (payload.results as Record<string, unknown>)
+    : payload;
+  const features = Array.isArray(container.features) ? container.features : null;
+  if (features) {
+    return features
+      .filter((f): f is Record<string, unknown> => Boolean(f) && typeof f === "object")
+      .map((f) => ({ ...((f.properties as Record<string, unknown>) ?? {}), geometry: f.geometry }));
+  }
+  const results = Array.isArray(payload.results) ? payload.results : [];
+  return results.filter((r): r is Record<string, unknown> => Boolean(r) && typeof r === "object");
+}
+
+async function fetchPage(url: URL): Promise<Record<string, unknown>> {
+  const response = await fetch(url, {
+    headers: { accept: "application/json", "User-Agent": "Bricky.AI/1.0" },
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+    next: { revalidate: 21600 },
+  });
+  if (!response.ok) throw new Error(`DVF+ API returned ${response.status} (${url.host})`);
+  return (await response.json()) as Record<string, unknown>;
+}
+
 export async function fetchDvfComparables(input: {
   inseeCode: string;
   latitude: number;
@@ -95,51 +139,63 @@ export async function fetchDvfComparables(input: {
   surfaceM2?: number;
   propertyType?: string;
   yearsBack?: number;
+  /** Ville à utiliser quand la source ne renvoie pas le nom de la commune. */
+  city?: string;
 }): Promise<ComparableSale[]> {
-  let nextUrl: string | null = null;
+  const buildUrl = (host: string) => {
+    const url = new URL(DVF_PATH, host);
+    url.searchParams.set("code_insee", input.inseeCode);
+    url.searchParams.set("anneemut_min", String(new Date().getFullYear() - (input.yearsBack ?? 5)));
+    url.searchParams.set("page_size", "100");
+    url.searchParams.set("ordering", "-datemut");
+    if (input.surfaceM2) {
+      url.searchParams.set("sbati_min", String(Math.round(Math.max(10, input.surfaceM2 * 0.65))));
+      url.searchParams.set("sbati_max", String(Math.round(input.surfaceM2 * 1.35)));
+    }
+    const type = (input.propertyType ?? "").toLowerCase();
+    if (type.includes("maison") || type.includes("house") || type.includes("villa")) {
+      url.searchParams.set("codtypbien", "111");
+    } else if (type.includes("appartement") || type.includes("apartment") || type.includes("studio")) {
+      url.searchParams.set("codtypbien", "121");
+    }
+    return url;
+  };
+
+  // Première page : on essaie chaque domaine jusqu'à ce que l'un réponde.
+  let payload: Record<string, unknown> | null = null;
   let currentUrl: URL | null = null;
+  let lastError: unknown = null;
+  for (const host of DVF_HOSTS) {
+    try {
+      currentUrl = buildUrl(host);
+      payload = await fetchPage(currentUrl);
+      break;
+    } catch (error) {
+      lastError = error;
+      payload = null;
+    }
+  }
+  if (!payload || !currentUrl) throw lastError instanceof Error ? lastError : new Error("DVF+ API unavailable");
+  let pageUrl: URL = currentUrl;
+
   const collected: ComparableSale[] = [];
-
-  currentUrl = new URL(DVF_BASE_URL);
-  currentUrl.searchParams.set("code_insee", input.inseeCode);
-  currentUrl.searchParams.set("anneemut_min", String(new Date().getFullYear() - (input.yearsBack ?? 5)));
-  currentUrl.searchParams.set("page_size", "100");
-  currentUrl.searchParams.set("ordering", "-datemut");
-
-  if (input.surfaceM2) {
-    currentUrl.searchParams.set("sbati_min", String(Math.max(10, input.surfaceM2 * 0.65)));
-    currentUrl.searchParams.set("sbati_max", String(input.surfaceM2 * 1.35));
-  }
-
-  const type = (input.propertyType ?? "").toLowerCase();
-  if (type.includes("maison") || type.includes("house")) {
-    currentUrl.searchParams.set("codtypbien", "111");
-  } else if (type.includes("appartement") || type.includes("apartment") || type.includes("studio")) {
-    currentUrl.searchParams.set("codtypbien", "121");
-  }
-
-  for (let page = 0; page < MAX_PAGES && currentUrl; page += 1) {
-    const response = await fetch(currentUrl, {
-      headers: { accept: "application/json" },
-      next: { revalidate: 21600 },
-    });
-
-    if (!response.ok) throw new Error(`DVF+ API returned ${response.status}`);
-
-    const payload = (await response.json()) as { results?: unknown[]; next?: unknown };
-    const rows = Array.isArray(payload.results) ? payload.results : [];
-
-    for (const row of rows) {
-      if (!row || typeof row !== "object") continue;
-      const sale = mapRow(row as Record<string, unknown>, input.latitude, input.longitude);
+  for (let page = 0; page < MAX_PAGES && payload; page += 1) {
+    for (const row of pageRows(payload)) {
+      const sale = mapRow(row, input.latitude, input.longitude, input.city);
       if (!sale) continue;
       if (sale.distanceM !== undefined && sale.distanceM > MAX_DISTANCE_M) continue;
       collected.push(sale);
     }
-
-    nextUrl = typeof payload.next === "string" && payload.next.length > 0 ? payload.next : null;
-    currentUrl = nextUrl ? new URL(nextUrl, currentUrl) : null;
     if (collected.length >= MAX_RESULTS) break;
+    const nextLink = payload.next;
+    const next: URL | null = typeof nextLink === "string" && nextLink.length > 0 ? new URL(nextLink, pageUrl) : null;
+    if (!next || page + 1 >= MAX_PAGES) break;
+    pageUrl = next;
+    try {
+      payload = await fetchPage(pageUrl);
+    } catch {
+      break; // On garde ce qu'on a déjà.
+    }
   }
 
   return dedupeSales(collected)
