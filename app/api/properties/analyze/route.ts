@@ -3,21 +3,10 @@ import { quotaReachedResponse, type QuotaCheck } from "@/lib/plan/server";
 import { enforceRateLimit } from "@/lib/rateLimit";
 import { logError } from "@/lib/logError";
 import { geocodeAddress } from "@/lib/data/geocode";
+import { fetchDvfComparables } from "@/lib/data/dvf";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-const DVF_API = "https://api.cquest.org/dvf";
-
-type Comparable = {
-  source: "DVF";
-  transaction_date: unknown;
-  address: unknown;
-  city: unknown;
-  surface_m2: number | null;
-  price: number | null;
-  price_m2: number | null;
-  distance_m: number | null;
-};
 
 function num(value: unknown) {
   const n = Number(value);
@@ -43,40 +32,36 @@ async function rpc(name: string, body: Record<string, unknown>, authorization: s
   return data;
 }
 
-async function fetchComparables(latitude: number, longitude: number): Promise<Comparable[]> {
-  const url = new URL(DVF_API);
-  url.searchParams.set("lat", String(latitude));
-  url.searchParams.set("lon", String(longitude));
-  url.searchParams.set("dist", "1000");
-
-  const response = await fetch(url, {
-    headers: { "User-Agent": "Bricky.AI/1.0" },
-    signal: AbortSignal.timeout(10000),
-    cache: "no-store",
+// Ventes comparables (DVF open data du Cerema), au format attendu par
+// ingest_market_comparables_v1. L'ancienne source (api.cquest.org) ne renvoyait plus rien :
+// aucune vente n'avait jamais été enregistrée.
+async function fetchComparables(input: {
+  inseeCode: string;
+  latitude: number;
+  longitude: number;
+  surfaceM2: number | null;
+  propertyType: string | null;
+  city: string | null;
+}) {
+  const sales = await fetchDvfComparables({
+    inseeCode: input.inseeCode,
+    latitude: input.latitude,
+    longitude: input.longitude,
+    surfaceM2: input.surfaceM2 ?? undefined,
+    propertyType: input.propertyType ?? undefined,
+    // La source ne donne pas le nom de la commune : celle du bien (même code INSEE).
+    city: input.city || input.inseeCode,
   });
-  if (!response.ok) throw new Error(`DVF source unavailable (${response.status})`);
-
-  const raw = await response.json();
-  const rows: Record<string, unknown>[] = Array.isArray(raw)
-    ? raw.filter((row: unknown): row is Record<string, unknown> => typeof row === "object" && row !== null)
-    : Array.isArray(raw?.data)
-    ? raw.data.filter((row: unknown): row is Record<string, unknown> => typeof row === "object" && row !== null)
-    : [];
-
-  return rows.map((row): Comparable => {
-    const surface = num(row.surface_reelle_bati ?? row.surface_bati ?? row.surface);
-    const price = num(row.valeur_fonciere ?? row.prix);
-    return {
-      source: "DVF",
-      transaction_date: row.date_mutation ?? row.date,
-      address: row.adresse_nom_voie ?? row.adresse ?? null,
-      city: row.nom_commune ?? row.commune ?? null,
-      surface_m2: surface,
-      price,
-      price_m2: surface && price ? Math.round((price / surface) * 100) / 100 : null,
-      distance_m: num(row.distance),
-    };
-  }).filter((row) => row.surface_m2 !== null && row.price !== null && row.price_m2 !== null);
+  return sales.map((sale) => ({
+    source: "DVF",
+    transaction_date: sale.transactionDate ?? null,
+    address: sale.address ?? null,
+    city: sale.city ?? null,
+    surface_m2: sale.surfaceM2 ?? null,
+    price: sale.price ?? null,
+    price_m2: sale.priceM2 ? Math.round(sale.priceM2 * 100) / 100 : null,
+    distance_m: sale.distanceM !== undefined ? Math.round(sale.distanceM) : null,
+  }));
 }
 
 const OVERPASS_URLS = [
@@ -270,9 +255,18 @@ export async function POST(request: Request) {
 
     // Step 1: market comparables (DVF), if we have coordinates.
     let market: unknown = { status: "insufficient_data", note: "Coordonnées absentes : aucune recherche DVF automatique." };
-    if (analysisId && latitude !== null && longitude !== null) {
+    if (analysisId && latitude !== null && longitude !== null && inseeCode) {
       try {
-        const comparables = await fetchComparables(latitude, longitude);
+        const comparables = await fetchComparables({
+          inseeCode,
+          latitude,
+          longitude,
+          surfaceM2: num(body.surface_m2),
+          propertyType: typeof body.property_type === "string" ? body.property_type : null,
+          city: typeof body.city === "string" ? body.city : null,
+        });
+        // Trace en base si la source ne renvoie rien : permet de voir un problème de source.
+        if (comparables.length === 0) await logError("properties.analyze.dvf", "Aucune vente DVF trouvée", { insee_code: inseeCode });
         const marketIngestion = await rpc("ingest_market_comparables_v1", {
           p_analysis_id: analysisId,
           p_comparables: comparables,
@@ -281,6 +275,7 @@ export async function POST(request: Request) {
         market = { ingestion: marketIngestion, refreshed };
         result = { ...result, analysis: (refreshed as { analysis?: unknown })?.analysis ?? result.analysis };
       } catch (marketError) {
+        await logError("properties.analyze.dvf", marketError, { insee_code: inseeCode });
         market = { status: "unavailable", note: marketError instanceof Error ? marketError.message : "Market data unavailable" };
       }
     }

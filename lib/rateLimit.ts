@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+// Clé serveur (jamais exposée au navigateur). Une fois définie, la fonction
+// check_rate_limit peut être fermée au public : personne ne peut alors remplir le
+// compteur d'un autre utilisateur pour le bloquer. Sans elle, on retombe sur la clé publique.
+const RATE_LIMIT_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || SUPABASE_ANON_KEY;
 
 type RateLimitConfig = {
   endpoint: string;
@@ -50,8 +54,9 @@ async function checkBucket(identity: string, endpoint: string, maxRequests: numb
     const response = await fetch(SUPABASE_URL + "/rest/v1/rpc/check_rate_limit", {
       method: "POST",
       headers: {
-        apikey: SUPABASE_ANON_KEY as string,
-        Authorization: "Bearer " + SUPABASE_ANON_KEY,
+        apikey: RATE_LIMIT_KEY as string,
+        // Les nouvelles clés secrètes (sb_secret_…) ne sont pas des JWT : en-tête apikey seul.
+        ...(RATE_LIMIT_KEY?.startsWith("sb_") ? {} : { Authorization: "Bearer " + RATE_LIMIT_KEY }),
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
