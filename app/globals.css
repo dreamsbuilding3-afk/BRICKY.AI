@@ -3737,3 +3737,5 @@ label.auto-filled input, label.auto-filled select { border-color: rgba(22,163,74
   .fig-card { padding: 10px 14px 12px; }
   .fig-note { display: none; }
 }
+.fig-card { margin-bottom: 14px; }
+@media (max-width: 640px) { .fig-card { margin-bottom: 10px; } }

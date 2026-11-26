@@ -33,7 +33,6 @@ export function AnalysesCounter({ value }: { value: number }) {
           <span className="fig-unit">{n > 1 ? "analyses réalisées" : "analyse réalisée"}</span>
         </div>
       </div>
-      <p className="fig-note">sur la plateforme, et chaque nouvelle analyse rend Bricky plus précis.</p>
     </section>
   );
 }
